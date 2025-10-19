@@ -24,10 +24,14 @@ impl GameView {
             map: Map::new(width, height),
         }
     }
+
+    pub fn to_text(&self) -> Text<'_> {
+        self.map.to_text()
+    }
 }
 
 impl Widget for &GameView {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        self.map.to_text().centered().render(area, buf);
+        self.to_text().render(area, buf);
     }
 }

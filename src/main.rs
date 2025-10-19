@@ -1,4 +1,4 @@
-use std::{io, ops::DerefMut};
+use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
@@ -44,9 +44,9 @@ impl App {
         Ok(())
     }
 
-    fn draw(&mut self, frame: &mut Frame) {
-        self.render_game(frame);
-        frame.render_widget(&*self, frame.area());
+    fn draw(&self, frame: &mut Frame) {
+        frame.render_widget(Clear, frame.area());
+        frame.render_widget(self, frame.area());
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -75,17 +75,6 @@ impl App {
     fn exit(&mut self) {
         self.exit = true;
     }
-
-    fn render_game(&mut self, frame: &mut Frame) {
-        if let Some(ref mut game_view) = self.game_view {
-            let area = center(
-                frame.area(),
-                Constraint::Percentage(80),
-                Constraint::Percentage(80),
-            );
-            frame.render_widget(&*game_view, area)
-        }
-    }
 }
 
 fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
@@ -98,12 +87,10 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from("  ".bold());
+        let title = Line::from(" idle game yass ".bold());
         let instructions = Line::from(vec![
-            " Decrement ".into(),
-            "<Left>".blue().bold(),
-            " Increment ".into(),
-            "<Right>".blue().bold(),
+            " Create map ".into(),
+            "<M> ".blue().bold(),
             " Quit ".into(),
             "<Q> ".blue().bold(),
         ]);
@@ -111,10 +98,13 @@ impl Widget for &App {
             .title(title.centered())
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
-
         if let Some(ref game_view) = self.game_view {
-            game_view.render(area, buf);
+            Paragraph::new(game_view.to_text())
+                .centered()
+                .block(block)
+                .render(area, buf);
+        } else {
+            block.render(area, buf);
         }
-        block.render(area, buf);
     }
 }
