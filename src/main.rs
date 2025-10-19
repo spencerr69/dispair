@@ -1,30 +1,40 @@
-use std::io;
+use std::{io, ops::DerefMut};
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
-    layout::Rect,
+    layout::{Constraint, Flex, Layout, Rect},
     style::Stylize,
     symbols::border,
     text::{Line, Text},
-    widgets::{Block, Paragraph, Widget},
+    widgets::{Block, Clear, Paragraph, Widget},
 };
+
+use crate::gameview::GameView;
+
+mod gameview;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
-    let app_result = App::default().run(&mut terminal);
+    let app_result = App::new().run(&mut terminal);
     ratatui::restore();
     app_result
 }
 
-#[derive(Debug, Default)]
-pub struct App {
-    counter: u8,
+pub struct App<'a> {
+    game_view: Option<GameView<'a>>,
     exit: bool,
 }
 
-impl App {
+impl<'a> App<'a> {
+    pub fn new() -> App<'a> {
+        App {
+            game_view: None,
+            exit: false,
+        }
+    }
+
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
@@ -33,8 +43,9 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.area());
+    fn draw(&mut self, frame: &mut Frame) {
+        frame.render_widget(&*self, frame.area());
+        self.render_game(frame);
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -48,11 +59,14 @@ impl App {
         Ok(())
     }
 
+    fn start_game(&mut self) {
+        self.game_view = Some(GameView::new())
+    }
+
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
-            KeyCode::Left => self.decrement_counter(),
-            KeyCode::Right => self.increment_counter(),
+            KeyCode::Char('m') => self.start_game(),
             _ => {}
         }
     }
@@ -61,18 +75,30 @@ impl App {
         self.exit = true;
     }
 
-    fn increment_counter(&mut self) {
-        self.counter += 1;
-    }
-
-    fn decrement_counter(&mut self) {
-        self.counter -= 1;
+    fn render_game(&mut self, frame: &mut Frame) {
+        if let Some(ref mut game_view) = self.game_view {
+            let area = center(
+                frame.area(),
+                Constraint::Percentage(80),
+                Constraint::Percentage(80),
+            );
+            game_view.render_view();
+            frame.render_widget(&*game_view, area)
+        }
     }
 }
 
-impl Widget for &App {
+fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
+    let [area] = Layout::horizontal([horizontal])
+        .flex(Flex::Center)
+        .areas(area);
+    let [area] = Layout::vertical([vertical]).flex(Flex::Center).areas(area);
+    area
+}
+
+impl Widget for &App<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" Counter App Tutorial ".bold());
+        let title = Line::from("  ".bold());
         let instructions = Line::from(vec![
             " Decrement ".into(),
             "<Left>".blue().bold(),
@@ -86,45 +112,10 @@ impl Widget for &App {
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
 
-        let counter_text = Text::from(vec![Line::from(vec![
-            "Value: ".into(),
-            self.counter.to_string().yellow(),
-        ])]);
+        if let Some(ref game_view) = self.game_view {
+            game_view.render(area, buf);
+        }
 
-        Paragraph::new(counter_text)
-            .centered()
-            .block(block)
-            .render(area, buf)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ratatui::style::Style;
-
-    #[test]
-    fn render() {
-        let app = App::default();
-        let mut buf = Buffer::empty(Rect::new(0, 0, 50, 4));
-
-        app.render(buf.area, &mut buf);
-
-        let mut expected = Buffer::with_lines(vec![
-            "┏━━━━━━━━━━━━━ Counter App Tutorial ━━━━━━━━━━━━━┓",
-            "┃                    Value: 0                    ┃",
-            "┃                                                ┃",
-            "┗━ Decrement <Left> Increment <Right> Quit <Q> ━━┛",
-        ]);
-        let title_style = Style::new().bold();
-        let counter_style = Style::new().yellow();
-        let key_style = Style::new().blue().bold();
-        expected.set_style(Rect::new(14, 0, 22, 1), title_style);
-        expected.set_style(Rect::new(28, 1, 1, 1), counter_style);
-        expected.set_style(Rect::new(13, 3, 6, 1), key_style);
-        expected.set_style(Rect::new(30, 3, 7, 1), key_style);
-        expected.set_style(Rect::new(43, 3, 4, 1), key_style);
-
-        assert_eq!(buf, expected);
+        block.render(area, buf)
     }
 }
