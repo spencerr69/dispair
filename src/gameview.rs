@@ -1,3 +1,4 @@
+use crate::map::{self, Map};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
@@ -5,47 +6,28 @@ use ratatui::{
     layout::Rect,
     style::Stylize,
     symbols::border,
-    text::{Line, Span, Text},
+    text::{Line, Span, Text, ToSpan},
     widgets::{Block, Paragraph, Widget},
 };
 
 pub struct Position(i16, i16);
 
-pub struct GameView<'a> {
+pub struct GameView {
     char_position: Position,
-    view_contents: Paragraph<'a>,
+    map: Map,
 }
 
-impl GameView<'_> {
-    pub fn new() -> Self {
+impl GameView {
+    pub fn new(width: i16, height: i16) -> Self {
         GameView {
             char_position: Position(0, 0),
-            view_contents: Paragraph::new(""),
+            map: Map::new(width, height),
         }
-    }
-
-    pub fn render_view(&mut self) {
-        let height = 20;
-        let width = 20;
-        let mut lines: Vec<Line> = Vec::new();
-
-        let bg_char = Span::from(".").gray();
-
-        for _ in 0..height {
-            let mut chars: Vec<Span> = Vec::new();
-            for _ in 0..width {
-                chars.push(bg_char.clone());
-            }
-            lines.push(Line::from(chars));
-        }
-
-        self.view_contents = Paragraph::new(lines);
     }
 }
 
-impl Widget for &GameView<'_> {
+impl Widget for &GameView {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let view_contents = &self.view_contents;
-        view_contents.render(area, buf)
+        self.map.to_text().centered().render(area, buf);
     }
 }

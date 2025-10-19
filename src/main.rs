@@ -14,6 +14,7 @@ use ratatui::{
 use crate::gameview::GameView;
 
 mod gameview;
+mod map;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
@@ -22,13 +23,13 @@ fn main() -> io::Result<()> {
     app_result
 }
 
-pub struct App<'a> {
-    game_view: Option<GameView<'a>>,
+pub struct App {
+    game_view: Option<GameView>,
     exit: bool,
 }
 
-impl<'a> App<'a> {
-    pub fn new() -> App<'a> {
+impl App {
+    pub fn new() -> App {
         App {
             game_view: None,
             exit: false,
@@ -44,8 +45,8 @@ impl<'a> App<'a> {
     }
 
     fn draw(&mut self, frame: &mut Frame) {
-        frame.render_widget(&*self, frame.area());
         self.render_game(frame);
+        frame.render_widget(&*self, frame.area());
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -60,7 +61,7 @@ impl<'a> App<'a> {
     }
 
     fn start_game(&mut self) {
-        self.game_view = Some(GameView::new())
+        self.game_view = Some(GameView::new(40, 20))
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
@@ -82,7 +83,6 @@ impl<'a> App<'a> {
                 Constraint::Percentage(80),
                 Constraint::Percentage(80),
             );
-            game_view.render_view();
             frame.render_widget(&*game_view, area)
         }
     }
@@ -96,7 +96,7 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     area
 }
 
-impl Widget for &App<'_> {
+impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from("  ".bold());
         let instructions = Line::from(vec![
@@ -115,7 +115,6 @@ impl Widget for &App<'_> {
         if let Some(ref game_view) = self.game_view {
             game_view.render(area, buf);
         }
-
-        block.render(area, buf)
+        block.render(area, buf);
     }
 }
