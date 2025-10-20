@@ -3,19 +3,25 @@ use ratatui::{
     prelude::Stylize,
     text::{Line, Span, Text, ToSpan},
 };
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use rand::prelude::*;
 
-use crate::character::Position;
+use crate::character::{Character, Position};
 
 pub struct GameMap {
     layer_base: Vec<Vec<EntityCharacters>>,
     layer_entities: Vec<Vec<EntityCharacters>>,
     layer_effects: Vec<Vec<EntityCharacters>>,
+    character: Option<Rc<RefCell<Character>>>,
+    prev_char_pos: Position,
+    height: usize,
+    width: usize,
 }
 
 impl GameMap {
-    pub fn new(width: i16, height: i16) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         let mut base: Vec<Vec<EntityCharacters>> = Vec::from(Vec::new());
         let mut entities: Vec<Vec<EntityCharacters>> = Vec::from(Vec::new());
         let mut effects: Vec<Vec<EntityCharacters>> = Vec::from(Vec::new());
@@ -40,17 +46,33 @@ impl GameMap {
             effects.push(effectsline);
         }
 
-        entities[3][2] = EntityCharacters::Character;
-
         GameMap {
             layer_base: base,
             layer_entities: entities,
             layer_effects: effects,
+            character: None,
+            prev_char_pos: Position(3, 2),
+            height,
+            width,
         }
     }
 
-    pub fn flatten_to_span(&self) -> Vec<Vec<Span<'_>>> {
-        let mut out: Vec<Vec<Span<'_>>> = self
+    pub fn set_character(&mut self, character: Rc<RefCell<Character>>) {
+        self.character = Some(character);
+    }
+
+    pub fn update_character_position(&mut self, new_pos: (usize, usize)) {
+        let (old_x, old_y) = self.prev_char_pos.get();
+        let (new_x, new_y) = new_pos;
+
+        self.layer_entities[old_y][old_x] = EntityCharacters::Empty;
+        self.layer_entities[new_y][new_x] = EntityCharacters::Character;
+
+        self.prev_char_pos.set(new_x, new_y);
+    }
+
+    pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {
+        let mut out: Vec<Vec<Span<'static>>> = self
             .layer_base
             .iter()
             .map(|line| line.iter().map(|entity| entity.to_styled()).collect())
@@ -73,10 +95,10 @@ impl GameMap {
         out
     }
 
-    pub fn to_text(&self) -> Text<'_> {
+    pub fn to_text(&self) -> Text<'static> {
         let map = self.flatten_to_span();
 
-        let out: Text<'_> = map
+        let out: Text<'static> = map
             .into_iter()
             .map(|style_line| Line::default().spans(style_line))
             .collect();
@@ -84,9 +106,17 @@ impl GameMap {
         out
     }
 
-    pub fn get_pos(&self, position: Position) -> &EntityCharacters {
+    pub fn get_pos(&self, position: &Position) -> &EntityCharacters {
         let (x, y) = position.get();
         &self.layer_entities[y][x]
+    }
+
+    pub fn can_stand(&self, position: &Position) -> bool {
+        let (x, y) = position.get();
+        if x < 0 || x >= self.width || y < 0 || y >= self.height {
+            return false;
+        }
+        self.get_pos(position) == &EntityCharacters::Empty
     }
 }
 
@@ -101,7 +131,7 @@ pub enum EntityCharacters {
 }
 
 impl EntityCharacters {
-    pub fn to_styled(&self) -> Span<'_> {
+    pub fn to_styled(&self) -> Span<'static> {
         match self {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
             EntityCharacters::Background2 => Span::from(",").dark_gray(),

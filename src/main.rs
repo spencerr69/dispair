@@ -69,7 +69,7 @@ impl App {
     }
 
     fn start_game(&mut self) {
-        self.game_view = Some(RogueGame::new(100, 100))
+        self.game_view = Some(RogueGame::new(100, 40))
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {

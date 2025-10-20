@@ -1,4 +1,4 @@
-use crate::character::{self, Character};
+use crate::character::{self, Character, Direction};
 use crate::gamemap::{self, GameMap};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
@@ -10,29 +10,39 @@ use ratatui::{
     text::{Line, Span, Text, ToSpan},
     widgets::{Block, Paragraph, Widget},
 };
+use std::cell::RefCell;
+use std::ops::Deref;
+use std::rc::Rc;
 
 pub struct RogueGame {
-    map: GameMap,
-    character: Character,
+    map: Rc<RefCell<GameMap>>,
+    character: Rc<RefCell<Character>>,
 }
 
 impl RogueGame {
-    pub fn new(width: i16, height: i16) -> Self {
-        RogueGame {
-            map: GameMap::new(width, height),
-            character: Character::new(),
-        }
+    pub fn new(width: usize, height: usize) -> Self {
+        let character = Rc::new(RefCell::new(Character::new()));
+        let map = Rc::new(RefCell::new(GameMap::new(width, height)));
+
+        // Set up the circular references
+        character.borrow_mut().set_map(Rc::clone(&map));
+        map.borrow_mut().set_character(Rc::clone(&character));
+
+        RogueGame { map, character }
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('w') => self.character.move_up(),
+            KeyCode::Char('s') => self.character.borrow_mut().move_direction(Direction::DOWN),
+            KeyCode::Char('w') => self.character.borrow_mut().move_direction(Direction::UP),
+            KeyCode::Char('d') => self.character.borrow_mut().move_direction(Direction::RIGHT),
+            KeyCode::Char('a') => self.character.borrow_mut().move_direction(Direction::LEFT),
             _ => {}
         }
     }
 
-    pub fn to_text(&self) -> Text<'_> {
-        self.map.to_text()
+    pub fn to_text(&self) -> Text<'static> {
+        self.map.borrow().to_text()
     }
 }
 
