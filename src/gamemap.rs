@@ -6,6 +6,8 @@ use ratatui::{
 
 use rand::prelude::*;
 
+use crate::character::Position;
+
 pub struct GameMap {
     layer_base: Vec<Vec<EntityCharacters>>,
     layer_entities: Vec<Vec<EntityCharacters>>,
@@ -80,6 +82,11 @@ impl GameMap {
             .collect();
 
         out
+    }
+
+    pub fn get_pos(&self, position: Position) -> &EntityCharacters {
+        let (x, y) = position.get();
+        &self.layer_entities[y][x]
     }
 }
 

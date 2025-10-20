@@ -11,10 +11,11 @@ use ratatui::{
     widgets::{Block, Clear, Paragraph, Widget},
 };
 
-use crate::gameview::GameView;
+use crate::roguegame::RogueGame;
 
-mod gameview;
-mod map;
+mod character;
+mod gamemap;
+mod roguegame;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
@@ -24,7 +25,7 @@ fn main() -> io::Result<()> {
 }
 
 pub struct App {
-    game_view: Option<GameView>,
+    game_view: Option<RogueGame>,
     exit: bool,
 }
 
@@ -46,12 +47,19 @@ impl App {
 
     fn draw(&self, frame: &mut Frame) {
         frame.render_widget(Clear, frame.area());
-        frame.render_widget(self, frame.area());
+        if let Some(ref game_view) = self.game_view {
+            frame.render_widget(game_view, frame.area());
+        } else {
+            frame.render_widget(self, frame.area());
+        }
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                if let Some(ref mut game_view) = self.game_view {
+                    game_view.handle_key_event(key_event);
+                }
                 self.handle_key_event(key_event)
             }
 
@@ -61,7 +69,7 @@ impl App {
     }
 
     fn start_game(&mut self) {
-        self.game_view = Some(GameView::new(40, 20))
+        self.game_view = Some(RogueGame::new(100, 100))
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
@@ -87,7 +95,7 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" idle game yass ".bold());
+        let title = Line::from(" idle game yass MENU ".bold());
         let instructions = Line::from(vec![
             " Create map ".into(),
             "<M> ".blue().bold(),
@@ -98,13 +106,7 @@ impl Widget for &App {
             .title(title.centered())
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
-        if let Some(ref game_view) = self.game_view {
-            Paragraph::new(game_view.to_text())
-                .centered()
-                .block(block)
-                .render(area, buf);
-        } else {
-            block.render(area, buf);
-        }
+
+        block.render(area, buf);
     }
 }
