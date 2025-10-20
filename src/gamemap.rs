@@ -1,7 +1,6 @@
 use ratatui::{
-    crossterm::style::StyledContent,
     prelude::Stylize,
-    text::{Line, Span, Text, ToSpan},
+    text::{Line, Span, Text},
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -61,15 +60,19 @@ impl GameMap {
         self.character = Some(character);
     }
 
-    pub fn update_character_position(&mut self, new_pos: (usize, usize)) {
-        let (old_x, old_y) = self.prev_char_pos.get();
-        let (new_x, new_y) = new_pos;
+    pub fn update_character_position(&mut self, new_pos: Position) {
+        let (old_x, old_y) = self.prev_char_pos.get_as_usize();
+        let (new_x, new_y) = new_pos.get_as_usize();
 
         self.layer_entities[old_y][old_x] = EntityCharacters::Empty;
         self.layer_entities[new_y][new_x] = EntityCharacters::Character;
 
-        self.prev_char_pos.set(new_x, new_y);
+        self.prev_char_pos = new_pos;
     }
+
+    // pub fn set_entity_position(&mut self, position: &Position) {
+    //     todo!()
+    // }
 
     pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {
         let mut out: Vec<Vec<Span<'static>>> = self
@@ -107,13 +110,13 @@ impl GameMap {
     }
 
     pub fn get_pos(&self, position: &Position) -> &EntityCharacters {
-        let (x, y) = position.get();
+        let (x, y) = position.get_as_usize();
         &self.layer_entities[y][x]
     }
 
     pub fn can_stand(&self, position: &Position) -> bool {
         let (x, y) = position.get();
-        if x < 0 || x >= self.width || y < 0 || y >= self.height {
+        if x < 0 || x >= self.width as i16 || y < 0 || y >= self.height as i16 {
             return false;
         }
         self.get_pos(position) == &EntityCharacters::Empty
