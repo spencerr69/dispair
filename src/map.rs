@@ -4,11 +4,13 @@ use ratatui::{
     text::{Line, Span, Text, ToSpan},
 };
 
-pub struct Map {
-    entities: Vec<Vec<EntityCharacters>>,
+use rand::prelude::*;
+
+pub struct GameMap {
+    map_contents: Vec<Vec<EntityCharacters>>,
 }
 
-impl Map {
+impl GameMap {
     pub fn new(width: i16, height: i16) -> Self {
         let mut entities: Vec<Vec<EntityCharacters>> = Vec::from(Vec::new());
 
@@ -20,11 +22,13 @@ impl Map {
             entities.push(line)
         }
 
-        Map { entities }
+        GameMap {
+            map_contents: entities,
+        }
     }
 
     pub fn to_style(&self) -> Vec<Vec<Span<'_>>> {
-        self.entities
+        self.map_contents
             .iter()
             .map(|line| line.iter().map(|entity| entity.to_styled()).collect())
             .collect()
@@ -50,9 +54,17 @@ pub enum EntityCharacters {
 }
 
 impl EntityCharacters {
-    pub fn to_styled(&self) -> Span {
+    pub fn to_styled(&self) -> Span<'_> {
+        let mut rng = rand::rng();
+
         match self {
-            EntityCharacters::Background => Span::from(".").dark_gray(),
+            EntityCharacters::Background => {
+                let choice = rng.random_range(0..=1);
+                match choice {
+                    0 => Span::from(".").dark_gray(),
+                    _ => Span::from(",").dark_gray(),
+                }
+            }
             EntityCharacters::Character => Span::from("0").white(),
             EntityCharacters::Enemy1 => Span::from("x").white(),
             EntityCharacters::Orb => Span::from("o".magenta().rapid_blink()),

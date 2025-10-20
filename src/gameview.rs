@@ -1,4 +1,4 @@
-use crate::map::{self, Map};
+use crate::map::{self, GameMap};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
@@ -14,14 +14,14 @@ pub struct Position(i16, i16);
 
 pub struct GameView {
     char_position: Position,
-    map: Map,
+    map: GameMap,
 }
 
 impl GameView {
     pub fn new(width: i16, height: i16) -> Self {
         GameView {
             char_position: Position(0, 0),
-            map: Map::new(width, height),
+            map: GameMap::new(width, height),
         }
     }
 
