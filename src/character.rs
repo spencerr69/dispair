@@ -61,6 +61,10 @@ impl Character {
         self.map = Some(map);
     }
 
+    pub fn set_pos(&mut self, new_pos: Position) {
+        self.position = new_pos;
+    }
+
     pub fn move_direction(&mut self, direction: Direction) {
         let (x, y) = self.position.get();
         let new_pos = match direction {
@@ -82,17 +86,16 @@ impl Character {
             if map.borrow().can_stand(&new_pos) && difference > timeout {
                 self.position = new_pos;
 
-                map.borrow_mut()
-                    .update_character_position(self.position.clone());
+                map.borrow_mut().update_character_position();
 
                 self.last_moved = attempt_time;
             }
         }
     }
 
-    // pub fn get_pos(&self) -> (i16, i16) {
-    //     self.position.get()
-    // }
+    pub fn get_pos(&self) -> &Position {
+        &self.position
+    }
 }
 
 #[cfg(test)]

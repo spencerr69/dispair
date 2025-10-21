@@ -58,16 +58,30 @@ impl GameMap {
 
     pub fn set_character(&mut self, character: Rc<RefCell<Character>>) {
         self.character = Some(character);
+        self.init_character();
     }
 
-    pub fn update_character_position(&mut self, new_pos: Position) {
-        let (old_x, old_y) = self.prev_char_pos.get_as_usize();
-        let (new_x, new_y) = new_pos.get_as_usize();
+    pub fn init_character(&mut self) {
+        let mut rng = rand::rng();
 
+        let (x, y) = (
+            rng.random_range(0..self.width) as i16,
+            rng.random_range(0..self.height) as i16,
+        );
+
+        let mut character_ref = self.character.as_mut().unwrap().borrow_mut();
+
+        character_ref.set_pos(Position(x, y));
+    }
+
+    pub fn update_character_position(&mut self) {
+        let (old_x, old_y) = self.prev_char_pos.get_as_usize();
+        let new_pos = self.character.as_ref().unwrap().borrow().get_pos().clone();
+        let (new_x, new_y) = new_pos.get_as_usize();
         self.layer_entities[old_y][old_x] = EntityCharacters::Empty;
         self.layer_entities[new_y][new_x] = EntityCharacters::Character;
 
-        self.prev_char_pos = new_pos;
+        self.prev_char_pos = new_pos.to_owned();
     }
 
     // pub fn set_entity_position(&mut self, position: &Position) {
