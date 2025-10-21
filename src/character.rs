@@ -99,37 +99,6 @@ impl Movable for Character {
         &self.prev_position
     }
 }
-// impl Movable for &mut Character {
-//     const ENTITY_CHAR: EntityCharacters = EntityCharacters::Character;
-
-//     fn set_pos(&mut self, new_pos: Position) {
-//         self.prev_position = self.position.clone();
-//         self.position = new_pos;
-//     }
-
-//     fn move_to(&mut self, new_pos: Position) {
-//         let attempt_time = SystemTime::now();
-//         let difference = attempt_time
-//             .duration_since(self.last_moved)
-//             .unwrap()
-//             .as_millis();
-//         // this is what movement speed controls vv
-//         let timeout = 100 / self.movement_speed as u128;
-
-//         if difference > timeout {
-//             self.set_pos(new_pos);
-//             self.last_moved = attempt_time;
-//         }
-//     }
-
-//     fn get_pos(&self) -> &Position {
-//         &self.position
-//     }
-
-//     fn get_prev_pos(&self) -> &Position {
-//         &self.prev_position
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
