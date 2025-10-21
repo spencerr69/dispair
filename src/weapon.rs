@@ -8,8 +8,8 @@ use crate::{
 
 #[derive(Clone)]
 pub struct Area {
-    corner1: Position,
-    corner2: Position,
+    pub corner1: Position,
+    pub corner2: Position,
 }
 
 impl Area {
@@ -36,6 +36,7 @@ pub struct DamageArea {
     pub area: Area,
     pub entity: EntityCharacters,
     pub duration: Duration,
+    pub blink: bool,
 }
 
 impl DamageArea {
@@ -100,6 +101,7 @@ impl Weapon for Sword {
             damage_amount: (self.get_damage() as f32 * wielder.strength).ceil() as i32,
             entity: EntityCharacters::AttackBlackout,
             duration: Duration::from_secs_f32(0.01),
+            blink: true,
         }
     }
 

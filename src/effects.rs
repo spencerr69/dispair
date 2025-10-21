@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use crate::{
-    roguegame::{EntityCharacters, Layer, set_entity},
+    roguegame::{EntityCharacters, Layer, get_pos, set_entity},
     weapon::{Area, DamageArea},
 };
 
@@ -35,6 +35,20 @@ impl DamageEffect {
                 &EntityCharacters::Empty,
             );
             self.complete = true
+        } else if self.damage_area.blink {
+            if get_pos(layer, &self.damage_area.area.corner1) == &EntityCharacters::Empty {
+                change_area(
+                    layer,
+                    self.damage_area.area.clone(),
+                    &self.damage_area.entity,
+                );
+            } else {
+                change_area(
+                    layer,
+                    self.damage_area.area.clone(),
+                    &EntityCharacters::Empty,
+                );
+            }
         }
     }
 }

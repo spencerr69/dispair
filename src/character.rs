@@ -68,9 +68,12 @@ pub struct Character {
     pub attack_speed: f32,
 
     health: i32,
+    max_health: i32,
     is_alive: bool,
 
     weapons: Vec<Box<dyn Weapon>>,
+
+    entitychar: EntityCharacters,
 }
 
 ///Trait for an entity which can move
@@ -101,17 +104,21 @@ pub trait Damageable {
 
 impl Character {
     pub fn new() -> Self {
+        let max_health = 100000000;
         Character {
             position: Position(0, 0),
-            movement_speed: 50.,
+            movement_speed: 1.,
             prev_position: Position(0, 0),
             last_moved: SystemTime::now(),
             facing: Direction::UP,
             strength: 1.,
-            attack_speed: 8.,
+            attack_speed: 1.,
 
-            health: 1000000,
+            health: max_health,
+            max_health: max_health,
             is_alive: true,
+
+            entitychar: EntityCharacters::Character,
 
             weapons: vec![Box::new(Sword::new(4, 1., 2))],
         }
@@ -164,6 +171,10 @@ impl Movable for Character {
         &self.position
     }
 
+    fn get_entity_char(&self) -> EntityCharacters {
+        self.entitychar.clone()
+    }
+
     fn get_prev_pos(&self) -> &Position {
         &self.prev_position
     }
@@ -180,6 +191,12 @@ impl Damageable for Character {
 
     fn take_damage(&mut self, damage: i32) {
         self.health -= damage;
+        if self.health >= self.max_health / 2 {
+            self.entitychar.replace(EntityCharacters::Character);
+        }
+        if self.health < self.max_health / 2 {
+            self.entitychar.replace(EntityCharacters::CharacterHurt);
+        }
         if self.health <= 0 {
             self.die();
         }

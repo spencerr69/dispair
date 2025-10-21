@@ -40,7 +40,7 @@ impl App {
         App {
             game_view: None,
             exit: false,
-            tick_rate: Duration::from_millis(10),
+            tick_rate: Duration::from_millis(20),
         }
     }
 

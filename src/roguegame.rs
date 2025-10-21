@@ -71,9 +71,9 @@ impl RogueGame {
             layer_effects: effects,
             height,
             width,
-            attack_ticks: 10 * 3,
-            enemy_move_ticks: 2 * 3,
-            enemy_spawn_ticks: 5 * 5,
+            attack_ticks: 40,
+            enemy_move_ticks: 20,
+            enemy_spawn_ticks: 100,
             tickcount: 0,
             enemies: vec![],
             game_over: false,
@@ -354,7 +354,7 @@ pub fn is_next_to_character(layer: &Layer, position: &Position) -> bool {
             let new_x = x as isize + dx;
 
             if new_y >= 0 && new_y < height as isize && new_x >= 0 && new_x < width as isize {
-                if layer[new_y as usize][new_x as usize] == EntityCharacters::Character {
+                if layer[new_y as usize][new_x as usize].is_char() {
                     return true;
                 }
             }
@@ -368,6 +368,7 @@ pub enum EntityCharacters {
     Background1,
     Background2,
     Character,
+    CharacterHurt,
     Enemy,
     EnemyHurt,
     Orb,
@@ -381,17 +382,23 @@ impl EntityCharacters {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
             EntityCharacters::Background2 => Span::from(",").dark_gray(),
             EntityCharacters::Character => Span::from("0").white().bold(),
+            EntityCharacters::CharacterHurt => Span::from("0").gray().italic(),
             EntityCharacters::Enemy => Span::from("x").white(),
             EntityCharacters::EnemyHurt => Span::from("x").gray().bold().italic(),
             EntityCharacters::Orb => Span::from("o".magenta().rapid_blink()),
             EntityCharacters::Empty => Span::from(" "),
-            EntityCharacters::AttackBlackout => {
-                Span::from(ratatui::symbols::block::FULL).bold().white()
-            }
+            EntityCharacters::AttackBlackout => Span::from(ratatui::symbols::block::FULL)
+                .bold()
+                .rapid_blink()
+                .white(),
         }
     }
 
     pub fn replace(&mut self, new_entity: EntityCharacters) {
         *self = new_entity;
+    }
+
+    pub fn is_char(&self) -> bool {
+        *self == EntityCharacters::Character || *self == EntityCharacters::CharacterHurt
     }
 }
