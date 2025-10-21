@@ -71,9 +71,9 @@ impl RogueGame {
             layer_effects: effects,
             height,
             width,
-            attack_ticks: 20,
-            enemy_move_ticks: 6,
-            enemy_spawn_ticks: 50,
+            attack_ticks: 10 * 3,
+            enemy_move_ticks: 2 * 3,
+            enemy_spawn_ticks: 5 * 5,
             tickcount: 0,
             enemies: vec![],
             game_over: false,
@@ -81,6 +81,7 @@ impl RogueGame {
         };
 
         game.init_character();
+        game.update_stats();
 
         game
     }
@@ -132,6 +133,7 @@ impl RogueGame {
                 enemy.update(&mut self.character, &self.layer_entities);
                 update_entity_positions(&mut self.layer_entities, enemy);
             });
+            self.animate();
         }
 
         if self.tickcount % self.attack_ticks == 0 {
@@ -143,8 +145,17 @@ impl RogueGame {
         }
     }
 
+    pub fn animate(&mut self) {
+        self.enemies.iter().for_each(|enemy| {
+            if *enemy.get_health() < 2 {
+                let enemy_entity = get_pos_mut(&mut self.layer_entities, enemy.get_pos());
+                enemy_entity.replace(EntityCharacters::EnemyHurt);
+            }
+        });
+    }
+
     pub fn update_stats(&mut self) {
-        self.attack_ticks = (self.attack_ticks as f32 * self.character.attack_speed).ceil() as u128
+        self.attack_ticks = (self.attack_ticks as f32 / self.character.attack_speed).ceil() as u128
     }
 
     pub fn spawn_enemy(&mut self) {
@@ -229,17 +240,12 @@ impl RogueGame {
         self.character.get_pos()
     }
 
-    pub fn get_pos(&self, position: &Position) -> &EntityCharacters {
-        let (x, y) = position.get_as_usize();
-        &self.layer_entities[y][x]
-    }
-
     pub fn can_stand(&self, position: &Position) -> bool {
         let (x, y) = position.get();
         if x < 0 || x >= self.width as i16 || y < 0 || y >= self.height as i16 {
             return false;
         }
-        self.get_pos(position) == &EntityCharacters::Empty
+        get_pos(&self.layer_entities, position) == &EntityCharacters::Empty
     }
 }
 
@@ -262,6 +268,15 @@ impl Widget for &RogueGame {
             .block(block)
             .render(area, buf);
     }
+}
+
+pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacters {
+    let (x, y) = position.get_as_usize();
+    &layer[y][x]
+}
+pub fn get_pos_mut<'a>(layer: &'a mut Layer, position: &Position) -> &'a mut EntityCharacters {
+    let (x, y) = position.get_as_usize();
+    &mut layer[y][x]
 }
 
 pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
@@ -353,7 +368,8 @@ pub enum EntityCharacters {
     Background1,
     Background2,
     Character,
-    Enemy1,
+    Enemy,
+    EnemyHurt,
     Orb,
     Empty,
     AttackBlackout,
@@ -365,12 +381,17 @@ impl EntityCharacters {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
             EntityCharacters::Background2 => Span::from(",").dark_gray(),
             EntityCharacters::Character => Span::from("0").white().bold(),
-            EntityCharacters::Enemy1 => Span::from("x").white(),
+            EntityCharacters::Enemy => Span::from("x").white(),
+            EntityCharacters::EnemyHurt => Span::from("x").gray().bold().italic(),
             EntityCharacters::Orb => Span::from("o".magenta().rapid_blink()),
             EntityCharacters::Empty => Span::from(" "),
             EntityCharacters::AttackBlackout => {
                 Span::from(ratatui::symbols::block::FULL).bold().white()
             }
         }
+    }
+
+    pub fn replace(&mut self, new_entity: EntityCharacters) {
+        *self = new_entity;
     }
 }

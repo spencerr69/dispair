@@ -70,7 +70,7 @@ impl EnemyBehaviour for Enemy {
 }
 
 impl Movable for Enemy {
-    const ENTITY_CHAR: EntityCharacters = EntityCharacters::Enemy1;
+    const ENTITY_CHAR: EntityCharacters = EntityCharacters::Enemy;
 
     fn get_pos(&self) -> &Position {
         &self.position

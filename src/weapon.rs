@@ -99,7 +99,7 @@ impl Weapon for Sword {
             area: new_area,
             damage_amount: (self.get_damage() as f32 * wielder.strength).ceil() as i32,
             entity: EntityCharacters::AttackBlackout,
-            duration: Duration::from_secs_f32(0.1),
+            duration: Duration::from_secs_f32(0.01),
         }
     }
 

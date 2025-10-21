@@ -103,17 +103,17 @@ impl Character {
     pub fn new() -> Self {
         Character {
             position: Position(0, 0),
-            movement_speed: 1.,
+            movement_speed: 50.,
             prev_position: Position(0, 0),
             last_moved: SystemTime::now(),
             facing: Direction::UP,
             strength: 1.,
-            attack_speed: 1.,
+            attack_speed: 8.,
 
-            health: 1000,
+            health: 1000000,
             is_alive: true,
 
-            weapons: vec![Box::new(Sword::new(10, 1., 2))],
+            weapons: vec![Box::new(Sword::new(4, 1., 2))],
         }
     }
 

@@ -40,7 +40,7 @@ impl App {
         App {
             game_view: None,
             exit: false,
-            tick_rate: Duration::from_millis(30),
+            tick_rate: Duration::from_millis(10),
         }
     }
 
@@ -91,7 +91,7 @@ impl App {
     }
 
     fn start_game(&mut self) {
-        self.game_view = Some(RogueGame::new(100, 40))
+        self.game_view = Some(RogueGame::new(100, 50))
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
