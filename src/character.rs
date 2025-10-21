@@ -1,6 +1,6 @@
-use std::{borrow::Borrow, time::SystemTime};
+use std::time::SystemTime;
 
-use crate::roguegame::{EntityCharacters, RogueGame};
+use crate::roguegame::EntityCharacters;
 
 #[derive(Clone)]
 pub struct Position(pub i16, pub i16);
