@@ -62,7 +62,7 @@ impl Character {
         Character {
             prev_position: Position(0, 0),
             position: Position(0, 0),
-            movement_speed: 1.,
+            movement_speed: 50.,
             last_moved: SystemTime::now(),
         }
     }
