@@ -1,5 +1,6 @@
 use crate::{
     character::{Character, Damageable, Direction, Movable, Position},
+    effects::DamageEffect,
     enemy::*,
 };
 use crossterm::event::{KeyCode, KeyEvent};
@@ -20,7 +21,6 @@ pub struct RogueGame {
     layer_base: Layer,
     layer_entities: Layer,
     layer_effects: Layer,
-    prev_char_pos: Position,
 
     tickcount: u128,
 
@@ -34,6 +34,8 @@ pub struct RogueGame {
     attack_ticks: u128,
 
     pub game_over: bool,
+
+    active_damage_effects: Vec<DamageEffect>,
 }
 
 impl RogueGame {
@@ -67,15 +69,15 @@ impl RogueGame {
             layer_base: base,
             layer_entities: entities,
             layer_effects: effects,
-            prev_char_pos: Position(3, 2),
             height,
             width,
             attack_ticks: 20,
-            enemy_move_ticks: 10,
-            enemy_spawn_ticks: 100,
+            enemy_move_ticks: 6,
+            enemy_spawn_ticks: 50,
             tickcount: 0,
             enemies: vec![],
             game_over: false,
+            active_damage_effects: vec![],
         };
 
         game.init_character();
@@ -86,6 +88,17 @@ impl RogueGame {
     pub fn update(&mut self) {
         self.tickcount += 1;
 
+        self.active_damage_effects = self
+            .active_damage_effects
+            .clone()
+            .into_iter()
+            .map(|mut damage_effect| {
+                damage_effect.update(&mut self.layer_effects);
+                damage_effect
+            })
+            .filter(|damage_effect| !damage_effect.complete)
+            .collect();
+
         if !self.character.is_alive() {
             self.game_over = true;
         }
@@ -94,7 +107,20 @@ impl RogueGame {
             .enemies
             .clone()
             .into_iter()
-            .filter(|e| (e).to_owned().is_alive())
+            .filter(|e| {
+                if !e.is_alive() {
+                    update_entity_positions(&mut self.layer_entities, e);
+                    set_entity(
+                        &mut self.layer_entities,
+                        e.get_pos(),
+                        EntityCharacters::Empty,
+                    )
+                    .unwrap_or(());
+                    return false;
+                } else {
+                    return true;
+                };
+            })
             .collect();
 
         if self.tickcount % self.enemy_spawn_ticks == 0 {
@@ -107,6 +133,18 @@ impl RogueGame {
                 update_entity_positions(&mut self.layer_entities, enemy);
             });
         }
+
+        if self.tickcount % self.attack_ticks == 0 {
+            let (damage_areas, mut damage_effects) = self.character.attack(&mut self.layer_effects);
+            damage_areas.iter().for_each(|area| {
+                area.deal_damage(&mut self.enemies);
+            });
+            self.active_damage_effects.append(&mut damage_effects)
+        }
+    }
+
+    pub fn update_stats(&mut self) {
+        self.attack_ticks = (self.attack_ticks as f32 * self.character.attack_speed).ceil() as u128
     }
 
     pub fn spawn_enemy(&mut self) {
@@ -227,17 +265,21 @@ impl Widget for &RogueGame {
 }
 
 pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
-    set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty);
-    set_entity(layer, entity.get_pos(), entity.get_entity_char())
+    set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty).unwrap_or(());
+    set_entity(layer, entity.get_pos(), entity.get_entity_char()).unwrap_or(());
 }
 
 pub fn set_entity(
     layer: &mut Vec<Vec<EntityCharacters>>,
     position: &Position,
     entity: EntityCharacters,
-) {
+) -> Result<(), String> {
     let (x, y) = position.get_as_usize();
+    if x >= layer[0].len() || y >= layer.len() {
+        return Err("Position out of bounds".to_string());
+    }
     layer[y][x] = entity;
+    Ok(())
 }
 
 pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Direction) {
@@ -252,6 +294,8 @@ pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Dire
     if can_stand(layer, &new_pos) {
         entity.move_to(new_pos, direction);
         update_entity_positions(layer, entity);
+    } else {
+        entity.move_to(entity.get_pos().clone(), direction);
     }
 }
 
@@ -304,7 +348,7 @@ pub fn is_next_to_character(layer: &Layer, position: &Position) -> bool {
     false
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum EntityCharacters {
     Background1,
     Background2,
@@ -312,6 +356,7 @@ pub enum EntityCharacters {
     Enemy1,
     Orb,
     Empty,
+    AttackBlackout,
 }
 
 impl EntityCharacters {
@@ -323,6 +368,9 @@ impl EntityCharacters {
             EntityCharacters::Enemy1 => Span::from("x").white(),
             EntityCharacters::Orb => Span::from("o".magenta().rapid_blink()),
             EntityCharacters::Empty => Span::from(" "),
+            EntityCharacters::AttackBlackout => {
+                Span::from(ratatui::symbols::block::FULL).bold().white()
+            }
         }
     }
 }

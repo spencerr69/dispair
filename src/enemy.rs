@@ -1,5 +1,3 @@
-use std::time::SystemTime;
-
 use crate::character::*;
 use crate::roguegame::*;
 
@@ -13,7 +11,6 @@ pub trait EnemyBehaviour {
 pub struct Enemy {
     position: Position,
     prev_position: Position,
-    last_moved: SystemTime,
 
     facing: Direction,
 
@@ -28,13 +25,12 @@ impl EnemyBehaviour for Enemy {
         Enemy {
             position: position.clone(),
             prev_position: position,
-            last_moved: SystemTime::now(),
 
             facing: Direction::UP,
 
             damage,
 
-            health: 100,
+            health: 5,
             is_alive: true,
         }
     }
@@ -104,15 +100,14 @@ impl Damageable for Enemy {
         &self.health
     }
 
-    fn set_health(&mut self, new_health: i32) {
-        self.health = new_health;
-    }
-
     fn is_alive(&self) -> bool {
         self.is_alive.clone()
     }
 
     fn take_damage(&mut self, damage: i32) {
         self.health -= damage;
+        if self.health <= 0 {
+            self.die();
+        }
     }
 }

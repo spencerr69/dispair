@@ -17,6 +17,7 @@ use ratatui::{
 use crate::roguegame::RogueGame;
 
 mod character;
+mod effects;
 mod enemy;
 mod roguegame;
 mod weapon;
@@ -39,7 +40,7 @@ impl App {
         App {
             game_view: None,
             exit: false,
-            tick_rate: Duration::from_millis(10),
+            tick_rate: Duration::from_millis(30),
         }
     }
 

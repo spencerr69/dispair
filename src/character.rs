@@ -1,9 +1,13 @@
-use crate::weapon::Weapon;
+use crate::{
+    effects::DamageEffect,
+    roguegame::Layer,
+    weapon::{Area, DamageArea, Sword, Weapon},
+};
 use std::time::SystemTime;
 
 use crate::roguegame::EntityCharacters;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct Position(pub i16, pub i16);
 
 impl Position {
@@ -36,6 +40,12 @@ impl Position {
         let (self_x, self_y) = self.get();
         let (other_x, other_y) = other.get();
         (other_x - self_x, other_y - self_y)
+    }
+
+    pub fn is_in_area(&self, area: &Area) -> bool {
+        let (x, y) = self.get();
+        let (min_x, min_y, max_x, max_y) = area.get_bounds();
+        x >= min_x && x <= max_x && y >= min_y && y <= max_y
     }
 }
 
@@ -78,7 +88,6 @@ pub trait Movable {
 ///Trait for an entity which has health and can be damaged
 pub trait Damageable {
     fn get_health(&self) -> &i32;
-    fn set_health(&mut self, new_health: i32);
 
     /// take_damage can also heal if damage is provided as negative
     fn take_damage(&mut self, damage: i32);
@@ -94,21 +103,36 @@ impl Character {
     pub fn new() -> Self {
         Character {
             position: Position(0, 0),
-            movement_speed: 50.,
+            movement_speed: 1.,
             prev_position: Position(0, 0),
             last_moved: SystemTime::now(),
             facing: Direction::UP,
             strength: 1.,
             attack_speed: 1.,
 
-            health: 10,
+            health: 1000,
             is_alive: true,
 
-            weapons: vec![],
+            weapons: vec![Box::new(Sword::new(10, 1., 2))],
         }
     }
 
-    pub fn attack(&self) {}
+    pub fn attack(&self, layer_effects: &mut Layer) -> (Vec<DamageArea>, Vec<DamageEffect>) {
+        let damage_areas: Vec<DamageArea> = self
+            .weapons
+            .iter()
+            .map(|weapon| weapon.attack(&self))
+            .collect();
+        let damage_effects: Vec<DamageEffect> = damage_areas
+            .clone()
+            .into_iter()
+            .map(|damage_area| DamageEffect::new(damage_area))
+            .collect();
+        damage_effects
+            .iter()
+            .for_each(|effect| effect.take_effect(layer_effects));
+        (damage_areas, damage_effects)
+    }
 }
 
 impl Movable for Character {
@@ -120,6 +144,8 @@ impl Movable for Character {
     }
 
     fn move_to(&mut self, new_pos: Position, facing: Direction) {
+        self.facing = facing;
+
         let attempt_time = SystemTime::now();
         let difference = attempt_time
             .duration_since(self.last_moved)
@@ -130,7 +156,6 @@ impl Movable for Character {
 
         if difference > timeout {
             self.set_pos(new_pos);
-            self.facing = facing;
             self.last_moved = attempt_time;
         }
     }
@@ -151,10 +176,6 @@ impl Damageable for Character {
 
     fn get_health(&self) -> &i32 {
         &self.health
-    }
-
-    fn set_health(&mut self, new_health: i32) {
-        self.health = new_health;
     }
 
     fn take_damage(&mut self, damage: i32) {
