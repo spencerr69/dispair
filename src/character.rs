@@ -1,7 +1,6 @@
-use crate::gamemap::GameMap;
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::time::SystemTime;
+
+use crate::roguegame::EntityCharacters;
 
 #[derive(Clone)]
 pub struct Position(pub i16, pub i16);
@@ -42,38 +41,42 @@ pub enum Direction {
 
 pub struct Character {
     position: Position,
-    map: Option<Rc<RefCell<GameMap>>>,
+    prev_position: Position,
     movement_speed: f32,
     last_moved: SystemTime,
+}
+
+pub trait Movable {
+    fn set_pos(&mut self, new_pos: Position);
+    fn get_pos(&self) -> &Position;
+    fn move_to(&mut self, new_pos: Position);
+    fn get_prev_pos(&self) -> &Position;
+    fn get_entity_char(&self) -> EntityCharacters {
+        Self::ENTITY_CHAR
+    }
+    const ENTITY_CHAR: EntityCharacters;
 }
 
 impl Character {
     pub fn new() -> Self {
         Character {
+            prev_position: Position(0, 0),
             position: Position(0, 0),
-            map: None,
             movement_speed: 1.,
             last_moved: SystemTime::now(),
         }
     }
+}
 
-    pub fn set_map(&mut self, map: Rc<RefCell<GameMap>>) {
-        self.map = Some(map);
-    }
+impl Movable for Character {
+    const ENTITY_CHAR: EntityCharacters = EntityCharacters::Character;
 
-    pub fn set_pos(&mut self, new_pos: Position) {
+    fn set_pos(&mut self, new_pos: Position) {
+        self.prev_position = self.position.clone();
         self.position = new_pos;
     }
 
-    pub fn move_direction(&mut self, direction: Direction) {
-        let (x, y) = self.position.get();
-        let new_pos = match direction {
-            Direction::LEFT => Position::new(x - 1, y),
-            Direction::RIGHT => Position::new(x + 1, y),
-            Direction::UP => Position::new(x, y - 1),
-            Direction::DOWN => Position::new(x, y + 1),
-        };
-
+    fn move_to(&mut self, new_pos: Position) {
         let attempt_time = SystemTime::now();
         let difference = attempt_time
             .duration_since(self.last_moved)
@@ -82,19 +85,18 @@ impl Character {
         // this is what movement speed controls vv
         let timeout = 100 / self.movement_speed as u128;
 
-        if let Some(map) = &self.map {
-            if map.borrow().can_stand(&new_pos) && difference > timeout {
-                self.position = new_pos;
-
-                map.borrow_mut().update_character_position();
-
-                self.last_moved = attempt_time;
-            }
+        if difference > timeout {
+            self.set_pos(new_pos);
+            self.last_moved = attempt_time;
         }
     }
 
-    pub fn get_pos(&self) -> &Position {
+    fn get_pos(&self) -> &Position {
         &self.position
+    }
+
+    fn get_prev_pos(&self) -> &Position {
+        &self.prev_position
     }
 }
 

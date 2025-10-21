@@ -4,17 +4,16 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
-    layout::{Constraint, Flex, Layout, Rect},
+    layout::Rect,
     style::Stylize,
     symbols::border,
-    text::{Line, Text},
-    widgets::{Block, Clear, Paragraph, Widget},
+    text::Line,
+    widgets::{Block, Clear, Widget},
 };
 
 use crate::roguegame::RogueGame;
 
 mod character;
-mod gamemap;
 mod roguegame;
 
 fn main() -> io::Result<()> {
@@ -85,13 +84,13 @@ impl App {
     }
 }
 
-fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
-    let [area] = Layout::horizontal([horizontal])
-        .flex(Flex::Center)
-        .areas(area);
-    let [area] = Layout::vertical([vertical]).flex(Flex::Center).areas(area);
-    area
-}
+// fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
+//     let [area] = Layout::horizontal([horizontal])
+//         .flex(Flex::Center)
+//         .areas(area);
+//     let [area] = Layout::vertical([vertical]).flex(Flex::Center).areas(area);
+//     area
+// }
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
