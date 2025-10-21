@@ -1,4 +1,7 @@
-use std::io;
+use std::{
+    io,
+    time::{Duration, Instant},
+};
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
@@ -14,7 +17,9 @@ use ratatui::{
 use crate::roguegame::RogueGame;
 
 mod character;
+mod enemy;
 mod roguegame;
+mod weapon;
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
@@ -26,6 +31,7 @@ fn main() -> io::Result<()> {
 pub struct App {
     game_view: Option<RogueGame>,
     exit: bool,
+    tick_rate: Duration,
 }
 
 impl App {
@@ -33,14 +39,30 @@ impl App {
         App {
             game_view: None,
             exit: false,
+            tick_rate: Duration::from_millis(10),
         }
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        let mut last_tick = Instant::now();
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_events()?;
+
+            let timeout = self.tick_rate.saturating_sub(last_tick.elapsed());
+            if event::poll(timeout)? {
+                self.handle_events()?;
+            }
+            if last_tick.elapsed() >= self.tick_rate {
+                if let Some(ref mut game_view) = self.game_view {
+                    game_view.update();
+                    if game_view.game_over {
+                        self.game_view = None;
+                    }
+                }
+                last_tick = Instant::now();
+            }
         }
+
         Ok(())
     }
 

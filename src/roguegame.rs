@@ -1,4 +1,7 @@
-use crate::character::{Character, Direction, Movable, Position};
+use crate::{
+    character::{Character, Damageable, Direction, Movable, Position},
+    enemy::*,
+};
 use crossterm::event::{KeyCode, KeyEvent};
 use rand::Rng;
 use ratatui::{
@@ -10,7 +13,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Widget},
 };
 
-type Layer = Vec<Vec<EntityCharacters>>;
+pub type Layer = Vec<Vec<EntityCharacters>>;
 
 pub struct RogueGame {
     character: Character,
@@ -18,8 +21,19 @@ pub struct RogueGame {
     layer_entities: Layer,
     layer_effects: Layer,
     prev_char_pos: Position,
+
+    tickcount: u128,
+
     height: usize,
     width: usize,
+
+    enemies: Vec<Enemy>,
+
+    enemy_spawn_ticks: u128,
+    enemy_move_ticks: u128,
+    attack_ticks: u128,
+
+    pub game_over: bool,
 }
 
 impl RogueGame {
@@ -56,6 +70,12 @@ impl RogueGame {
             prev_char_pos: Position(3, 2),
             height,
             width,
+            attack_ticks: 20,
+            enemy_move_ticks: 10,
+            enemy_spawn_ticks: 100,
+            tickcount: 0,
+            enemies: vec![],
+            game_over: false,
         };
 
         game.init_character();
@@ -63,51 +83,60 @@ impl RogueGame {
         game
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char('s') => self.move_character(Direction::DOWN),
-            KeyCode::Char('w') => self.move_character(Direction::UP),
-            KeyCode::Char('d') => self.move_character(Direction::RIGHT),
-            KeyCode::Char('a') => self.move_character(Direction::LEFT),
-            _ => {}
+    pub fn update(&mut self) {
+        self.tickcount += 1;
+
+        if !self.character.is_alive() {
+            self.game_over = true;
+        }
+
+        self.enemies = self
+            .enemies
+            .clone()
+            .into_iter()
+            .filter(|e| (e).to_owned().is_alive())
+            .collect();
+
+        if self.tickcount % self.enemy_spawn_ticks == 0 {
+            self.spawn_enemy();
+        }
+
+        if self.tickcount % self.enemy_move_ticks == 0 {
+            self.enemies.iter_mut().for_each(|enemy| {
+                enemy.update(&mut self.character, &self.layer_entities);
+                update_entity_positions(&mut self.layer_entities, enemy);
+            });
         }
     }
-    pub fn update_character_position(&mut self) {
-        let (old_x, old_y) = self.prev_char_pos.get_as_usize();
-        let new_pos = self.character.get_pos();
-        let (new_x, new_y) = new_pos.get_as_usize();
-        self.layer_entities[old_y][old_x] = EntityCharacters::Empty;
-        self.layer_entities[new_y][new_x] = EntityCharacters::Character;
 
-        self.prev_char_pos = new_pos.clone();
+    pub fn spawn_enemy(&mut self) {
+        self.enemies.push(Enemy::new(
+            get_rand_position_on_edge(&self.layer_entities),
+            1,
+        ))
     }
 
-    pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
-        Self::set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty);
-        Self::set_entity(layer, entity.get_pos(), entity.get_entity_char())
-    }
-
-    pub fn set_entity(
-        layer: &mut Vec<Vec<EntityCharacters>>,
-        position: &Position,
-        entity: EntityCharacters,
-    ) {
-        let (x, y) = position.get_as_usize();
-        layer[y][x] = entity;
-    }
-
-    pub fn move_character(&mut self, direction: Direction) {
-        let (x, y) = self.character.get_pos().get();
-        let new_pos = match direction {
-            Direction::LEFT => Position::new(x - 1, y),
-            Direction::RIGHT => Position::new(x + 1, y),
-            Direction::UP => Position::new(x, y - 1),
-            Direction::DOWN => Position::new(x, y + 1),
-        };
-
-        if self.can_stand(&new_pos) {
-            self.character.move_to(new_pos);
-            Self::update_entity_positions(self.layer_entities.as_mut(), &mut self.character);
+    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char('s') => move_entity(
+                &mut self.layer_entities,
+                &mut self.character,
+                Direction::DOWN,
+            ),
+            KeyCode::Char('w') => {
+                move_entity(&mut self.layer_entities, &mut self.character, Direction::UP)
+            }
+            KeyCode::Char('d') => move_entity(
+                &mut self.layer_entities,
+                &mut self.character,
+                Direction::RIGHT,
+            ),
+            KeyCode::Char('a') => move_entity(
+                &mut self.layer_entities,
+                &mut self.character,
+                Direction::LEFT,
+            ),
+            _ => {}
         }
     }
 
@@ -120,7 +149,7 @@ impl RogueGame {
         );
 
         self.character.set_pos(Position(x, y));
-        self.update_character_position();
+        update_entity_positions(&mut self.layer_entities, &self.character);
     }
 
     pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {
@@ -158,6 +187,10 @@ impl RogueGame {
         out
     }
 
+    pub fn get_character_pos(&self) -> &Position {
+        self.character.get_pos()
+    }
+
     pub fn get_pos(&self, position: &Position) -> &EntityCharacters {
         let (x, y) = position.get_as_usize();
         &self.layer_entities[y][x]
@@ -174,8 +207,13 @@ impl RogueGame {
 
 impl Widget for &RogueGame {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" idle game yass ".bold());
-        let instructions = Line::from(vec![" Quit ".into(), "<Q> ".blue().bold()]);
+        let title = Line::from(" spattui ".bold());
+
+        let instructions = Line::from(vec![
+            " health: ".into(),
+            self.character.get_health().to_string().green().bold(),
+            " ".into(),
+        ]);
         let block = Block::bordered()
             .title(title.centered())
             .title_bottom(instructions.centered())
@@ -186,6 +224,84 @@ impl Widget for &RogueGame {
             .block(block)
             .render(area, buf);
     }
+}
+
+pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
+    set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty);
+    set_entity(layer, entity.get_pos(), entity.get_entity_char())
+}
+
+pub fn set_entity(
+    layer: &mut Vec<Vec<EntityCharacters>>,
+    position: &Position,
+    entity: EntityCharacters,
+) {
+    let (x, y) = position.get_as_usize();
+    layer[y][x] = entity;
+}
+
+pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Direction) {
+    let (x, y) = entity.get_pos().get();
+    let new_pos = match direction {
+        Direction::LEFT => Position::new(x - 1, y),
+        Direction::RIGHT => Position::new(x + 1, y),
+        Direction::UP => Position::new(x, y - 1),
+        Direction::DOWN => Position::new(x, y + 1),
+    };
+
+    if can_stand(layer, &new_pos) {
+        entity.move_to(new_pos);
+        update_entity_positions(layer, entity);
+    }
+}
+
+pub fn can_stand(layer: &Layer, position: &Position) -> bool {
+    let (x, y) = position.get_as_usize();
+    x < layer[0].len() && y < layer.len() && layer[y][x] == EntityCharacters::Empty
+}
+
+pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
+    let mut rng = rand::rng();
+
+    let which_edge = rng.random_range(0..4);
+    let position = match which_edge {
+        0 => Position::new(0, rng.random_range(0..layer.len() as i16)),
+        1 => Position::new(
+            layer[0].len() as i16 - 1,
+            rng.random_range(0..layer.len() as i16),
+        ),
+        2 => Position::new(rng.random_range(0..layer[0].len() as i16), 0),
+        3 => Position::new(
+            rng.random_range(0..layer[0].len() as i16),
+            layer.len() as i16 - 1,
+        ),
+        _ => Position::new(0, 0),
+    };
+    position
+}
+
+pub fn is_next_to_character(layer: &Layer, position: &Position) -> bool {
+    let (x, y) = position.get_as_usize();
+    let height = layer.len();
+    let width = if height > 0 { layer[0].len() } else { 0 };
+
+    for dy in -1..=1 {
+        for dx in -1..=1 {
+            if dy == 0 && dx == 0 {
+                continue;
+            }
+
+            let new_y = y as isize + dy;
+            let new_x = x as isize + dx;
+
+            if new_y >= 0 && new_y < height as isize && new_x >= 0 && new_x < width as isize {
+                if layer[new_y as usize][new_x as usize] == EntityCharacters::Character {
+                    return true;
+                }
+            }
+        }
+    }
+    false
 }
 
 #[derive(PartialEq, Eq)]

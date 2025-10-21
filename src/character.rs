@@ -1,8 +1,9 @@
+use crate::weapon::Weapon;
 use std::time::SystemTime;
 
 use crate::roguegame::EntityCharacters;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Position(pub i16, pub i16);
 
 impl Position {
@@ -30,8 +31,15 @@ impl Position {
     pub fn get_as_usize(&self) -> (usize, usize) {
         (self.0 as usize, self.1 as usize)
     }
+
+    pub fn get_distance(&self, other: &Position) -> (i16, i16) {
+        let (self_x, self_y) = self.get();
+        let (other_x, other_y) = other.get();
+        (other_x - self_x, other_y - self_y)
+    }
 }
 
+#[derive(Clone)]
 pub enum Direction {
     LEFT,
     RIGHT,
@@ -42,14 +50,24 @@ pub enum Direction {
 pub struct Character {
     position: Position,
     prev_position: Position,
-    movement_speed: f32,
     last_moved: SystemTime,
+    pub facing: Direction,
+
+    pub movement_speed: f32,
+    pub strength: f32,
+    pub attack_speed: f32,
+
+    health: i32,
+    is_alive: bool,
+
+    weapons: Vec<Box<dyn Weapon>>,
 }
 
+///Trait for an entity which can move
 pub trait Movable {
     fn set_pos(&mut self, new_pos: Position);
     fn get_pos(&self) -> &Position;
-    fn move_to(&mut self, new_pos: Position);
+    fn move_to(&mut self, new_pos: Position, facing: Direction);
     fn get_prev_pos(&self) -> &Position;
     fn get_entity_char(&self) -> EntityCharacters {
         Self::ENTITY_CHAR
@@ -57,15 +75,40 @@ pub trait Movable {
     const ENTITY_CHAR: EntityCharacters;
 }
 
+///Trait for an entity which has health and can be damaged
+pub trait Damageable {
+    fn get_health(&self) -> &i32;
+    fn set_health(&mut self, new_health: i32);
+
+    /// take_damage can also heal if damage is provided as negative
+    fn take_damage(&mut self, damage: i32);
+
+    /// Function to be called when entity dies.
+    fn die(&mut self);
+
+    /// return if entity is alive
+    fn is_alive(&self) -> bool;
+}
+
 impl Character {
     pub fn new() -> Self {
         Character {
-            prev_position: Position(0, 0),
             position: Position(0, 0),
             movement_speed: 50.,
+            prev_position: Position(0, 0),
             last_moved: SystemTime::now(),
+            facing: Direction::UP,
+            strength: 1.,
+            attack_speed: 1.,
+
+            health: 10,
+            is_alive: true,
+
+            weapons: vec![],
         }
     }
+
+    pub fn attack(&self) {}
 }
 
 impl Movable for Character {
@@ -76,7 +119,7 @@ impl Movable for Character {
         self.position = new_pos;
     }
 
-    fn move_to(&mut self, new_pos: Position) {
+    fn move_to(&mut self, new_pos: Position, facing: Direction) {
         let attempt_time = SystemTime::now();
         let difference = attempt_time
             .duration_since(self.last_moved)
@@ -87,6 +130,7 @@ impl Movable for Character {
 
         if difference > timeout {
             self.set_pos(new_pos);
+            self.facing = facing;
             self.last_moved = attempt_time;
         }
     }
@@ -97,6 +141,31 @@ impl Movable for Character {
 
     fn get_prev_pos(&self) -> &Position {
         &self.prev_position
+    }
+}
+
+impl Damageable for Character {
+    fn die(&mut self) {
+        self.is_alive = false;
+    }
+
+    fn get_health(&self) -> &i32 {
+        &self.health
+    }
+
+    fn set_health(&mut self, new_health: i32) {
+        self.health = new_health;
+    }
+
+    fn take_damage(&mut self, damage: i32) {
+        self.health -= damage;
+        if self.health <= 0 {
+            self.die();
+        }
+    }
+
+    fn is_alive(&self) -> bool {
+        self.is_alive.clone()
     }
 }
 
