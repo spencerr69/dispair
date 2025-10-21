@@ -20,11 +20,11 @@ pub trait Weapon {
 pub struct Sword {
     base_damage: i32,
     damage_scalar: f32,
-    size: u32,
+    size: i16,
 }
 
 impl Sword {
-    pub fn new(base_damage: i32, damage_scalar: f32, size: u32) -> Self {
+    pub fn new(base_damage: i32, damage_scalar: f32, size: i16) -> Self {
         Sword {
             base_damage,
             damage_scalar,
@@ -35,23 +35,31 @@ impl Sword {
 
 impl Weapon for Sword {
     fn attack(&self, wielder: &Character) -> DamageArea {
-        let (mut x, mut y) = wielder.get_pos().clone().get();
-        let direction = wielder.facing;
+        let (x, y) = wielder.get_pos().clone().get();
+        let direction = wielder.facing.clone();
 
         let new_area: Area = match direction {
             Direction::DOWN => Area {
                 corner1: Position(x + self.size, y + 1),
                 corner2: Position(x - self.size, y + self.size),
             },
-            Direction::UP => (x, y - 1),
-            Direction::LEFT => (x - 1, y),
-            Direction::RIGHT => (x + 1, y),
+            Direction::UP => Area {
+                corner1: Position(x - self.size, y - 1),
+                corner2: Position(x + self.size, y - self.size),
+            },
+            Direction::LEFT => Area {
+                corner1: Position(x - 1, y + self.size),
+                corner2: Position(x - self.size, y - self.size),
+            },
+            Direction::RIGHT => Area {
+                corner1: Position(x + 1, y - self.size),
+                corner2: Position(x + self.size, y + self.size),
+            },
         };
 
         DamageArea {
-            area: Area {
-                corner1: Position(),
-            },
+            area: new_area,
+            damage_amount: (self.get_damage() as f32 * wielder.strength).ceil() as i32,
         }
     }
 

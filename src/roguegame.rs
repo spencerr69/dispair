@@ -250,7 +250,7 @@ pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Dire
     };
 
     if can_stand(layer, &new_pos) {
-        entity.move_to(new_pos);
+        entity.move_to(new_pos, direction);
         update_entity_positions(layer, entity);
     }
 }
