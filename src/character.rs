@@ -104,7 +104,7 @@ pub trait Damageable {
 
 impl Character {
     pub fn new() -> Self {
-        let max_health = 100000000;
+        let max_health = 10;
         Character {
             position: Position(0, 0),
             movement_speed: 1.,
@@ -120,7 +120,7 @@ impl Character {
 
             entitychar: EntityCharacters::Character,
 
-            weapons: vec![Box::new(Sword::new(4, 1., 2))],
+            weapons: vec![Box::new(Sword::new(2, 1., 1))],
         }
     }
 

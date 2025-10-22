@@ -26,6 +26,7 @@ fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
     let app_result = App::new().run(&mut terminal);
     ratatui::restore();
+
     app_result
 }
 
@@ -91,7 +92,7 @@ impl App {
     }
 
     fn start_game(&mut self) {
-        self.game_view = Some(RogueGame::new(100, 50))
+        self.game_view = Some(RogueGame::new(50, 10))
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {

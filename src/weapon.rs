@@ -88,11 +88,11 @@ impl Weapon for Sword {
             },
             Direction::LEFT => Area {
                 corner1: Position(x - 1, y + self.size),
-                corner2: Position(x - 1 - self.size, y - self.size),
+                corner2: Position(x - self.size, y - self.size),
             },
             Direction::RIGHT => Area {
-                corner1: Position(x + 1, y - self.size),
-                corner2: Position(x + 1 + self.size, y + self.size),
+                corner1: Position(x + 1, y + self.size),
+                corner2: Position(x + self.size, y - self.size),
             },
         };
 

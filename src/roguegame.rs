@@ -73,7 +73,7 @@ impl RogueGame {
             width,
             attack_ticks: 40,
             enemy_move_ticks: 20,
-            enemy_spawn_ticks: 100,
+            enemy_spawn_ticks: 10,
             tickcount: 0,
             enemies: vec![],
             game_over: false,
