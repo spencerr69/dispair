@@ -11,10 +11,13 @@ use ratatui::{
     style::Stylize,
     symbols::border,
     text::Line,
-    widgets::{Block, Clear, Widget},
+    widgets::{Block, Clear, Paragraph, Widget},
 };
 
-use crate::roguegame::RogueGame;
+use crate::{
+    roguegame::RogueGame,
+    upgrade::{PlayerState, UpgradesMenu},
+};
 
 mod character;
 mod effects;
@@ -35,14 +38,18 @@ pub struct App {
     game_view: Option<RogueGame>,
     exit: bool,
     tick_rate: Duration,
+    upgrade_menu: Option<UpgradesMenu>,
+    player_state: PlayerState,
 }
 
 impl App {
-    pub fn new() -> App {
+    pub fn new() -> Self {
         App {
             game_view: None,
+            upgrade_menu: None,
             exit: false,
             tick_rate: Duration::from_millis(20),
+            player_state: PlayerState::default(),
         }
     }
 
@@ -73,9 +80,15 @@ impl App {
         frame.render_widget(Clear, frame.area());
         if let Some(ref game_view) = self.game_view {
             frame.render_widget(game_view, frame.area());
+        } else if let Some(ref upgrades_menu) = self.upgrade_menu {
+            frame.render_widget(upgrades_menu, frame.area());
         } else {
             frame.render_widget(self, frame.area());
         }
+    }
+
+    fn start_upgrade_menu(&mut self) {
+        self.upgrade_menu = Some(UpgradesMenu::new(self.player_state.clone()));
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -100,6 +113,7 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('m') => self.start_game(),
+            KeyCode::Char('u') => self.start_upgrade_menu(),
             _ => {}
         }
     }
