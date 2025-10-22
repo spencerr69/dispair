@@ -20,6 +20,7 @@ mod character;
 mod effects;
 mod enemy;
 mod roguegame;
+mod upgrade;
 mod weapon;
 
 fn main() -> io::Result<()> {
