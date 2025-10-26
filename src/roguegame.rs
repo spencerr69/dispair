@@ -371,7 +371,6 @@ pub enum EntityCharacters {
     CharacterHurt,
     Enemy,
     EnemyHurt,
-    Orb,
     Empty,
     AttackBlackout,
 }
@@ -385,7 +384,6 @@ impl EntityCharacters {
             EntityCharacters::CharacterHurt => Span::from("0").gray().italic(),
             EntityCharacters::Enemy => Span::from("x").white(),
             EntityCharacters::EnemyHurt => Span::from("x").gray().bold().italic(),
-            EntityCharacters::Orb => Span::from("o".magenta().rapid_blink()),
             EntityCharacters::Empty => Span::from(" "),
             EntityCharacters::AttackBlackout => Span::from(ratatui::symbols::block::FULL)
                 .bold()

@@ -191,6 +191,7 @@ impl Damageable for Character {
 
     fn take_damage(&mut self, damage: i32) {
         self.health -= damage;
+
         if self.health >= self.max_health / 2 {
             self.entitychar.replace(EntityCharacters::Character);
         }

@@ -15,7 +15,6 @@ use crossterm::{
 };
 use futures::{FutureExt, StreamExt};
 use ratatui::backend::CrosstermBackend as Backend;
-use serde::{Deserialize, Serialize};
 use tokio::{
     sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
     task::JoinHandle,
@@ -80,16 +79,6 @@ impl Tui {
 
     pub fn frame_rate(mut self, frame_rate: f64) -> Self {
         self.frame_rate = frame_rate;
-        self
-    }
-
-    pub fn mouse(mut self, mouse: bool) -> Self {
-        self.mouse = mouse;
-        self
-    }
-
-    pub fn paste(mut self, paste: bool) -> Self {
-        self.paste = paste;
         self
     }
 

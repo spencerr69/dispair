@@ -15,8 +15,9 @@ use serde::{Deserialize, Serialize, ser::Error};
 
 #[derive(Debug, Default, Clone)]
 pub struct PlayerState {
-    upgrades: Vec<UpgradeNode>,
-    inventory: Inventory,
+    pub upgrades: Vec<UpgradeNode>,
+    pub inventory: Inventory,
+    pub stats: Stats,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -31,8 +32,36 @@ pub struct UpgradeNode {
 
 #[derive(Default, Debug, Clone)]
 pub struct Inventory {
-    gold: i32,
+    pub gold: i32,
 }
+
+#[derive(Debug, Clone)]
+pub struct Stats {
+    pub health: i64,
+
+    pub damage_mult: f64,
+    pub attack_speed_mult: f64,
+    pub movement_speed_mult: f64,
+
+    pub width: usize,
+    pub height: usize,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            health: 10,
+
+            damage_mult: 1.,
+            attack_speed_mult: 1.,
+            movement_speed_mult: 1.,
+
+            width: 20,
+            height: 6,
+        }
+    }
+}
+
 pub type UpgradeTree = Vec<UpgradeNode>;
 
 pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
