@@ -36,6 +36,11 @@ impl Position {
         (self.0 as usize, self.1 as usize)
     }
 
+    pub fn constrain(&mut self, layer: &Layer) {
+        self.0 = self.0.max(0).min(layer[0].len() as i16 - 1);
+        self.1 = self.1.max(0).min(layer.len() as i16 - 1);
+    }
+
     pub fn get_distance(&self, other: &Position) -> (i16, i16) {
         let (self_x, self_y) = self.get();
         let (other_x, other_y) = other.get();
@@ -104,7 +109,7 @@ pub trait Damageable {
 
 impl Character {
     pub fn new() -> Self {
-        let max_health = 10;
+        let max_health = 10000;
         Character {
             position: Position(0, 0),
             movement_speed: 1.,
@@ -121,6 +126,7 @@ impl Character {
             entitychar: EntityCharacters::Character,
 
             weapons: vec![Box::new(Sword::new(2, 1., 1))],
+            // weapons: vec![],
         }
     }
 

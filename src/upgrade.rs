@@ -75,6 +75,7 @@ pub struct UpgradesMenu {
     player_state: PlayerState,
     upgrade_tree: UpgradeTree,
     pub upgrade_selection: ListState,
+    pub close: bool,
 }
 
 impl UpgradesMenu {
@@ -84,6 +85,7 @@ impl UpgradesMenu {
             player_state,
             upgrade_tree,
             upgrade_selection: ListState::default(),
+            close: false,
         }
     }
 
@@ -97,6 +99,8 @@ impl UpgradesMenu {
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('s') => self.next_selection(),
+
+            KeyCode::Esc => self.close = true,
             _ => {}
         }
     }

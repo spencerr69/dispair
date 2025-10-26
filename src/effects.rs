@@ -54,6 +54,8 @@ impl DamageEffect {
 }
 
 pub fn change_area(layer: &mut Layer, area: Area, entity: &EntityCharacters) {
-    area.iter()
-        .for_each(|position| set_entity(layer, &position, entity.clone()).unwrap_or(()));
+    area.iter().for_each(|mut position| {
+        position.constrain(layer);
+        set_entity(layer, &position, entity.clone()).unwrap_or(())
+    });
 }

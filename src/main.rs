@@ -36,7 +36,7 @@ impl App {
             upgrades_view: None,
             exit: false,
             player_state: PlayerState::default(),
-            frame_rate: 180.0,
+            frame_rate: 60.0,
             tick_rate: 60.0,
         }
     }
@@ -82,15 +82,15 @@ impl App {
         }
         if let Some(game) = &mut self.game_view {
             game.handle_key_event(key_event);
-        }
-        if let Some(upgrades_menu) = &mut self.upgrades_view {
+        } else if let Some(upgrades_menu) = &mut self.upgrades_view {
             upgrades_menu.handle_key_event(key_event);
-        }
-        match key_event.code {
-            KeyCode::Enter => self.start_game(),
-            KeyCode::Tab => self.start_upgrades(),
-            KeyCode::Esc => self.exit = true,
-            _ => {}
+        } else {
+            match key_event.code {
+                KeyCode::Enter => self.start_game(),
+                KeyCode::Tab => self.start_upgrades(),
+                KeyCode::Esc => self.exit = true,
+                _ => {}
+            }
         }
     }
 
@@ -108,6 +108,12 @@ impl App {
         if let Some(game) = &mut self.game_view {
             if game.game_over {
                 self.game_view = None;
+            }
+        }
+
+        if let Some(upgrades_menu) = &mut self.upgrades_view {
+            if upgrades_menu.close {
+                self.upgrades_view = None
             }
         }
     }
@@ -135,8 +141,8 @@ impl Widget for &App {
     where
         Self: Sized,
     {
-        Paragraph::new("game")
-            .block(Block::bordered())
+        Paragraph::new("")
+            .block(Block::bordered().title("Game"))
             .render(area, buf);
     }
 }

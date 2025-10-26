@@ -72,8 +72,8 @@ impl RogueGame {
             height,
             width,
             attack_ticks: 40,
-            enemy_move_ticks: 20,
-            enemy_spawn_ticks: 10,
+            enemy_move_ticks: 50,
+            enemy_spawn_ticks: 100,
             tickcount: 0,
             enemies: vec![],
             game_over: false,
@@ -86,6 +86,7 @@ impl RogueGame {
         game
     }
 
+    //TODO: seperate to a tick update and frame update
     pub fn update(&mut self) {
         self.tickcount += 1;
 
@@ -185,6 +186,7 @@ impl RogueGame {
                 &mut self.character,
                 Direction::LEFT,
             ),
+            KeyCode::Esc => self.game_over = true,
             _ => {}
         }
     }
@@ -299,12 +301,14 @@ pub fn set_entity(
 
 pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Direction) {
     let (x, y) = entity.get_pos().get();
-    let new_pos = match direction {
+    let mut new_pos = match direction {
         Direction::LEFT => Position::new(x - 1, y),
         Direction::RIGHT => Position::new(x + 1, y),
         Direction::UP => Position::new(x, y - 1),
         Direction::DOWN => Position::new(x, y + 1),
     };
+
+    new_pos.constrain(layer);
 
     if can_stand(layer, &new_pos) {
         entity.move_to(new_pos, direction);
