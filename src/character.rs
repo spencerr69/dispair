@@ -33,7 +33,7 @@ impl Position {
     }
 
     pub fn get_as_usize(&self) -> (usize, usize) {
-        (self.0 as usize, self.1 as usize)
+        (self.0.max(0) as usize, self.1.max(0) as usize)
     }
 
     pub fn constrain(&mut self, layer: &Layer) {
@@ -135,6 +135,10 @@ impl Character {
             .weapons
             .iter()
             .map(|weapon| weapon.attack(&self))
+            .map(|mut damage_area| {
+                damage_area.area.constrain(layer_effects);
+                damage_area
+            })
             .collect();
         let damage_effects: Vec<DamageEffect> = damage_areas
             .clone()

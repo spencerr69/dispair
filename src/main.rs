@@ -125,8 +125,8 @@ impl App {
     }
 
     fn start_game(&mut self) {
-        let height = self.player_state.stats.height;
         let width = self.player_state.stats.width;
+        let height = self.player_state.stats.height;
 
         self.game_view = Some(RogueGame::new(width, height));
     }

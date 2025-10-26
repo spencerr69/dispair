@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{error::Error, time::Instant};
 
 use crate::{
     roguegame::{EntityCharacters, Layer, get_pos, set_entity},

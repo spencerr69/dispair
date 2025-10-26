@@ -291,6 +291,8 @@ pub fn set_entity(
     position: &Position,
     entity: EntityCharacters,
 ) -> Result<(), String> {
+    let mut position = position.clone();
+    position.constrain(layer);
     let (x, y) = position.get_as_usize();
     if x >= layer[0].len() || y >= layer.len() {
         return Err("Position out of bounds".to_string());
