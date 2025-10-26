@@ -76,14 +76,19 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&mut self, frame: &mut Frame) {
         frame.render_widget(Clear, frame.area());
         if let Some(ref game_view) = self.game_view {
             frame.render_widget(game_view, frame.area());
-        } else if let Some(ref upgrades_menu) = self.upgrade_menu {
-            frame.render_widget(upgrades_menu, frame.area());
+        } else if let Some(ref mut upgrades_menu) = self.upgrade_menu {
+            // frame.render_stateful_widget(
+            //     &*upgrades_menu,
+            //     frame.area(),
+            //     &mut upgrades_menu.upgrade_selection,
+            // );
+            upgrades_menu.render_upgrades(frame);
         } else {
-            frame.render_widget(self, frame.area());
+            frame.render_widget(&*self, frame.area());
         }
     }
 
@@ -96,6 +101,8 @@ impl App {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 if let Some(ref mut game_view) = self.game_view {
                     game_view.handle_key_event(key_event);
+                } else if let Some(ref mut upgrades_menu) = self.upgrade_menu {
+                    upgrades_menu.handle_key_event(key_event);
                 }
                 self.handle_key_event(key_event)
             }
