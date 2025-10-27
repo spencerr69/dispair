@@ -25,9 +25,11 @@ pub struct App {
     upgrades_view: Option<UpgradesMenu>,
     exit: bool,
     player_state: PlayerState,
-    frame_rate: f64,
-    tick_rate: f64,
+    pub frame_rate: f64,
+    pub tick_rate: f64,
 }
+
+pub const TICK_RATE: f64 = 30.0;
 
 impl App {
     pub fn new() -> Self {
@@ -36,8 +38,8 @@ impl App {
             upgrades_view: None,
             exit: false,
             player_state: PlayerState::default(),
-            frame_rate: 60.0,
-            tick_rate: 60.0,
+            frame_rate: 180.0,
+            tick_rate: TICK_RATE,
         }
     }
 
@@ -106,6 +108,7 @@ impl App {
 
     fn on_tick(&mut self) {
         if let Some(game) = &mut self.game_view {
+            game.on_tick();
             if game.game_over {
                 self.game_view = None;
             }
@@ -120,7 +123,7 @@ impl App {
 
     fn on_frame(&mut self) {
         if let Some(game) = &mut self.game_view {
-            game.update();
+            game.on_frame();
         }
     }
 

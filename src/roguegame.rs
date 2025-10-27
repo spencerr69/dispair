@@ -1,4 +1,5 @@
 use crate::{
+    TICK_RATE,
     character::{Character, Damageable, Direction, Movable, Position},
     effects::DamageEffect,
     enemy::*,
@@ -64,6 +65,10 @@ impl RogueGame {
             effects.push(effectsline);
         }
 
+        let attack_ticks = Self::per_sec_to_tick_count(1.5);
+        let enemy_move_ticks = Self::per_sec_to_tick_count(2.);
+        let enemy_spawn_ticks = Self::per_sec_to_tick_count(1.);
+
         let mut game = RogueGame {
             character: Character::new(),
             layer_base: base,
@@ -71,9 +76,9 @@ impl RogueGame {
             layer_effects: effects,
             height,
             width,
-            attack_ticks: 40,
-            enemy_move_ticks: 50,
-            enemy_spawn_ticks: 100,
+            attack_ticks,
+            enemy_move_ticks,
+            enemy_spawn_ticks,
             tickcount: 0,
             enemies: vec![],
             game_over: false,
@@ -86,20 +91,14 @@ impl RogueGame {
         game
     }
 
-    //TODO: seperate to a tick update and frame update
-    pub fn update(&mut self) {
-        self.tickcount += 1;
+    pub fn per_sec_to_tick_count(per_sec: f64) -> u128 {
+        let per_tick = TICK_RATE / per_sec;
+        per_tick.ceil() as u128
+    }
 
-        self.active_damage_effects = self
-            .active_damage_effects
-            .clone()
-            .into_iter()
-            .map(|mut damage_effect| {
-                damage_effect.update(&mut self.layer_effects);
-                damage_effect
-            })
-            .filter(|damage_effect| !damage_effect.complete)
-            .collect();
+    //TODO: seperate to a tick update and frame update
+    pub fn on_tick(&mut self) {
+        self.tickcount += 1;
 
         if !self.character.is_alive() {
             self.game_over = true;
@@ -134,7 +133,7 @@ impl RogueGame {
                 enemy.update(&mut self.character, &self.layer_entities);
                 update_entity_positions(&mut self.layer_entities, enemy);
             });
-            self.animate();
+            self.change_low_health_enemies_questionable();
         }
 
         if self.tickcount % self.attack_ticks == 0 {
@@ -146,7 +145,22 @@ impl RogueGame {
         }
     }
 
-    pub fn animate(&mut self) {
+    pub fn on_frame(&mut self) {
+        self.active_damage_effects = self
+            .active_damage_effects
+            .clone()
+            .into_iter()
+            .map(|mut damage_effect| {
+                damage_effect.update(&mut self.layer_effects);
+                damage_effect
+            })
+            .filter(|damage_effect| !damage_effect.complete)
+            .collect();
+
+        self.change_low_health_enemies_questionable();
+    }
+
+    pub fn change_low_health_enemies_questionable(&mut self) {
         self.enemies.iter().for_each(|enemy| {
             if *enemy.get_health() < 2 {
                 let enemy_entity = get_pos_mut(&mut self.layer_entities, enemy.get_pos());
@@ -391,10 +405,9 @@ impl EntityCharacters {
             EntityCharacters::Enemy => Span::from("x").white(),
             EntityCharacters::EnemyHurt => Span::from("x").gray().bold().italic(),
             EntityCharacters::Empty => Span::from(" "),
-            EntityCharacters::AttackBlackout => Span::from(ratatui::symbols::block::FULL)
-                .bold()
-                .rapid_blink()
-                .white(),
+            EntityCharacters::AttackBlackout => {
+                Span::from(ratatui::symbols::block::FULL).bold().white()
+            }
         }
     }
 
