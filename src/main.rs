@@ -144,7 +144,7 @@ impl Widget for &App {
         Self: Sized,
     {
         Paragraph::new("")
-            .block(Block::bordered().title("Game"))
+            .block(Block::bordered().title("dispair"))
             .render(area, buf);
     }
 }

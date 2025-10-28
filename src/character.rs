@@ -3,6 +3,7 @@ use ratatui::style::{Style, Stylize};
 use crate::{
     effects::DamageEffect,
     roguegame::Layer,
+    upgrade::PlayerState,
     weapon::{Area, DamageArea, Sword, Weapon},
 };
 use std::time::SystemTime;
@@ -10,12 +11,12 @@ use std::time::SystemTime;
 use crate::roguegame::EntityCharacters;
 
 #[derive(Clone, Default, PartialEq, Eq)]
-pub struct Position(pub i16, pub i16);
+pub struct Position(pub i32, pub i32);
 
 impl Position {
-    pub fn new(x: i16, y: i16) -> Self {
-        let new_x: i16;
-        let new_y: i16;
+    pub fn new(x: i32, y: i32) -> Self {
+        let new_x: i32;
+        let new_y: i32;
         if x < 0 {
             new_x = 0;
         } else {
@@ -30,7 +31,7 @@ impl Position {
         Position(new_x, new_y)
     }
 
-    pub fn get(&self) -> (i16, i16) {
+    pub fn get(&self) -> (i32, i32) {
         (self.0, self.1)
     }
 
@@ -39,11 +40,11 @@ impl Position {
     }
 
     pub fn constrain(&mut self, layer: &Layer) {
-        self.0 = self.0.max(0).min(layer[0].len() as i16 - 1);
-        self.1 = self.1.max(0).min(layer.len() as i16 - 1);
+        self.0 = self.0.max(0).min(layer[0].len() as i32 - 1);
+        self.1 = self.1.max(0).min(layer.len() as i32 - 1);
     }
 
-    pub fn get_distance(&self, other: &Position) -> (i16, i16) {
+    pub fn get_distance(&self, other: &Position) -> (i32, i32) {
         let (self_x, self_y) = self.get();
         let (other_x, other_y) = other.get();
         (other_x - self_x, other_y - self_y)
@@ -64,7 +65,7 @@ pub enum Direction {
     DOWN,
 }
 
-pub struct Character {
+pub struct Character<'a> {
     position: Position,
     prev_position: Position,
     last_moved: SystemTime,
@@ -79,6 +80,8 @@ pub struct Character {
     is_alive: bool,
 
     weapons: Vec<Box<dyn Weapon>>,
+
+    pub player_state: &'a PlayerState,
 
     entitychar: EntityCharacters,
 }
@@ -106,8 +109,8 @@ pub trait Damageable {
     fn is_alive(&self) -> bool;
 }
 
-impl Character {
-    pub fn new() -> Self {
+impl<'a> Character<'a> {
+    pub fn new(player_state: &'a PlayerState) -> Self {
         let max_health = 10000;
         Character {
             position: Position(0, 0),
@@ -117,6 +120,7 @@ impl Character {
             facing: Direction::UP,
             strength: 1.,
             attack_speed: 1.,
+            player_state,
 
             health: max_health,
             max_health: max_health,
@@ -124,7 +128,7 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![Box::new(Sword::new(2, 1., 1))],
+            weapons: vec![Box::new(Sword::new(player_state))],
             // weapons: vec![],
         }
     }

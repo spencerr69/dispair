@@ -4,6 +4,7 @@ use crate::{
     character::{Character, Damageable, Direction, Movable, Position},
     enemy::Enemy,
     roguegame::{EntityCharacters, Layer},
+    upgrade::PlayerState,
 };
 
 #[derive(Clone)]
@@ -22,7 +23,7 @@ impl Area {
         (x1..=x2).flat_map(move |x| (y1..=y2).map(move |y| Position(x, y)))
     }
 
-    pub fn get_bounds(&self) -> (i16, i16, i16, i16) {
+    pub fn get_bounds(&self) -> (i32, i32, i32, i32) {
         let (x1, y1) = self.corner1.get();
         let (x2, y2) = self.corner2.get();
 
@@ -64,15 +65,18 @@ pub trait Weapon {
 pub struct Sword {
     base_damage: i32,
     damage_scalar: f32,
-    size: i16,
+    size: i32,
 }
 
 impl Sword {
-    pub fn new(base_damage: i32, damage_scalar: f32, size: i16) -> Self {
+    pub fn new(player_state: &PlayerState) -> Self {
+        let size_base = 1;
+        let base_damage = 2;
+        let damage_scalar = 1.;
         Sword {
             base_damage,
             damage_scalar,
-            size,
+            size: size_base + player_state.stats.size,
         }
     }
 }

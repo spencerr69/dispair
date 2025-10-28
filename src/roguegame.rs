@@ -23,7 +23,7 @@ pub type Layer = Vec<Vec<EntityCharacters>>;
 pub struct RogueGame {
     pub player_state: PlayerState,
 
-    character: Character,
+    character: Option<Character<'static>>,
     layer_base: Layer,
     layer_entities: Layer,
     layer_effects: Layer,
@@ -84,8 +84,8 @@ impl RogueGame {
         let timer = Duration::from_secs(player_state.stats.timer);
 
         let mut game = RogueGame {
-            player_state,
-            character: Character::new(),
+            player_state: player_state.clone(),
+            character: None,
             layer_base: base,
             layer_entities: entities,
             layer_effects: effects,
@@ -101,6 +101,8 @@ impl RogueGame {
             start_time,
             timer,
         };
+
+        game.character = Some(Character::new(&game.player_state));
 
         game.init_character();
         game.update_stats();
@@ -227,12 +229,14 @@ impl RogueGame {
         let mut rng = rand::rng();
 
         let (x, y) = (
-            rng.random_range(0..self.width) as i16,
-            rng.random_range(0..self.height) as i16,
+            rng.random_range(0..self.width) as i32,
+            rng.random_range(0..self.height) as i32,
         );
 
         self.character.set_pos(Position(x, y));
         update_entity_positions(&mut self.layer_entities, &self.character);
+
+        self.character.player_state = &self.player_state;
     }
 
     pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {
@@ -276,7 +280,7 @@ impl RogueGame {
 
     pub fn can_stand(&self, position: &Position) -> bool {
         let (x, y) = position.get();
-        if x < 0 || x >= self.width as i16 || y < 0 || y >= self.height as i16 {
+        if x < 0 || x >= self.width as i32 || y < 0 || y >= self.height as i32 {
             return false;
         }
         get_pos(&self.layer_entities, position) == &EntityCharacters::Empty
@@ -287,7 +291,7 @@ impl Widget for &RogueGame {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let timer = self.timer.saturating_sub(self.start_time.elapsed());
 
-        let title = Line::from(" spattui ".bold());
+        let title = Line::from(" dispair.run ".bold());
 
         let instructions = Line::from(vec![
             " health: ".into(),
@@ -298,8 +302,8 @@ impl Widget for &RogueGame {
             " ".into(),
         ]);
         let block = Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered())
+            .title(title)
+            .title_bottom(instructions.right_aligned())
             .border_set(border::THICK);
 
         Paragraph::new(self.to_text())
@@ -367,15 +371,15 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
 
     let which_edge = rng.random_range(0..4);
     let position = match which_edge {
-        0 => Position::new(0, rng.random_range(0..layer.len() as i16)),
+        0 => Position::new(0, rng.random_range(0..layer.len() as i32)),
         1 => Position::new(
-            layer[0].len() as i16 - 1,
-            rng.random_range(0..layer.len() as i16),
+            layer[0].len() as i32 - 1,
+            rng.random_range(0..layer.len() as i32),
         ),
-        2 => Position::new(rng.random_range(0..layer[0].len() as i16), 0),
+        2 => Position::new(rng.random_range(0..layer[0].len() as i32), 0),
         3 => Position::new(
-            rng.random_range(0..layer[0].len() as i16),
-            layer.len() as i16 - 1,
+            rng.random_range(0..layer[0].len() as i32),
+            layer.len() as i32 - 1,
         ),
         _ => Position::new(0, 0),
     };

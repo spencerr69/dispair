@@ -41,6 +41,8 @@ pub struct Stats {
     pub attack_speed_mult: f64,
     pub movement_speed_mult: f64,
 
+    pub size: i32,
+
     pub width: usize,
     pub height: usize,
 
@@ -58,6 +60,8 @@ impl Default for Stats {
 
             width: 20,
             height: 6,
+
+            size: 1,
 
             timer: 10,
         }
