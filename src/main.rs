@@ -30,6 +30,7 @@ pub struct App {
 }
 
 pub const TICK_RATE: f64 = 30.0;
+pub const FRAME_RATE: f64 = 60.0;
 
 impl App {
     pub fn new() -> Self {
@@ -38,7 +39,7 @@ impl App {
             upgrades_view: None,
             exit: false,
             player_state: PlayerState::default(),
-            frame_rate: 180.0,
+            frame_rate: FRAME_RATE,
             tick_rate: TICK_RATE,
         }
     }

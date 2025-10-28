@@ -23,7 +23,7 @@ pub type Layer = Vec<Vec<EntityCharacters>>;
 pub struct RogueGame {
     pub player_state: PlayerState,
 
-    character: Option<Character<'static>>,
+    character: Character,
     layer_base: Layer,
     layer_entities: Layer,
     layer_effects: Layer,
@@ -85,7 +85,7 @@ impl RogueGame {
 
         let mut game = RogueGame {
             player_state: player_state.clone(),
-            character: None,
+            character: Character::new(player_state),
             layer_base: base,
             layer_entities: entities,
             layer_effects: effects,
@@ -101,8 +101,6 @@ impl RogueGame {
             start_time,
             timer,
         };
-
-        game.character = Some(Character::new(&game.player_state));
 
         game.init_character();
         game.update_stats();
@@ -189,7 +187,7 @@ impl RogueGame {
     }
 
     pub fn update_stats(&mut self) {
-        self.attack_ticks = (self.attack_ticks as f32 / self.character.attack_speed).ceil() as u128
+        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128
     }
 
     pub fn spawn_enemy(&mut self) {
@@ -235,8 +233,6 @@ impl RogueGame {
 
         self.character.set_pos(Position(x, y));
         update_entity_positions(&mut self.layer_entities, &self.character);
-
-        self.character.player_state = &self.player_state;
     }
 
     pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {

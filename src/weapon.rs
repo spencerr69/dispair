@@ -4,7 +4,7 @@ use crate::{
     character::{Character, Damageable, Direction, Movable, Position},
     enemy::Enemy,
     roguegame::{EntityCharacters, Layer},
-    upgrade::PlayerState,
+    upgrade::Stats,
 };
 
 #[derive(Clone)]
@@ -69,14 +69,14 @@ pub struct Sword {
 }
 
 impl Sword {
-    pub fn new(player_state: &PlayerState) -> Self {
+    pub fn new(player_stats: Stats) -> Self {
         let size_base = 1;
         let base_damage = 2;
         let damage_scalar = 1.;
         Sword {
             base_damage,
             damage_scalar,
-            size: size_base + player_state.stats.size,
+            size: size_base + player_stats.size,
         }
     }
 }
@@ -107,9 +107,9 @@ impl Weapon for Sword {
 
         DamageArea {
             area: new_area,
-            damage_amount: (self.get_damage() as f32 * wielder.strength).ceil() as i32,
+            damage_amount: (self.get_damage() as f64 * wielder.strength).ceil() as i32,
             entity: EntityCharacters::AttackBlackout,
-            duration: Duration::from_secs_f32(0.05),
+            duration: Duration::from_secs_f32(0.01),
             blink: false,
         }
     }

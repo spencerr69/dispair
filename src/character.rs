@@ -65,15 +65,15 @@ pub enum Direction {
     DOWN,
 }
 
-pub struct Character<'a> {
+pub struct Character {
     position: Position,
     prev_position: Position,
     last_moved: SystemTime,
     pub facing: Direction,
 
-    pub movement_speed: f32,
-    pub strength: f32,
-    pub attack_speed: f32,
+    pub movement_speed: f64,
+    pub strength: f64,
+    pub attack_speed: f64,
 
     health: i32,
     max_health: i32,
@@ -81,8 +81,7 @@ pub struct Character<'a> {
 
     weapons: Vec<Box<dyn Weapon>>,
 
-    pub player_state: &'a PlayerState,
-
+    // pub player_stats: Stats,
     entitychar: EntityCharacters,
 }
 
@@ -109,26 +108,25 @@ pub trait Damageable {
     fn is_alive(&self) -> bool;
 }
 
-impl<'a> Character<'a> {
-    pub fn new(player_state: &'a PlayerState) -> Self {
+impl Character {
+    pub fn new(player_state: PlayerState) -> Self {
         let max_health = 10000;
         Character {
             position: Position(0, 0),
-            movement_speed: 1.,
             prev_position: Position(0, 0),
             last_moved: SystemTime::now(),
             facing: Direction::UP,
-            strength: 1.,
-            attack_speed: 1.,
-            player_state,
-
+            movement_speed: player_state.stats.movement_speed_mult,
+            strength: player_state.stats.damage_mult,
+            attack_speed: player_state.stats.attack_speed_mult,
+            // player_stats: player_state.stats.clone(),
             health: max_health,
             max_health: max_health,
             is_alive: true,
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![Box::new(Sword::new(player_state))],
+            weapons: vec![Box::new(Sword::new(player_state.stats))],
             // weapons: vec![],
         }
     }

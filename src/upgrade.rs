@@ -61,7 +61,7 @@ impl Default for Stats {
             width: 20,
             height: 6,
 
-            size: 1,
+            size: 0,
 
             timer: 10,
         }
