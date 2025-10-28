@@ -1,3 +1,3 @@
-# idle-tui
+# dispair
 
-wip TUI autoshooter/idle game built in rust. using ratatui
+a work-in-progress TUI game being written in Rust about unpairing the [BAD] from the [GOOD]
