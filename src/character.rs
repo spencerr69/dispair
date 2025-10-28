@@ -1,3 +1,5 @@
+use ratatui::style::{Style, Stylize};
+
 use crate::{
     effects::DamageEffect,
     roguegame::Layer,
@@ -87,10 +89,7 @@ pub trait Movable {
     fn get_pos(&self) -> &Position;
     fn move_to(&mut self, new_pos: Position, facing: Direction);
     fn get_prev_pos(&self) -> &Position;
-    fn get_entity_char(&self) -> EntityCharacters {
-        Self::ENTITY_CHAR
-    }
-    const ENTITY_CHAR: EntityCharacters;
+    fn get_entity_char(&self) -> EntityCharacters;
 }
 
 ///Trait for an entity which has health and can be damaged
@@ -123,7 +122,7 @@ impl Character {
             max_health: max_health,
             is_alive: true,
 
-            entitychar: EntityCharacters::Character,
+            entitychar: EntityCharacters::Character(Style::default()),
 
             weapons: vec![Box::new(Sword::new(2, 1., 1))],
             // weapons: vec![],
@@ -153,8 +152,6 @@ impl Character {
 }
 
 impl Movable for Character {
-    const ENTITY_CHAR: EntityCharacters = EntityCharacters::Character;
-
     fn set_pos(&mut self, new_pos: Position) {
         self.prev_position = self.position.clone();
         self.position = new_pos;
@@ -200,13 +197,18 @@ impl Damageable for Character {
     }
 
     fn take_damage(&mut self, damage: i32) {
+        let normal_style = Style::default();
+        let hurt_style = Style::default().gray().italic();
+
         self.health -= damage;
 
         if self.health >= self.max_health / 2 {
-            self.entitychar.replace(EntityCharacters::Character);
+            self.entitychar
+                .replace(EntityCharacters::Character(normal_style));
         }
         if self.health < self.max_health / 2 {
-            self.entitychar.replace(EntityCharacters::CharacterHurt);
+            self.entitychar
+                .replace(EntityCharacters::Character(hurt_style));
         }
         if self.health <= 0 {
             self.die();

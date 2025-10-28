@@ -9,7 +9,7 @@ use rand::Rng;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::Stylize,
+    style::{Color, Modifier, Style, Stylize},
     symbols::border,
     text::{Line, Span, Text},
     widgets::{Block, Paragraph, Widget},
@@ -162,10 +162,7 @@ impl RogueGame {
 
     pub fn change_low_health_enemies_questionable(&mut self) {
         self.enemies.iter().for_each(|enemy| {
-            if *enemy.get_health() < 2 {
-                let enemy_entity = get_pos_mut(&mut self.layer_entities, enemy.get_pos());
-                enemy_entity.replace(EntityCharacters::EnemyHurt);
-            }
+            update_entity_positions(&mut self.layer_entities, enemy);
         });
     }
 
@@ -177,6 +174,7 @@ impl RogueGame {
         self.enemies.push(Enemy::new(
             get_rand_position_on_edge(&self.layer_entities),
             1,
+            5,
         ))
     }
 
@@ -387,23 +385,23 @@ pub fn is_next_to_character(layer: &Layer, position: &Position) -> bool {
 pub enum EntityCharacters {
     Background1,
     Background2,
-    Character,
-    CharacterHurt,
-    Enemy,
-    EnemyHurt,
+    Character(Style),
+    Enemy(Style),
     Empty,
     AttackBlackout,
 }
+
+//hurt style .gray().italic()
 
 impl EntityCharacters {
     pub fn to_styled(&self) -> Span<'static> {
         match self {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
             EntityCharacters::Background2 => Span::from(",").dark_gray(),
-            EntityCharacters::Character => Span::from("0").white().bold(),
-            EntityCharacters::CharacterHurt => Span::from("0").gray().italic(),
-            EntityCharacters::Enemy => Span::from("x").white(),
-            EntityCharacters::EnemyHurt => Span::from("x").gray().bold().italic(),
+            EntityCharacters::Character(style) => {
+                Span::from("0").white().bold().style(style.clone())
+            }
+            EntityCharacters::Enemy(style) => Span::from("x").white().style(style.clone()),
             EntityCharacters::Empty => Span::from(" "),
             EntityCharacters::AttackBlackout => {
                 Span::from(ratatui::symbols::block::FULL).bold().white()
@@ -416,6 +414,9 @@ impl EntityCharacters {
     }
 
     pub fn is_char(&self) -> bool {
-        *self == EntityCharacters::Character || *self == EntityCharacters::CharacterHurt
+        match *self {
+            EntityCharacters::Character(_) => true,
+            _ => false,
+        }
     }
 }
