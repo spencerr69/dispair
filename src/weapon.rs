@@ -1,40 +1,12 @@
 use std::time::Duration;
 
 use crate::{
-    character::{Character, Damageable, Direction, Movable, Position},
+    character::{Character, Damageable, Movable},
+    coords::{Area, Direction, Position},
     enemy::Enemy,
-    roguegame::{EntityCharacters, Layer},
+    roguegame::EntityCharacters,
     upgrade::Stats,
 };
-
-#[derive(Clone)]
-pub struct Area {
-    pub corner1: Position,
-    pub corner2: Position,
-}
-
-impl Area {
-    pub fn new(corner1: Position, corner2: Position) -> Self {
-        Area { corner1, corner2 }
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = Position> {
-        let (x1, y1, x2, y2) = self.get_bounds();
-        (x1..=x2).flat_map(move |x| (y1..=y2).map(move |y| Position(x, y)))
-    }
-
-    pub fn get_bounds(&self) -> (i32, i32, i32, i32) {
-        let (x1, y1) = self.corner1.get();
-        let (x2, y2) = self.corner2.get();
-
-        (x1.min(x2), y1.min(y2), x1.max(x2), y1.max(y2))
-    }
-
-    pub fn constrain(&mut self, layer: &Layer) {
-        self.corner1.constrain(layer);
-        self.corner2.constrain(layer);
-    }
-}
 
 #[derive(Clone)]
 pub struct DamageArea {

@@ -1,8 +1,9 @@
 use std::time::Instant;
 
 use crate::{
+    coords::Area,
     roguegame::{EntityCharacters, Layer, get_pos, set_entity},
-    weapon::{Area, DamageArea},
+    weapon::DamageArea,
 };
 
 #[derive(Clone)]
@@ -54,7 +55,7 @@ impl DamageEffect {
 }
 
 pub fn change_area(layer: &mut Layer, area: Area, entity: &EntityCharacters) {
-    area.iter().for_each(|mut position| {
+    area.clone().into_iter().for_each(|mut position| {
         position.constrain(layer);
         set_entity(layer, &position, entity.clone()).unwrap_or(())
     });

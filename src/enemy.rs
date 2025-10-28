@@ -2,6 +2,8 @@ use ratatui::style::Style;
 use ratatui::style::Stylize;
 
 use crate::character::*;
+use crate::coords::Direction;
+use crate::coords::Position;
 use crate::roguegame::*;
 
 pub trait EnemyBehaviour {

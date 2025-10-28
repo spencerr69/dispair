@@ -13,6 +13,7 @@ use crate::{
 };
 
 mod character;
+mod coords;
 mod effects;
 mod enemy;
 mod roguegame;

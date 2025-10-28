@@ -2,7 +2,8 @@ use std::time::{Duration, Instant};
 
 use crate::{
     TICK_RATE,
-    character::{Character, Damageable, Direction, Movable, Position},
+    character::{Character, Damageable, Movable},
+    coords::{Direction, Position},
     effects::DamageEffect,
     enemy::*,
     upgrade::PlayerState,
