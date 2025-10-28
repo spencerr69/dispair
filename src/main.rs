@@ -1,135 +1,159 @@
-use std::{
-    io,
-    time::{Duration, Instant},
-};
+use std::error::Error;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    DefaultTerminal, Frame,
-    buffer::Buffer,
-    layout::Rect,
-    style::Stylize,
-    symbols::border,
-    text::Line,
-    widgets::{Block, Clear, Widget},
+    Frame,
+    widgets::{Block, Paragraph, Widget},
 };
 
-use crate::roguegame::RogueGame;
+use crate::{
+    roguegame::RogueGame,
+    tui::{Event, Tui},
+    upgrade::{PlayerState, UpgradesMenu},
+};
 
 mod character;
 mod effects;
 mod enemy;
 mod roguegame;
+mod tui;
+mod upgrade;
 mod weapon;
-
-fn main() -> io::Result<()> {
-    let mut terminal = ratatui::init();
-    let app_result = App::new().run(&mut terminal);
-    ratatui::restore();
-
-    app_result
-}
 
 pub struct App {
     game_view: Option<RogueGame>,
+    upgrades_view: Option<UpgradesMenu>,
     exit: bool,
-    tick_rate: Duration,
+    player_state: PlayerState,
+    pub frame_rate: f64,
+    pub tick_rate: f64,
 }
 
+pub const TICK_RATE: f64 = 30.0;
+
 impl App {
-    pub fn new() -> App {
-        App {
+    pub fn new() -> Self {
+        Self {
             game_view: None,
+            upgrades_view: None,
             exit: false,
-            tick_rate: Duration::from_millis(20),
+            player_state: PlayerState::default(),
+            frame_rate: 180.0,
+            tick_rate: TICK_RATE,
         }
     }
 
-    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        let mut last_tick = Instant::now();
-        while !self.exit {
-            terminal.draw(|frame| self.draw(frame))?;
+    async fn run(&mut self) -> Result<(), Box<dyn Error>> {
+        let mut tui = Tui::new()?
+            .frame_rate(self.frame_rate)
+            .tick_rate(self.tick_rate);
 
-            let timeout = self.tick_rate.saturating_sub(last_tick.elapsed());
-            if event::poll(timeout)? {
-                self.handle_events()?;
+        tui.enter()?;
+
+        loop {
+            tui.draw(|f| self.ui(f))?;
+
+            if let Some(event) = tui.next().await {
+                self.handle_event(event);
             }
-            if last_tick.elapsed() >= self.tick_rate {
-                if let Some(ref mut game_view) = self.game_view {
-                    game_view.update();
-                    if game_view.game_over {
-                        self.game_view = None;
-                    }
-                }
-                last_tick = Instant::now();
+
+            if self.exit {
+                break;
             }
         }
 
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(Clear, frame.area());
-        if let Some(ref game_view) = self.game_view {
-            frame.render_widget(game_view, frame.area());
-        } else {
-            frame.render_widget(self, frame.area());
-        }
-    }
-
-    fn handle_events(&mut self) -> io::Result<()> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                if let Some(ref mut game_view) = self.game_view {
-                    game_view.handle_key_event(key_event);
-                }
-                self.handle_key_event(key_event)
+    pub fn handle_event(&mut self, event: Event) {
+        match event {
+            Event::Tick => {
+                self.on_tick();
             }
-
+            Event::Render => {
+                self.on_frame();
+            }
+            Event::Key(key_event) => self.handle_key_event(key_event),
             _ => {}
-        };
-        Ok(())
+        }
+    }
+
+    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+        if !key_event.is_press() {
+            return;
+        }
+        if let Some(game) = &mut self.game_view {
+            game.handle_key_event(key_event);
+        } else if let Some(upgrades_menu) = &mut self.upgrades_view {
+            upgrades_menu.handle_key_event(key_event);
+        } else {
+            match key_event.code {
+                KeyCode::Enter => self.start_game(),
+                KeyCode::Tab => self.start_upgrades(),
+                KeyCode::Esc => self.exit = true,
+                _ => {}
+            }
+        }
+    }
+
+    fn ui(&mut self, frame: &mut Frame) {
+        frame.render_widget(&*self, frame.area());
+        if let Some(game) = &self.game_view {
+            frame.render_widget(game, frame.area());
+        }
+        if let Some(ref mut upgrades_menu) = self.upgrades_view {
+            upgrades_menu.render_upgrades(frame);
+        }
+    }
+
+    fn on_tick(&mut self) {
+        if let Some(game) = &mut self.game_view {
+            game.on_tick();
+            if game.game_over {
+                self.player_state = game.player_state.clone();
+                self.game_view = None;
+            }
+        }
+
+        if let Some(upgrades_menu) = &mut self.upgrades_view {
+            if upgrades_menu.close {
+                self.player_state = upgrades_menu.player_state.clone();
+                self.upgrades_view = None
+            }
+        }
+    }
+
+    fn on_frame(&mut self) {
+        if let Some(game) = &mut self.game_view {
+            game.on_frame();
+        }
     }
 
     fn start_game(&mut self) {
-        self.game_view = Some(RogueGame::new(50, 10))
+        self.game_view = Some(RogueGame::new(self.player_state.clone()));
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char('q') => self.exit(),
-            KeyCode::Char('m') => self.start_game(),
-            _ => {}
-        }
-    }
-
-    fn exit(&mut self) {
-        self.exit = true;
+    fn start_upgrades(&mut self) {
+        self.upgrades_view = Some(UpgradesMenu::new(self.player_state.clone()));
     }
 }
 
-// fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
-//     let [area] = Layout::horizontal([horizontal])
-//         .flex(Flex::Center)
-//         .areas(area);
-//     let [area] = Layout::vertical([vertical]).flex(Flex::Center).areas(area);
-//     area
-// }
-
 impl Widget for &App {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" idle game yass MENU ".bold());
-        let instructions = Line::from(vec![
-            " Create map ".into(),
-            "<M> ".blue().bold(),
-            " Quit ".into(),
-            "<Q> ".blue().bold(),
-        ]);
-        let block = Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered())
-            .border_set(border::THICK);
-
-        block.render(area, buf);
+    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer)
+    where
+        Self: Sized,
+    {
+        Paragraph::new("")
+            .block(Block::bordered().title("Game"))
+            .render(area, buf);
     }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let mut app = App::new();
+
+    let _ = app.run().await?;
+
+    Ok(())
 }

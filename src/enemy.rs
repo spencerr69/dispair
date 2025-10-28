@@ -1,8 +1,11 @@
+use ratatui::style::Style;
+use ratatui::style::Stylize;
+
 use crate::character::*;
 use crate::roguegame::*;
 
 pub trait EnemyBehaviour {
-    fn new(position: Position, damage: i32) -> Self;
+    fn new(position: Position, damage: i32, health: i32) -> Self;
 
     fn update(&mut self, character: &mut Character, layer: &Layer);
 }
@@ -17,11 +20,14 @@ pub struct Enemy {
     damage: i32,
 
     health: i32,
+    max_health: i32,
     is_alive: bool,
+
+    entitychar: EntityCharacters,
 }
 
 impl EnemyBehaviour for Enemy {
-    fn new(position: Position, damage: i32) -> Self {
+    fn new(position: Position, damage: i32, health: i32) -> Self {
         Enemy {
             position: position.clone(),
             prev_position: position,
@@ -30,8 +36,11 @@ impl EnemyBehaviour for Enemy {
 
             damage,
 
-            health: 5,
+            health,
+            max_health: health,
             is_alive: true,
+
+            entitychar: EntityCharacters::Enemy(Style::default()),
         }
     }
 
@@ -70,8 +79,6 @@ impl EnemyBehaviour for Enemy {
 }
 
 impl Movable for Enemy {
-    const ENTITY_CHAR: EntityCharacters = EntityCharacters::Enemy;
-
     fn get_pos(&self) -> &Position {
         &self.position
     }
@@ -89,6 +96,10 @@ impl Movable for Enemy {
         self.prev_position = self.position.clone();
         self.position = new_pos;
     }
+
+    fn get_entity_char(&self) -> EntityCharacters {
+        self.entitychar.clone()
+    }
 }
 
 impl Damageable for Enemy {
@@ -105,7 +116,18 @@ impl Damageable for Enemy {
     }
 
     fn take_damage(&mut self, damage: i32) {
+        let normal_style = Style::default();
+        let hurt_style = Style::default().gray().italic();
+
         self.health -= damage;
+
+        if self.health >= self.max_health / 2 {
+            self.entitychar
+                .replace(EntityCharacters::Enemy(normal_style));
+        }
+        if self.health < self.max_health / 2 {
+            self.entitychar.replace(EntityCharacters::Enemy(hurt_style));
+        }
         if self.health <= 0 {
             self.die();
         }

@@ -1,3 +1,5 @@
+use ratatui::style::{Style, Stylize};
+
 use crate::{
     effects::DamageEffect,
     roguegame::Layer,
@@ -33,7 +35,12 @@ impl Position {
     }
 
     pub fn get_as_usize(&self) -> (usize, usize) {
-        (self.0 as usize, self.1 as usize)
+        (self.0.max(0) as usize, self.1.max(0) as usize)
+    }
+
+    pub fn constrain(&mut self, layer: &Layer) {
+        self.0 = self.0.max(0).min(layer[0].len() as i16 - 1);
+        self.1 = self.1.max(0).min(layer.len() as i16 - 1);
     }
 
     pub fn get_distance(&self, other: &Position) -> (i16, i16) {
@@ -82,10 +89,7 @@ pub trait Movable {
     fn get_pos(&self) -> &Position;
     fn move_to(&mut self, new_pos: Position, facing: Direction);
     fn get_prev_pos(&self) -> &Position;
-    fn get_entity_char(&self) -> EntityCharacters {
-        Self::ENTITY_CHAR
-    }
-    const ENTITY_CHAR: EntityCharacters;
+    fn get_entity_char(&self) -> EntityCharacters;
 }
 
 ///Trait for an entity which has health and can be damaged
@@ -104,7 +108,7 @@ pub trait Damageable {
 
 impl Character {
     pub fn new() -> Self {
-        let max_health = 10;
+        let max_health = 10000;
         Character {
             position: Position(0, 0),
             movement_speed: 1.,
@@ -118,9 +122,10 @@ impl Character {
             max_health: max_health,
             is_alive: true,
 
-            entitychar: EntityCharacters::Character,
+            entitychar: EntityCharacters::Character(Style::default()),
 
             weapons: vec![Box::new(Sword::new(2, 1., 1))],
+            // weapons: vec![],
         }
     }
 
@@ -129,6 +134,10 @@ impl Character {
             .weapons
             .iter()
             .map(|weapon| weapon.attack(&self))
+            .map(|mut damage_area| {
+                damage_area.area.constrain(layer_effects);
+                damage_area
+            })
             .collect();
         let damage_effects: Vec<DamageEffect> = damage_areas
             .clone()
@@ -143,8 +152,6 @@ impl Character {
 }
 
 impl Movable for Character {
-    const ENTITY_CHAR: EntityCharacters = EntityCharacters::Character;
-
     fn set_pos(&mut self, new_pos: Position) {
         self.prev_position = self.position.clone();
         self.position = new_pos;
@@ -190,12 +197,18 @@ impl Damageable for Character {
     }
 
     fn take_damage(&mut self, damage: i32) {
+        let normal_style = Style::default();
+        let hurt_style = Style::default().gray().italic();
+
         self.health -= damage;
+
         if self.health >= self.max_health / 2 {
-            self.entitychar.replace(EntityCharacters::Character);
+            self.entitychar
+                .replace(EntityCharacters::Character(normal_style));
         }
         if self.health < self.max_health / 2 {
-            self.entitychar.replace(EntityCharacters::CharacterHurt);
+            self.entitychar
+                .replace(EntityCharacters::Character(hurt_style));
         }
         if self.health <= 0 {
             self.die();

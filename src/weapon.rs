@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     character::{Character, Damageable, Direction, Movable, Position},
     enemy::Enemy,
-    roguegame::EntityCharacters,
+    roguegame::{EntityCharacters, Layer},
 };
 
 #[derive(Clone)]
@@ -27,6 +27,11 @@ impl Area {
         let (x2, y2) = self.corner2.get();
 
         (x1.min(x2), y1.min(y2), x1.max(x2), y1.max(y2))
+    }
+
+    pub fn constrain(&mut self, layer: &Layer) {
+        self.corner1.constrain(layer);
+        self.corner2.constrain(layer);
     }
 }
 
@@ -100,8 +105,8 @@ impl Weapon for Sword {
             area: new_area,
             damage_amount: (self.get_damage() as f32 * wielder.strength).ceil() as i32,
             entity: EntityCharacters::AttackBlackout,
-            duration: Duration::from_secs_f32(0.01),
-            blink: true,
+            duration: Duration::from_secs_f32(0.05),
+            blink: false,
         }
     }
 
