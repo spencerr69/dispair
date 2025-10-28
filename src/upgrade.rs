@@ -1,15 +1,13 @@
 use std::path::Path;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{KeyCode, KeyEvent};
 
 use ratatui::{
     Frame,
-    buffer::Buffer,
-    layout::Rect,
     style::{Style, Stylize},
     symbols::border,
-    text::{Line, Text, ToLine, ToText},
-    widgets::{Block, List, ListItem, ListState, Paragraph, StatefulWidget},
+    text::{Line, ToText},
+    widgets::{Block, List, ListItem, ListState},
 };
 use serde::{Deserialize, Serialize, ser::Error};
 
@@ -45,6 +43,8 @@ pub struct Stats {
 
     pub width: usize,
     pub height: usize,
+
+    pub timer: u64,
 }
 
 impl Default for Stats {
@@ -58,6 +58,8 @@ impl Default for Stats {
 
             width: 20,
             height: 6,
+
+            timer: 10,
         }
     }
 }
@@ -72,7 +74,7 @@ pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
 }
 
 pub struct UpgradesMenu {
-    player_state: PlayerState,
+    pub player_state: PlayerState,
     upgrade_tree: UpgradeTree,
     pub upgrade_selection: ListState,
     pub close: bool,
@@ -89,13 +91,6 @@ impl UpgradesMenu {
         }
     }
 
-    pub fn get_text(&self) -> Vec<Text<'_>> {
-        self.upgrade_tree
-            .iter()
-            .map(|node| node.title.to_text())
-            .collect()
-    }
-
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('s') => self.next_selection(),
@@ -109,9 +104,9 @@ impl UpgradesMenu {
         self.upgrade_selection.select_next();
     }
 
-    pub fn get_info(&self) -> Option<usize> {
-        self.upgrade_selection.selected()
-    }
+    // pub fn get_info(&self) -> Option<usize> {
+    //     self.upgrade_selection.selected()
+    // }
 
     pub fn node_to_list(upgrade_nodes: &Vec<UpgradeNode>) -> Vec<ListItem<'_>> {
         upgrade_nodes

@@ -1,15 +1,18 @@
+use std::time::{Duration, Instant};
+
 use crate::{
     TICK_RATE,
     character::{Character, Damageable, Direction, Movable, Position},
     effects::DamageEffect,
     enemy::*,
+    upgrade::PlayerState,
 };
 use crossterm::event::{KeyCode, KeyEvent};
 use rand::Rng;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::{Color, Modifier, Style, Stylize},
+    style::{Style, Stylize},
     symbols::border,
     text::{Line, Span, Text},
     widgets::{Block, Paragraph, Widget},
@@ -18,6 +21,8 @@ use ratatui::{
 pub type Layer = Vec<Vec<EntityCharacters>>;
 
 pub struct RogueGame {
+    pub player_state: PlayerState,
+
     character: Character,
     layer_base: Layer,
     layer_entities: Layer,
@@ -37,10 +42,16 @@ pub struct RogueGame {
     pub game_over: bool,
 
     active_damage_effects: Vec<DamageEffect>,
+
+    timer: Duration,
+    start_time: Instant,
 }
 
 impl RogueGame {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(player_state: PlayerState) -> Self {
+        let width = player_state.stats.width;
+        let height = player_state.stats.height;
+
         let mut base: Layer = Vec::from(Vec::new());
         let mut entities: Layer = Vec::from(Vec::new());
         let mut effects: Layer = Vec::from(Vec::new());
@@ -69,7 +80,11 @@ impl RogueGame {
         let enemy_move_ticks = Self::per_sec_to_tick_count(2.);
         let enemy_spawn_ticks = Self::per_sec_to_tick_count(1.);
 
+        let start_time = Instant::now();
+        let timer = Duration::from_secs(player_state.stats.timer);
+
         let mut game = RogueGame {
+            player_state,
             character: Character::new(),
             layer_base: base,
             layer_entities: entities,
@@ -83,6 +98,8 @@ impl RogueGame {
             enemies: vec![],
             game_over: false,
             active_damage_effects: vec![],
+            start_time,
+            timer,
         };
 
         game.init_character();
@@ -96,9 +113,12 @@ impl RogueGame {
         per_tick.ceil() as u128
     }
 
-    //TODO: seperate to a tick update and frame update
     pub fn on_tick(&mut self) {
         self.tickcount += 1;
+
+        if self.start_time.elapsed() >= self.timer {
+            self.game_over = true;
+        }
 
         if !self.character.is_alive() {
             self.game_over = true;
@@ -265,11 +285,16 @@ impl RogueGame {
 
 impl Widget for &RogueGame {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let timer = self.timer.saturating_sub(self.start_time.elapsed());
+
         let title = Line::from(" spattui ".bold());
 
         let instructions = Line::from(vec![
             " health: ".into(),
-            self.character.get_health().to_string().green().bold(),
+            self.character.get_health().to_string().bold(),
+            " ".into(),
+            " time: ".into(),
+            timer.as_secs().to_string().bold().into(),
             " ".into(),
         ]);
         let block = Block::bordered()
@@ -288,10 +313,10 @@ pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacter
     let (x, y) = position.get_as_usize();
     &layer[y][x]
 }
-pub fn get_pos_mut<'a>(layer: &'a mut Layer, position: &Position) -> &'a mut EntityCharacters {
-    let (x, y) = position.get_as_usize();
-    &mut layer[y][x]
-}
+// pub fn get_pos_mut<'a>(layer: &'a mut Layer, position: &Position) -> &'a mut EntityCharacters {
+//     let (x, y) = position.get_as_usize();
+//     &mut layer[y][x]
+// }
 
 pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
     set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty).unwrap_or(());

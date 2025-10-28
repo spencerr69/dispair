@@ -110,12 +110,14 @@ impl App {
         if let Some(game) = &mut self.game_view {
             game.on_tick();
             if game.game_over {
+                self.player_state = game.player_state.clone();
                 self.game_view = None;
             }
         }
 
         if let Some(upgrades_menu) = &mut self.upgrades_view {
             if upgrades_menu.close {
+                self.player_state = upgrades_menu.player_state.clone();
                 self.upgrades_view = None
             }
         }
@@ -128,10 +130,7 @@ impl App {
     }
 
     fn start_game(&mut self) {
-        let width = self.player_state.stats.width;
-        let height = self.player_state.stats.height;
-
-        self.game_view = Some(RogueGame::new(width, height));
+        self.game_view = Some(RogueGame::new(self.player_state.clone()));
     }
 
     fn start_upgrades(&mut self) {
