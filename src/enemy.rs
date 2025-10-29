@@ -7,7 +7,9 @@ use crate::coords::Position;
 use crate::roguegame::*;
 
 pub trait EnemyBehaviour {
-    fn new(position: Position, damage: i32, health: i32) -> Self;
+    fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self;
+
+    fn get_worth(&self) -> u32;
 
     fn update(&mut self, character: &mut Character, layer: &Layer);
 }
@@ -26,10 +28,12 @@ pub struct Enemy {
     is_alive: bool,
 
     entitychar: EntityCharacters,
+
+    worth: u32,
 }
 
 impl EnemyBehaviour for Enemy {
-    fn new(position: Position, damage: i32, health: i32) -> Self {
+    fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self {
         Enemy {
             position: position.clone(),
             prev_position: position,
@@ -43,7 +47,13 @@ impl EnemyBehaviour for Enemy {
             is_alive: true,
 
             entitychar: EntityCharacters::Enemy(Style::default()),
+
+            worth,
         }
+    }
+
+    fn get_worth(&self) -> u32 {
+        self.worth.clone()
     }
 
     fn update(&mut self, character: &mut Character, layer: &Layer) {
