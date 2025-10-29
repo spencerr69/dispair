@@ -19,15 +19,40 @@ pub struct PlayerState {
     pub stats: Stats,
 }
 
+impl PlayerState {
+    pub fn refresh(&mut self) {
+        self.stats = Stats::default();
+
+        //upgrade 11: PRESERVE::\conform
+        if !self.upgrade_owned(&"11".to_string()) {
+            self.stats.enemy_spawn_mult = 50.;
+            self.stats.timer = 10;
+        }
+
+        //upgrade 12 grow
+        if self.upgrade_owned(&"12".to_string()) {
+            self.stats.size += 1;
+        }
+    }
+
+    pub fn upgrade_owned(&self, id: &String) -> bool {
+        self.upgrades.get(id).unwrap_or(&false).clone()
+    }
+}
+
 impl Default for PlayerState {
     fn default() -> Self {
         let upgrade_tree = get_upgrade_tree().unwrap();
 
-        Self {
+        let mut out = Self {
             inventory: Inventory::default(),
             stats: Stats::default(),
             upgrades: get_current_upgrades(upgrade_tree, HashMap::new()),
-        }
+        };
+
+        out.refresh();
+
+        out
     }
 }
 
@@ -41,6 +66,7 @@ pub struct UpgradeNode {
     value: Option<f64>,
     cost: Option<u32>,
     children: Option<Vec<UpgradeNode>>,
+    requires: Vec<String>,
 }
 
 impl UpgradeNode {
@@ -70,11 +96,13 @@ impl Inventory {
 
 #[derive(Debug, Clone)]
 pub struct Stats {
-    pub health: i64,
+    pub health: i32,
 
     pub damage_mult: f64,
     pub attack_speed_mult: f64,
     pub movement_speed_mult: f64,
+
+    pub enemy_spawn_mult: f64,
 
     pub size: i32,
 
@@ -93,12 +121,14 @@ impl Default for Stats {
             attack_speed_mult: 1.,
             movement_speed_mult: 1.,
 
+            enemy_spawn_mult: 1.,
+
             width: 20,
             height: 6,
 
             size: 0,
 
-            timer: 10,
+            timer: 60,
         }
     }
 }
@@ -154,6 +184,7 @@ impl UpgradesMenu {
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
+            KeyCode::Char('w') => self.prev_selection(),
             KeyCode::Char('s') => self.next_selection(),
             KeyCode::Enter => {
                 if let Some(current_node) = self.get_selected_node() {
@@ -196,6 +227,10 @@ impl UpgradesMenu {
         }
     }
 
+    pub fn prev_selection(&mut self) {
+        self.upgrade_selection.select_previous();
+    }
+
     pub fn next_selection(&mut self) {
         self.upgrade_selection.select_next();
     }
@@ -228,19 +263,32 @@ impl UpgradesMenu {
     }
 
     pub fn node_to_list(
-        upgrade_nodes: &Vec<UpgradeNode>,
-        current_upgrades: CurrentUpgrades,
-    ) -> Vec<ListItem<'_>> {
+        upgrade_nodes: Vec<UpgradeNode>,
+        player_state: PlayerState,
+    ) -> Vec<ListItem<'static>> {
         upgrade_nodes
             .iter()
             .map(|node| {
-                let have_upgrade = current_upgrades.get(&node.id);
-                if have_upgrade.unwrap_or(&false).clone() {
-                    ListItem::from(node.get_display_title().bold().underlined().dark_gray())
+                let have_required = node.requires.iter().fold(true, |acc, current| {
+                    acc && player_state.upgrade_owned(&current)
+                });
+
+                if player_state.upgrade_owned(&node.id) {
+                    Some(ListItem::from(
+                        node.get_display_title()
+                            .clone()
+                            .bold()
+                            .underlined()
+                            .dark_gray(),
+                    ))
+                } else if have_required {
+                    Some(ListItem::from(node.get_display_title().clone()))
                 } else {
-                    ListItem::from(node.get_display_title())
+                    None
                 }
             })
+            .filter(|i| i.is_some())
+            .map(|i| i.unwrap())
             .collect()
     }
 
@@ -252,25 +300,26 @@ impl UpgradesMenu {
         let mut block = Block::bordered().border_set(border::THICK);
         let inner = block.inner(frame.area());
 
+        let gold = self.player_state.inventory.gold;
+        let current_layer = self.current_layer.clone();
+
+        let text: Vec<ListItem> = Self::node_to_list(current_layer, self.player_state.clone());
+
         let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)]);
         let [left, right] = horizontal.areas(inner);
 
         let title = Line::from(" dispair ".bold());
-        let instructions = Line::from(vec![
-            " gold: ".into(),
-            self.player_state.inventory.gold.to_string().into(),
-        ]);
+        let instructions = Line::from(vec![" gold: ".into(), gold.to_string().into()]);
         block = block
             .title(title.left_aligned())
             .title_bottom(instructions.right_aligned());
 
-        let text: Vec<ListItem> =
-            Self::node_to_list(&self.current_layer, self.player_state.upgrades.clone());
         let list = List::new(text)
             .highlight_style(Style::new().slow_blink().bold())
             .highlight_symbol(">");
 
         let current_upgrade = self.get_selected_node().unwrap_or(UpgradeNode::default());
+
         let upgrade_block = Block::bordered().border_set(border::ROUNDED);
         let upgrade_title = Line::from(current_upgrade.clone().title);
         let upgrade_desc = Line::from(current_upgrade.clone().description);
@@ -294,28 +343,10 @@ impl UpgradesMenu {
         frame.render_widget(block, frame.area());
 
         frame.render_widget(upgrade_paragraph, right);
+
         frame.render_stateful_widget(list, left, &mut self.upgrade_selection);
     }
 }
-
-// impl StatefulWidget for &UpgradesMenu {
-//     type State = ListState;
-//     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-//         let title = Line::from(" spattui ".bold());
-
-//         let instructions = Line::from(vec![" health: ".into(), " ".into()]);
-//         let block = Block::bordered()
-//             .title(title.centered())
-//             .title_bottom(instructions.centered())
-//             .border_set(border::THICK);
-
-//         List::new(self.get_text())
-//             .block(block)
-//             .highlight_style(Style::new().slow_blink().bold())
-//             .highlight_symbol(">")
-//             .render(area, buf, state);
-//     }
-// }
 
 #[cfg(test)]
 mod tests {

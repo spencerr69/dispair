@@ -113,6 +113,7 @@ impl App {
             game.on_tick();
             if game.game_over {
                 self.player_state = game.player_state.clone();
+                self.player_state.refresh();
                 self.game_view = None;
             }
         }
@@ -120,6 +121,7 @@ impl App {
         if let Some(upgrades_menu) = &mut self.upgrades_view {
             if upgrades_menu.close {
                 self.player_state = upgrades_menu.player_state.clone();
+                self.player_state.refresh();
                 self.upgrades_view = None
             }
         }

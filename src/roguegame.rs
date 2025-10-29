@@ -79,7 +79,8 @@ impl RogueGame {
 
         let attack_ticks = Self::per_sec_to_tick_count(1.5);
         let enemy_move_ticks = Self::per_sec_to_tick_count(2.);
-        let enemy_spawn_ticks = Self::per_sec_to_tick_count(1.);
+        let enemy_spawn_ticks =
+            Self::per_sec_to_tick_count(0.4 * player_state.stats.enemy_spawn_mult);
 
         let start_time = Instant::now();
         let timer = Duration::from_secs(player_state.stats.timer);
@@ -189,7 +190,7 @@ impl RogueGame {
     }
 
     pub fn update_stats(&mut self) {
-        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128
+        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128;
     }
 
     pub fn spawn_enemy(&mut self) {
@@ -389,28 +390,15 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     position
 }
 
-pub fn is_next_to_character(layer: &Layer, position: &Position) -> bool {
+pub fn is_next_to_character(char_position: &Position, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
-    let height = layer.len();
-    let width = if height > 0 { layer[0].len() } else { 0 };
+    let (char_x, char_y) = char_position.get_as_usize();
 
-    for dy in -1..=1 {
-        for dx in -1..=1 {
-            if dy == 0 && dx == 0 {
-                continue;
-            }
-
-            let new_y = y as isize + dy;
-            let new_x = x as isize + dx;
-
-            if new_y >= 0 && new_y < height as isize && new_x >= 0 && new_x < width as isize {
-                if layer[new_y as usize][new_x as usize].is_char() {
-                    return true;
-                }
-            }
-        }
+    if x >= char_x - 1 && char_x + 1 >= x && y >= char_y - 1 && char_y + 1 >= y {
+        true
+    } else {
+        false
     }
-    false
 }
 
 #[derive(PartialEq, Eq, Clone)]
