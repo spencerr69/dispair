@@ -7,8 +7,8 @@ use ratatui::{
     layout::{Constraint, Layout},
     style::{Style, Stylize},
     symbols::border,
-    text::{Line, ToLine, ToText},
-    widgets::{Block, List, ListItem, ListState, Paragraph, Widget, Wrap},
+    text::Line,
+    widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
 use serde::{Deserialize, Serialize, ser::Error};
 
