@@ -1,31 +1,40 @@
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 use crossterm::event::{KeyCode, KeyEvent};
 
 use ratatui::{
     Frame,
+    layout::{Constraint, Layout},
     style::{Style, Stylize},
     symbols::border,
     text::{Line, ToText},
-    widgets::{Block, List, ListItem, ListState},
+    widgets::{Block, List, ListItem, ListState, Paragraph, Widget, Wrap},
 };
 use serde::{Deserialize, Serialize, ser::Error};
 
 #[derive(Debug, Default, Clone)]
 pub struct PlayerState {
-    pub upgrades: Vec<UpgradeNode>,
+    pub upgrades: CurrentUpgrades,
     pub inventory: Inventory,
     pub stats: Stats,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+pub type CurrentUpgrades = HashMap<String, bool>;
+
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct UpgradeNode {
     title: String,
     description: String,
     id: String,
     value: Option<f64>,
-    cost: Option<i64>,
+    cost: Option<u32>,
     children: Option<Vec<UpgradeNode>>,
+}
+
+impl UpgradeNode {
+    pub fn has_children(&self) -> bool {
+        self.children.is_some()
+    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -83,11 +92,27 @@ pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
     Ok(upgrade_tree)
 }
 
+pub fn get_current_upgrades(
+    upgrade_tree: UpgradeTree,
+    mut acc: CurrentUpgrades,
+) -> CurrentUpgrades {
+    upgrade_tree.into_iter().for_each(|node| {
+        acc.insert(node.id, false);
+        if let Some(children) = node.children {
+            acc = get_current_upgrades(children, acc.clone());
+        }
+    });
+
+    acc
+}
+
 pub struct UpgradesMenu {
     pub player_state: PlayerState,
-    upgrade_tree: UpgradeTree,
+    root_upgrade_tree: UpgradeTree,
     pub upgrade_selection: ListState,
     pub close: bool,
+    pub current_layer: UpgradeTree,
+    pub history: Vec<usize>,
 }
 
 impl UpgradesMenu {
@@ -95,18 +120,46 @@ impl UpgradesMenu {
         let upgrade_tree = get_upgrade_tree().unwrap();
         Self {
             player_state,
-            upgrade_tree,
+            root_upgrade_tree: upgrade_tree.clone(),
+            current_layer: upgrade_tree,
             upgrade_selection: ListState::default(),
             close: false,
+            history: Vec::new(),
         }
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('s') => self.next_selection(),
+            KeyCode::Enter => {
+                if let Some(current_node) = self.get_selected_node() {
+                    if current_node.has_children() {
+                        self.navigate_into_upgrade();
+                    } else {
+                        self.buy_upgrade().unwrap_or(());
+                    }
+                }
+            }
 
             KeyCode::Esc => self.close = true,
             _ => {}
+        }
+    }
+
+    pub fn buy_upgrade(&mut self) -> Result<(), String> {
+        if let Some(current_node) = self.get_selected_node() {
+            if current_node.cost.is_some() {
+                if current_node.cost.unwrap() > self.player_state.inventory.gold {
+                    return Err("Not enough money".to_string());
+                }
+                self.player_state.inventory.gold -= current_node.cost.unwrap();
+                self.player_state.upgrades.insert(current_node.id, true);
+                Ok(())
+            } else {
+                Err("Upgrade is not purchaseable".to_string())
+            }
+        } else {
+            Err("No upgrade selected".to_string())
         }
     }
 
@@ -114,9 +167,23 @@ impl UpgradesMenu {
         self.upgrade_selection.select_next();
     }
 
-    // pub fn get_info(&self) -> Option<usize> {
-    //     self.upgrade_selection.selected()
-    // }
+    pub fn get_selected_node(&self) -> Option<UpgradeNode> {
+        let selected_index = self.upgrade_selection.selected()?;
+        if self.current_layer.len() > selected_index {
+            Some(self.current_layer[selected_index].clone())
+        } else {
+            None
+        }
+    }
+
+    pub fn navigate_into_upgrade(&mut self) -> Option<()> {
+        let selected_index = self.upgrade_selection.selected()?;
+        if let Some(ref children) = self.current_layer[selected_index].children {
+            self.current_layer = children.clone();
+            return Some(());
+        }
+        None
+    }
 
     pub fn node_to_list(upgrade_nodes: &Vec<UpgradeNode>) -> Vec<ListItem<'_>> {
         upgrade_nodes
@@ -126,22 +193,58 @@ impl UpgradesMenu {
     }
 
     pub fn render_upgrades(&mut self, frame: &mut Frame) {
-        let title = Line::from(" spattui ".bold());
+        let mut block = Block::bordered().border_set(border::THICK);
+
+        let inner = block.inner(frame.area());
+
+        let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)]);
+
+        let [left, right] = horizontal.areas(inner);
+
+        let title = Line::from(" dispair ".bold());
 
         let instructions = Line::from(vec![
             " gold: ".into(),
             self.player_state.inventory.gold.to_string().into(),
         ]);
-        let block = Block::bordered()
-            .title(title.centered())
-            .title_bottom(instructions.centered())
-            .border_set(border::THICK);
-        let text: Vec<ListItem> = Self::node_to_list(&self.upgrade_tree);
+        block = block
+            .title(title.left_aligned())
+            .title_bottom(instructions.right_aligned());
+
+        let text: Vec<ListItem> = Self::node_to_list(&self.current_layer);
         let list = List::new(text)
-            .block(block)
             .highlight_style(Style::new().slow_blink().bold())
             .highlight_symbol(">");
-        frame.render_stateful_widget(list, frame.area(), &mut self.upgrade_selection);
+
+        let current_upgrade = self.get_selected_node().unwrap_or(UpgradeNode::default());
+
+        let upgrade_block = Block::bordered().border_set(border::ROUNDED);
+
+        let upgrade_title = Line::from(current_upgrade.title);
+
+        let upgrade_desc = Line::from(current_upgrade.description);
+
+        let mut upgrade_cost = Line::from("");
+
+        if current_upgrade.cost.is_some() {
+            upgrade_cost = Line::from(format!("${}", current_upgrade.cost.unwrap_or(0)));
+        }
+
+        let upgrade_paragraph = Paragraph::new(vec![
+            upgrade_title,
+            "".into(),
+            upgrade_desc,
+            "".into(),
+            upgrade_cost,
+        ])
+        .block(upgrade_block)
+        .centered()
+        .wrap(Wrap { trim: false });
+
+        frame.render_widget(block, frame.area());
+
+        frame.render_widget(upgrade_paragraph, right);
+        frame.render_stateful_widget(list, left, &mut self.upgrade_selection);
     }
 }
 
@@ -172,5 +275,13 @@ mod tests {
     fn parse_correctly() {
         let upgrade_tree = get_upgrade_tree().unwrap();
         assert_eq!(upgrade_tree[0].title, "PRESERVE")
+    }
+
+    #[test]
+    fn current_upgrades_check() {
+        let upgrade_tree = get_upgrade_tree().unwrap();
+        let current_upgrades = get_current_upgrades(upgrade_tree, HashMap::new());
+        println!("Current upgrades: {:?}", current_upgrades);
+        assert!(!current_upgrades.is_empty());
     }
 }
