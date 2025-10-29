@@ -131,6 +131,7 @@ impl RogueGame {
             .into_iter()
             .filter(|e| {
                 if !e.is_alive() {
+                    self.player_state.inventory.add_gold(e.get_worth());
                     update_entity_positions(&mut self.layer_entities, e);
                     set_entity(
                         &mut self.layer_entities,
@@ -196,7 +197,12 @@ impl RogueGame {
             get_rand_position_on_edge(&self.layer_entities),
             1,
             5,
+            self.get_enemy_worth(),
         ))
+    }
+
+    fn get_enemy_worth(&self) -> u32 {
+        1
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
