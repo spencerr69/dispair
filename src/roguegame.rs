@@ -131,6 +131,7 @@ impl RogueGame {
             .into_iter()
             .filter(|e| {
                 if !e.is_alive() {
+                    self.player_state.inventory.add_gold(e.get_worth());
                     update_entity_positions(&mut self.layer_entities, e);
                     set_entity(
                         &mut self.layer_entities,

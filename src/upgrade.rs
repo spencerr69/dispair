@@ -30,7 +30,13 @@ pub struct UpgradeNode {
 
 #[derive(Default, Debug, Clone)]
 pub struct Inventory {
-    pub gold: i32,
+    pub gold: u32,
+}
+
+impl Inventory {
+    pub fn add_gold(&mut self, amount: u32) {
+        self.gold += amount
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -122,7 +128,10 @@ impl UpgradesMenu {
     pub fn render_upgrades(&mut self, frame: &mut Frame) {
         let title = Line::from(" spattui ".bold());
 
-        let instructions = Line::from(vec![" health: ".into(), " ".into()]);
+        let instructions = Line::from(vec![
+            " gold: ".into(),
+            self.player_state.inventory.gold.to_string().into(),
+        ]);
         let block = Block::bordered()
             .title(title.centered())
             .title_bottom(instructions.centered())
