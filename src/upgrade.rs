@@ -35,7 +35,7 @@ pub struct Inventory {
 
 impl Inventory {
     pub fn add_gold(&mut self, amount: u32) {
-        self.gold += amount
+        self.gold = self.gold.saturating_add(amount);
     }
 }
 
