@@ -394,7 +394,11 @@ pub fn is_next_to_character(char_position: &Position, position: &Position) -> bo
     let (x, y) = position.get_as_usize();
     let (char_x, char_y) = char_position.get_as_usize();
 
-    if x >= char_x - 1 && char_x + 1 >= x && y >= char_y - 1 && char_y + 1 >= y {
+    if x >= char_x.saturating_sub(1)
+        && char_x.saturating_add(1) >= x
+        && y >= char_y.saturating_sub(1)
+        && char_y.saturating_add(1) >= y
+    {
         true
     } else {
         false

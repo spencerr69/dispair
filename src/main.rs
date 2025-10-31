@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use color_eyre::eyre::Context;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
@@ -45,7 +46,7 @@ impl App {
         }
     }
 
-    async fn run(&mut self) -> Result<(), Box<dyn Error>> {
+    async fn run(&mut self) -> color_eyre::Result<()> {
         let mut tui = Tui::new()?
             .frame_rate(self.frame_rate)
             .tick_rate(self.tick_rate);
@@ -155,9 +156,15 @@ impl Widget for &App {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    color_eyre::install()?;
+
     let mut app = App::new();
 
-    let _ = app.run().await?;
-
-    Ok(())
+    let result = app.run().await.wrap_err("whoops")?;
+    if let Err(err) = tui::restore() {
+        eprintln!(
+            "failed to restore terminal. Run `reset` or restart your terminal to recover: {err}"
+        );
+    }
+    Ok(result)
 }
