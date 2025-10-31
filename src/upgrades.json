@@ -77,6 +77,34 @@
                         "children": null
                     }
                 ]
+            },
+            {
+                "title": "STATS::\\health",
+                "description": "\\------------/",
+                "id": "22",
+                "cost": null,
+                "limit": 0,
+                "requires": [],
+                "children": [
+                    {
+                        "title": "STATS::\\health::\\flat_up",
+                        "description": "increase base health by +1",
+                        "id": "221",
+                        "cost": 10,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    },
+                    {
+                        "title": "STATS::\\health::\\mult_up",
+                        "description": "increase health by +5%",
+                        "id": "222",
+                        "cost": 20,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    }
+                ]
             }
         ]
     }

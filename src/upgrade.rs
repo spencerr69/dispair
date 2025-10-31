@@ -35,6 +35,11 @@ impl PlayerState {
             self.stats.size += 1;
         }
 
+        //upgrade 13 become
+        if self.upgrade_owned(&"13".to_string()) {
+            self.stats.enemy_spawn_mult += 0.5;
+        }
+
         //upgrades 2 STATS
         //upgrade 211 damage/flat_up
         if self.upgrade_owned(&"211".to_string()) {
@@ -45,6 +50,19 @@ impl PlayerState {
         if self.upgrade_owned(&"212".to_string()) {
             self.stats.damage_mult += 0.05 * self.amount_owned(&"212".to_string()) as f64;
         }
+
+        //upgrade 221 health/flat_up
+        if self.upgrade_owned(&"221".to_string()) {
+            self.stats.base_health += 1 * self.amount_owned(&"221".to_string()) as i32;
+        }
+
+        //upgrade 222 health/mult_up
+        if self.upgrade_owned(&"222".to_string()) {
+            self.stats.health_mult += 0.05 * self.amount_owned(&"222".to_string()) as f64;
+        }
+
+        //cleanups
+        self.stats.health = (self.stats.base_health as f64 * self.stats.health_mult).ceil() as i32;
     }
 
     pub fn amount_owned(&self, id: &String) -> u32 {
@@ -112,6 +130,9 @@ impl Inventory {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Stats {
+    pub base_health: i32,
+    pub health_mult: f64,
+
     pub health: i32,
 
     pub damage_mult: f64,
@@ -134,6 +155,9 @@ pub struct Stats {
 impl Default for Stats {
     fn default() -> Self {
         Self {
+            base_health: 10,
+            health_mult: 1.,
+
             health: 10,
 
             damage_mult: 1.,
@@ -239,12 +263,12 @@ impl UpgradesMenu {
                     return Err("Not enough money".to_string());
                 }
                 self.player_state.inventory.gold -= current_node.cost.unwrap();
-                let upgrade_count = self
-                    .player_state
-                    .upgrades
-                    .get_mut(&current_node.id)
-                    .unwrap();
-                *upgrade_count += 1;
+                let upgrade_count = self.player_state.upgrades.get_mut(&current_node.id);
+                if let Some(count) = upgrade_count {
+                    *count += 1;
+                } else {
+                    self.player_state.upgrades.insert(current_node.id, 1);
+                }
                 Ok(())
             } else {
                 Err("Upgrade is not purchaseable".to_string())

@@ -1,10 +1,8 @@
 use std::{
     error::Error,
-    fs::{self, File, OpenOptions},
-    io::Write,
+    fs::{File, OpenOptions},
 };
 
-use color_eyre::eyre::Context;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
