@@ -116,5 +116,45 @@
                 "children": null
             }
         ]
+    },
+    {
+        "title": "EFFECT",
+        "description": "\\----/",
+        "id": "3",
+        "cost": null,
+        "limit": 0,
+        "requires": [
+            "13"
+        ],
+        "children": [
+            {
+                "title": "EFFECT::\\mark",
+                "description": "mark enemies to explode",
+                "id": "31",
+                "cost": null,
+                "limit": 0,
+                "requires": [],
+                "children": [
+                    {
+                        "title": "EFFECT::\\mark::\\mark_chance",
+                        "description": "+2% chance to mark enemies to explode on death",
+                        "id": "311",
+                        "cost": 20,
+                        "limit": 10,
+                        "requires": [],
+                        "children": null
+                    },
+                    {
+                        "title": "EFFECT::\\mark::\\explosion_size",
+                        "description": "+1 size to explosion",
+                        "id": "312",
+                        "cost": 50,
+                        "limit": 5,
+                        "requires": [],
+                        "children": null
+                    }
+                ]
+            }
+        ]
     }
 ]

@@ -1,10 +1,15 @@
+use std::time::Duration;
+
+use rand::Rng;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 
 use crate::character::*;
+use crate::coords::Area;
 use crate::coords::Direction;
 use crate::coords::Position;
 use crate::roguegame::*;
+use crate::weapon::DamageArea;
 
 pub trait EnemyBehaviour {
     fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self;
@@ -30,6 +35,42 @@ pub struct Enemy {
     entitychar: EntityCharacters,
 
     worth: u32,
+
+    pub marked: bool,
+}
+
+impl Enemy {
+    pub fn attempt_mark_for_explosion(&mut self, chance_to_mark: u32) {
+        let mut rng = rand::rng();
+
+        let roll = rng.random_range(1..=100);
+
+        if roll <= chance_to_mark {
+            self.marked = true;
+        }
+    }
+
+    pub fn explode(&self, mark_explosion_size: u32) -> DamageArea {
+        let area = Area {
+            corner1: Position(
+                self.position.0.saturating_sub(mark_explosion_size as i32),
+                self.position.1.saturating_sub(mark_explosion_size as i32),
+            ),
+            corner2: Position(
+                self.position.0.saturating_add(mark_explosion_size as i32),
+                self.position.1.saturating_add(mark_explosion_size as i32),
+            ),
+        };
+
+        DamageArea {
+            damage_amount: self.max_health - 1,
+            area,
+            entity: EntityCharacters::AttackBlackout,
+            duration: Duration::from_secs_f64(0.1),
+            blink: true,
+            mark_chance: 0,
+        }
+    }
 }
 
 impl EnemyBehaviour for Enemy {
@@ -49,6 +90,8 @@ impl EnemyBehaviour for Enemy {
             entitychar: EntityCharacters::Enemy(Style::default()),
 
             worth,
+
+            marked: false,
         }
     }
 

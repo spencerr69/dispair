@@ -15,13 +15,15 @@ pub struct DamageArea {
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,
+    pub mark_chance: u32,
 }
 
 impl DamageArea {
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
             if enemy.get_pos().is_in_area(&self.area) {
-                enemy.take_damage(self.damage_amount)
+                enemy.take_damage(self.damage_amount);
+                enemy.attempt_mark_for_explosion(self.mark_chance);
             }
         });
     }
@@ -38,6 +40,7 @@ pub struct Sword {
     base_damage: i32,
     damage_scalar: f32,
     size: i32,
+    mark_chance: u32,
 }
 
 impl Sword {
@@ -49,6 +52,7 @@ impl Sword {
             base_damage: base_damage + player_stats.damage_flat_boost,
             damage_scalar,
             size: size_base + player_stats.size,
+            mark_chance: player_stats.mark_chance,
         }
     }
 }
@@ -83,6 +87,7 @@ impl Weapon for Sword {
             entity: EntityCharacters::AttackBlackout,
             duration: Duration::from_secs_f32(0.01),
             blink: false,
+            mark_chance: self.mark_chance,
         }
     }
 

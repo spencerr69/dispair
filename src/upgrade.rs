@@ -15,18 +15,18 @@ impl PlayerState {
 
         //upgrades 1 PRESERVE
         //upgrade 11: PRESERVE::\conform
-        if !self.upgrade_owned(&"11".to_string()) {
+        if !self.upgrade_owned("11") {
             self.stats.enemy_spawn_mult = 50.;
             self.stats.timer = 10;
         }
 
         //upgrade 12 grow
-        if self.upgrade_owned(&"12".to_string()) {
+        if self.upgrade_owned("12") {
             self.stats.size += 1;
         }
 
         //upgrade 13 become
-        if self.upgrade_owned(&"13".to_string()) {
+        if self.upgrade_owned("13") {
             self.stats.enemy_spawn_mult += 0.8;
             self.stats.height += 5;
             self.stats.width += 5;
@@ -34,39 +34,50 @@ impl PlayerState {
 
         //upgrades 2 STATS
         //upgrade 211 damage/flat_up
-        if self.upgrade_owned(&"211".to_string()) {
-            self.stats.damage_flat_boost += 1 * self.amount_owned(&"211".to_string()) as i32;
+        if self.upgrade_owned("211") {
+            self.stats.damage_flat_boost += 1 * self.amount_owned("211") as i32;
         }
 
         //upgrade 212 damage/mult_up
-        if self.upgrade_owned(&"212".to_string()) {
-            self.stats.damage_mult += 0.05 * self.amount_owned(&"212".to_string()) as f64;
+        if self.upgrade_owned("212") {
+            self.stats.damage_mult += 0.05 * self.amount_owned("212") as f64;
         }
 
         //upgrade 221 health/flat_up
-        if self.upgrade_owned(&"221".to_string()) {
-            self.stats.base_health += 1 * self.amount_owned(&"221".to_string()) as i32;
+        if self.upgrade_owned("221") {
+            self.stats.base_health += 1 * self.amount_owned("221") as i32;
         }
 
         //upgrade 222 health/mult_up
-        if self.upgrade_owned(&"222".to_string()) {
-            self.stats.health_mult += 0.05 * self.amount_owned(&"222".to_string()) as f64;
+        if self.upgrade_owned("222") {
+            self.stats.health_mult += 0.05 * self.amount_owned("222") as f64;
         }
 
         //upgrade 23 attack_rate
-        if self.upgrade_owned(&"23".to_string()) {
-            self.stats.attack_speed_mult += 0.10 * self.amount_owned(&"23".to_string()) as f64;
+        if self.upgrade_owned("23") {
+            self.stats.attack_speed_mult += 0.10 * self.amount_owned("23") as f64;
+        }
+
+        //upgrade 31 MARK
+        //upgrade 311 mark chance
+        if self.upgrade_owned("311") {
+            self.stats.mark_chance += 2 * self.amount_owned("311");
+        }
+
+        //upgrade 312 mark size
+        if self.upgrade_owned("312") {
+            self.stats.mark_explosion_size += 1 * self.amount_owned("312");
         }
 
         //cleanups
         self.stats.health = (self.stats.base_health as f64 * self.stats.health_mult).ceil() as i32;
     }
 
-    pub fn amount_owned(&self, id: &String) -> u32 {
+    pub fn amount_owned(&self, id: &str) -> u32 {
         self.upgrades.get(id).unwrap_or(&0).clone()
     }
 
-    pub fn upgrade_owned(&self, id: &String) -> bool {
+    pub fn upgrade_owned(&self, id: &str) -> bool {
         self.upgrades.get(id).unwrap_or(&0).clone() > 0
     }
 }
@@ -147,6 +158,9 @@ pub struct Stats {
     pub height: usize,
 
     pub timer: u64,
+
+    pub mark_chance: u32,
+    pub mark_explosion_size: u32,
 }
 
 impl Default for Stats {
@@ -172,6 +186,9 @@ impl Default for Stats {
             size: 0,
 
             timer: 60,
+
+            mark_chance: 0,
+            mark_explosion_size: 1,
         }
     }
 }
