@@ -42,6 +42,7 @@ pub struct RogueGame {
 
     enemy_health: i32,
     enemy_damage: i32,
+    enemy_worth: u32,
 
     attack_ticks: u128,
 
@@ -106,6 +107,7 @@ impl RogueGame {
 
             enemy_damage: 1,
             enemy_health: 5,
+            enemy_worth: 1,
 
             tickcount: 0,
             enemies: vec![],
@@ -215,29 +217,32 @@ impl RogueGame {
         let init_enemy_damage = 1.;
         let init_enemy_spawn_secs = 0.4 * self.player_state.stats.enemy_spawn_mult;
         let init_enemy_move_secs = 2. * self.player_state.stats.enemy_move_mult;
+        let init_enemy_worth: u32 = 1;
 
-        self.enemy_health = (init_enemy_health * self.timescaler.scale_amount / 2.).ceil() as i32;
-        self.enemy_damage = (init_enemy_damage * self.timescaler.scale_amount / 5.).ceil() as i32;
+        self.enemy_health =
+            (init_enemy_health * (self.timescaler.scale_amount).max(1.)).ceil() as i32;
+
+        self.enemy_damage =
+            (init_enemy_damage * (self.timescaler.scale_amount / 5.).max(1.)).ceil() as i32;
         self.enemy_spawn_ticks = Self::per_sec_to_tick_count(
-            init_enemy_spawn_secs as f64 / self.timescaler.scale_amount,
+            init_enemy_spawn_secs as f64 * self.timescaler.scale_amount,
         );
 
         self.enemy_move_ticks = Self::per_sec_to_tick_count(
-            init_enemy_move_secs as f64 * (self.timescaler.scale_amount / 5.).max(1.),
+            init_enemy_move_secs as f64 * (self.timescaler.scale_amount / 3.5).max(1.),
         );
+
+        self.enemy_worth =
+            (init_enemy_worth as f64 * (self.timescaler.scale_amount / 3.).max(1.)).ceil() as u32;
     }
 
     pub fn spawn_enemy(&mut self) {
         self.enemies.push(Enemy::new(
             get_rand_position_on_edge(&self.layer_entities),
-            1,
-            5,
-            self.get_enemy_worth(),
+            self.enemy_damage,
+            self.enemy_health,
+            self.enemy_worth,
         ))
-    }
-
-    fn get_enemy_worth(&self) -> u32 {
-        1
     }
 
     fn scale(&mut self) -> f64 {

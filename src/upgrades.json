@@ -3,17 +3,17 @@
         "title": "PRESERVE",
         "description": "\\------/",
         "id": "1",
-        "value": null,
         "cost": null,
+        "limit": 0,
         "requires": [],
         "children": [
             {
                 "title": "PRESERVE::\\conform",
-                "description": "don't be so obvious.\n$$add better description",
+                "description": "don't be so obvious.\nmost hostiles no longer perceive you as a threat",
                 "children": null,
                 "id": "11",
-                "value": null,
                 "cost": 1,
+                "limit": 1,
                 "requires": []
             },
             {
@@ -21,11 +21,99 @@
                 "description": "don't be so weak.\nadd 1 size.",
                 "children": null,
                 "id": "12",
-                "value": null,
                 "cost": 5,
+                "limit": 1,
                 "requires": [
                     "11"
                 ]
+            },
+            {
+                "title": "PRESERVE::\\become",
+                "description": "you open your eyes in a [LOCATION]. the world is ahead of you.",
+                "children": null,
+                "id": "13",
+                "cost": 15,
+                "limit": 1,
+                "requires": [
+                    "12"
+                ]
+            }
+        ]
+    },
+    {
+        "title": "STATS",
+        "description": "\\---/",
+        "id": "2",
+        "cost": null,
+        "limit": 0,
+        "requires": [
+            "13"
+        ],
+        "children": [
+            {
+                "title": "STATS::\\damage",
+                "description": "\\------------/",
+                "id": "21",
+                "cost": null,
+                "limit": 0,
+                "requires": [],
+                "children": [
+                    {
+                        "title": "STATS::\\damage::\\flat_up",
+                        "description": "increase all METHOD damage by +1",
+                        "id": "211",
+                        "cost": 10,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    },
+                    {
+                        "title": "STATS::\\damage::\\mult_up",
+                        "description": "increase all damage by +5%",
+                        "id": "212",
+                        "cost": 20,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    }
+                ]
+            },
+            {
+                "title": "STATS::\\health",
+                "description": "\\------------/",
+                "id": "22",
+                "cost": null,
+                "limit": 0,
+                "requires": [],
+                "children": [
+                    {
+                        "title": "STATS::\\health::\\flat_up",
+                        "description": "increase base health by +1",
+                        "id": "221",
+                        "cost": 10,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    },
+                    {
+                        "title": "STATS::\\health::\\mult_up",
+                        "description": "increase health by +5%",
+                        "id": "222",
+                        "cost": 20,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    }
+                ]
+            },
+            {
+                "title": "STATS::\\attack_rate",
+                "description": "increase attack rate by +10%",
+                "id": "23",
+                "cost": 10,
+                "limit": 3,
+                "requires": [],
+                "children": null
             }
         ]
     }

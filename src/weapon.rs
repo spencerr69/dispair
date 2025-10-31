@@ -46,7 +46,7 @@ impl Sword {
         let base_damage = 2;
         let damage_scalar = 1.;
         Sword {
-            base_damage,
+            base_damage: base_damage + player_stats.damage_flat_boost,
             damage_scalar,
             size: size_base + player_stats.size,
         }
