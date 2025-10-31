@@ -13,7 +13,8 @@ use serde::de::Error as serdeError;
 use crate::{
     roguegame::RogueGame,
     tui::{Event, Tui},
-    upgrade::{PlayerState, UpgradesMenu},
+    upgrade::PlayerState,
+    upgrademenu::UpgradesMenu,
 };
 
 mod character;
@@ -24,6 +25,7 @@ mod roguegame;
 mod timescaler;
 mod tui;
 mod upgrade;
+mod upgrademenu;
 mod weapon;
 
 pub struct App {

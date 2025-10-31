@@ -105,6 +105,15 @@
                         "children": null
                     }
                 ]
+            },
+            {
+                "title": "STATS::\\attack_rate",
+                "description": "increase attack rate by +10%",
+                "id": "23",
+                "cost": 10,
+                "limit": 3,
+                "requires": [],
+                "children": null
             }
         ]
     }
