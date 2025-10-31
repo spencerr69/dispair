@@ -24,19 +24,23 @@ impl PlayerState {
         self.stats = Stats::default();
 
         //upgrade 11: PRESERVE::\conform
-        if !self.upgrade_owned(&"11".to_string()) {
+        if !(self.amount_owned(&"11".to_string()) > 0) {
             self.stats.enemy_spawn_mult = 50.;
             self.stats.timer = 10;
         }
 
         //upgrade 12 grow
-        if self.upgrade_owned(&"12".to_string()) {
+        if self.amount_owned(&"12".to_string()) > 0 {
             self.stats.size += 1;
         }
     }
 
+    pub fn amount_owned(&self, id: &String) -> u32 {
+        self.upgrades.get(id).unwrap_or(&0).clone()
+    }
+
     pub fn upgrade_owned(&self, id: &String) -> bool {
-        self.upgrades.get(id).unwrap_or(&false).clone()
+        self.upgrades.get(id).unwrap_or(&0).clone() > 0
     }
 }
 
@@ -56,7 +60,7 @@ impl Default for PlayerState {
     }
 }
 
-pub type CurrentUpgrades = HashMap<String, bool>;
+pub type CurrentUpgrades = HashMap<String, u32>;
 
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct UpgradeNode {
@@ -66,6 +70,7 @@ pub struct UpgradeNode {
     value: Option<f64>,
     cost: Option<u32>,
     children: Option<Vec<UpgradeNode>>,
+    limit: u32,
     requires: Vec<String>,
 }
 
@@ -149,7 +154,7 @@ pub fn get_current_upgrades(
     mut acc: CurrentUpgrades,
 ) -> CurrentUpgrades {
     upgrade_tree.into_iter().for_each(|node| {
-        acc.insert(node.id, false);
+        acc.insert(node.id, 0);
         if let Some(children) = node.children {
             acc = get_current_upgrades(children, acc.clone());
         }
@@ -213,13 +218,18 @@ impl UpgradesMenu {
     pub fn buy_upgrade(&mut self) -> Result<(), String> {
         if let Some(current_node) = self.get_selected_node() {
             if current_node.cost.is_some() {
-                if self.upgrade_owned(&current_node.id) {
+                if self.player_state.amount_owned(&current_node.id) >= current_node.limit {
                     return Err("Upgrade already owned".to_string());
                 } else if current_node.cost.unwrap() > self.player_state.inventory.gold {
                     return Err("Not enough money".to_string());
                 }
                 self.player_state.inventory.gold -= current_node.cost.unwrap();
-                self.player_state.upgrades.insert(current_node.id, true);
+                let upgrade_count = self
+                    .player_state
+                    .upgrades
+                    .get_mut(&current_node.id)
+                    .unwrap();
+                *upgrade_count += 1;
                 Ok(())
             } else {
                 Err("Upgrade is not purchaseable".to_string())
@@ -272,10 +282,10 @@ impl UpgradesMenu {
             .iter()
             .map(|node| {
                 let have_required = node.requires.iter().fold(true, |acc, current| {
-                    acc && player_state.upgrade_owned(&current)
+                    acc && player_state.amount_owned(&current) > 0
                 });
 
-                if player_state.upgrade_owned(&node.id) {
+                if node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit {
                     Some(ListItem::from(
                         node.get_display_title()
                             .clone()
@@ -295,7 +305,7 @@ impl UpgradesMenu {
     }
 
     pub fn upgrade_owned(&self, id: &String) -> bool {
-        self.player_state.upgrades.get(id).unwrap_or(&false).clone()
+        self.player_state.upgrades.get(id).unwrap_or(&0).clone() > 0
     }
 
     pub fn render_upgrades(&mut self, frame: &mut Frame) {
@@ -331,12 +341,24 @@ impl UpgradesMenu {
         } else if current_upgrade.has_children() {
             upgrade_cost = Line::from("> enter folder")
         }
+
+        let mut upgrade_amount = Line::from("");
+        if current_upgrade.limit > 1 {
+            upgrade_amount = Line::from(format!(
+                "You have: {}/{}",
+                self.player_state.amount_owned(&current_upgrade.id),
+                current_upgrade.limit
+            ));
+        }
+
         let upgrade_paragraph = Paragraph::new(vec![
             upgrade_title,
             "".into(),
             upgrade_desc,
             "".into(),
             upgrade_cost,
+            "".into(),
+            upgrade_amount,
         ])
         .block(upgrade_block)
         .centered()

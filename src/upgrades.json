@@ -5,15 +5,17 @@
         "id": "1",
         "value": null,
         "cost": null,
+        "limit": 0,
         "requires": [],
         "children": [
             {
                 "title": "PRESERVE::\\conform",
-                "description": "don't be so obvious.\n$$add better description",
+                "description": "don't be so obvious.\nmost hostiles no longer perceive you as a threat",
                 "children": null,
                 "id": "11",
                 "value": null,
                 "cost": 1,
+                "limit": 5,
                 "requires": []
             },
             {
@@ -23,8 +25,21 @@
                 "id": "12",
                 "value": null,
                 "cost": 5,
+                "limit": 1,
                 "requires": [
                     "11"
+                ]
+            },
+            {
+                "title": "PRESERVE::\\become",
+                "description": "you open your eyes in a [LOCATION]. the world is ahead of you.",
+                "children": null,
+                "id": "13",
+                "value": null,
+                "cost": 15,
+                "limit": 1,
+                "requires": [
+                    "12"
                 ]
             }
         ]
