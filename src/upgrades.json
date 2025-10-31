@@ -5,6 +5,7 @@
         "id": "1",
         "value": null,
         "cost": null,
+        "requires": [],
         "children": [
             {
                 "title": "PRESERVE::\\conform",
@@ -12,7 +13,19 @@
                 "children": null,
                 "id": "11",
                 "value": null,
-                "cost": 1
+                "cost": 1,
+                "requires": []
+            },
+            {
+                "title": "PRESERVE::\\grow",
+                "description": "don't be so weak.\nadd 1 size.",
+                "children": null,
+                "id": "12",
+                "value": null,
+                "cost": 5,
+                "requires": [
+                    "11"
+                ]
             }
         ]
     }

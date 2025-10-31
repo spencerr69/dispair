@@ -56,7 +56,7 @@ pub trait Damageable {
 
 impl Character {
     pub fn new(player_state: PlayerState) -> Self {
-        let max_health = 10000;
+        let max_health = player_state.stats.health;
         Character {
             position: Position(0, 0),
             prev_position: Position(0, 0),

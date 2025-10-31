@@ -57,7 +57,7 @@ impl EnemyBehaviour for Enemy {
     }
 
     fn update(&mut self, character: &mut Character, layer: &Layer) {
-        if is_next_to_character(layer, &self.position) {
+        if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);
         }
 

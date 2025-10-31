@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use color_eyre::eyre::Context;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
@@ -17,6 +18,7 @@ mod coords;
 mod effects;
 mod enemy;
 mod roguegame;
+mod timescaler;
 mod tui;
 mod upgrade;
 mod weapon;
@@ -45,7 +47,7 @@ impl App {
         }
     }
 
-    async fn run(&mut self) -> Result<(), Box<dyn Error>> {
+    async fn run(&mut self) -> color_eyre::Result<()> {
         let mut tui = Tui::new()?
             .frame_rate(self.frame_rate)
             .tick_rate(self.tick_rate);
@@ -113,6 +115,7 @@ impl App {
             game.on_tick();
             if game.game_over {
                 self.player_state = game.player_state.clone();
+                self.player_state.refresh();
                 self.game_view = None;
             }
         }
@@ -120,6 +123,7 @@ impl App {
         if let Some(upgrades_menu) = &mut self.upgrades_view {
             if upgrades_menu.close {
                 self.player_state = upgrades_menu.player_state.clone();
+                self.player_state.refresh();
                 self.upgrades_view = None
             }
         }
@@ -153,9 +157,15 @@ impl Widget for &App {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    color_eyre::install()?;
+
     let mut app = App::new();
 
-    let _ = app.run().await?;
-
-    Ok(())
+    let result = app.run().await.wrap_err("whoops")?;
+    if let Err(err) = tui::restore() {
+        eprintln!(
+            "failed to restore terminal. Run `reset` or restart your terminal to recover: {err}"
+        );
+    }
+    Ok(result)
 }

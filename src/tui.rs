@@ -1,4 +1,5 @@
 use std::{
+    io,
     ops::{Deref, DerefMut},
     time::Duration,
 };
@@ -59,7 +60,7 @@ impl Tui {
         let task = tokio::spawn(async {});
         let mouse = false;
         let paste = false;
-        Ok(Self {
+        let mut tui = Self {
             terminal,
             task,
             cancellation_token,
@@ -69,7 +70,11 @@ impl Tui {
             tick_rate,
             mouse,
             paste,
-        })
+        };
+
+        tui.set_panic_hook();
+
+        Ok(tui)
     }
 
     pub fn tick_rate(mut self, tick_rate: f64) -> Self {
@@ -209,6 +214,20 @@ impl Tui {
     pub async fn next(&mut self) -> Option<Event> {
         self.event_rx.recv().await
     }
+
+    pub fn set_panic_hook(&self) {
+        let hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |panic_info| {
+            let _ = restore(); // ignore any errors as we are already failing
+            hook(panic_info);
+        }));
+    }
+}
+
+pub fn restore() -> io::Result<()> {
+    crossterm::execute!(std::io::stderr(), LeaveAlternateScreen, cursor::Show)?;
+    crossterm::terminal::disable_raw_mode()?;
+    Ok(())
 }
 
 impl Deref for Tui {

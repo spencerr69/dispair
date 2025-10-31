@@ -6,6 +6,7 @@ use crate::{
     coords::{Direction, Position},
     effects::DamageEffect,
     enemy::*,
+    timescaler::TimeScaler,
     upgrade::PlayerState,
 };
 use crossterm::event::{KeyCode, KeyEvent};
@@ -38,6 +39,10 @@ pub struct RogueGame {
 
     enemy_spawn_ticks: u128,
     enemy_move_ticks: u128,
+
+    enemy_health: i32,
+    enemy_damage: i32,
+
     attack_ticks: u128,
 
     pub game_over: bool,
@@ -46,6 +51,8 @@ pub struct RogueGame {
 
     timer: Duration,
     start_time: Instant,
+
+    timescaler: TimeScaler,
 }
 
 impl RogueGame {
@@ -79,7 +86,8 @@ impl RogueGame {
 
         let attack_ticks = Self::per_sec_to_tick_count(1.5);
         let enemy_move_ticks = Self::per_sec_to_tick_count(2.);
-        let enemy_spawn_ticks = Self::per_sec_to_tick_count(1.);
+        let enemy_spawn_ticks =
+            Self::per_sec_to_tick_count(0.4 * player_state.stats.enemy_spawn_mult);
 
         let start_time = Instant::now();
         let timer = Duration::from_secs(player_state.stats.timer);
@@ -95,12 +103,17 @@ impl RogueGame {
             attack_ticks,
             enemy_move_ticks,
             enemy_spawn_ticks,
+
+            enemy_damage: 1,
+            enemy_health: 5,
+
             tickcount: 0,
             enemies: vec![],
             game_over: false,
             active_damage_effects: vec![],
             start_time,
             timer,
+            timescaler: TimeScaler::now(),
         };
 
         game.init_character();
@@ -158,6 +171,11 @@ impl RogueGame {
             self.change_low_health_enemies_questionable();
         }
 
+        if self.tickcount % TICK_RATE.floor() as u128 == 0 {
+            self.scale();
+            self.scale_enemies();
+        }
+
         if self.tickcount % self.attack_ticks == 0 {
             let (damage_areas, mut damage_effects) = self.character.attack(&mut self.layer_effects);
             damage_areas.iter().for_each(|area| {
@@ -189,7 +207,24 @@ impl RogueGame {
     }
 
     pub fn update_stats(&mut self) {
-        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128
+        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128;
+    }
+
+    fn scale_enemies(&mut self) {
+        let init_enemy_health = 5.;
+        let init_enemy_damage = 1.;
+        let init_enemy_spawn_secs = 0.4 * self.player_state.stats.enemy_spawn_mult;
+        let init_enemy_move_secs = 2. * self.player_state.stats.enemy_move_mult;
+
+        self.enemy_health = (init_enemy_health * self.timescaler.scale_amount / 2.).ceil() as i32;
+        self.enemy_damage = (init_enemy_damage * self.timescaler.scale_amount / 5.).ceil() as i32;
+        self.enemy_spawn_ticks = Self::per_sec_to_tick_count(
+            init_enemy_spawn_secs as f64 / self.timescaler.scale_amount,
+        );
+
+        self.enemy_move_ticks = Self::per_sec_to_tick_count(
+            init_enemy_move_secs as f64 * (self.timescaler.scale_amount / 5.).max(1.),
+        );
     }
 
     pub fn spawn_enemy(&mut self) {
@@ -203,6 +238,10 @@ impl RogueGame {
 
     fn get_enemy_worth(&self) -> u32 {
         1
+    }
+
+    fn scale(&mut self) -> f64 {
+        self.timescaler.scale()
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
@@ -389,28 +428,19 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     position
 }
 
-pub fn is_next_to_character(layer: &Layer, position: &Position) -> bool {
+pub fn is_next_to_character(char_position: &Position, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
-    let height = layer.len();
-    let width = if height > 0 { layer[0].len() } else { 0 };
+    let (char_x, char_y) = char_position.get_as_usize();
 
-    for dy in -1..=1 {
-        for dx in -1..=1 {
-            if dy == 0 && dx == 0 {
-                continue;
-            }
-
-            let new_y = y as isize + dy;
-            let new_x = x as isize + dx;
-
-            if new_y >= 0 && new_y < height as isize && new_x >= 0 && new_x < width as isize {
-                if layer[new_y as usize][new_x as usize].is_char() {
-                    return true;
-                }
-            }
-        }
+    if x >= char_x.saturating_sub(1)
+        && char_x.saturating_add(1) >= x
+        && y >= char_y.saturating_sub(1)
+        && char_y.saturating_add(1) >= y
+    {
+        true
+    } else {
+        false
     }
-    false
 }
 
 #[derive(PartialEq, Eq, Clone)]
