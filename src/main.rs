@@ -1,4 +1,8 @@
-use std::error::Error;
+use std::{
+    error::Error,
+    fs::{self, File, OpenOptions},
+    io::Write,
+};
 
 use color_eyre::eyre::Context;
 use crossterm::event::{KeyCode, KeyEvent};
@@ -6,6 +10,7 @@ use ratatui::{
     Frame,
     widgets::{Block, Paragraph, Widget},
 };
+use serde::de::Error as serdeError;
 
 use crate::{
     roguegame::RogueGame,
@@ -32,16 +37,53 @@ pub struct App {
     pub tick_rate: f64,
 }
 
+pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error> {
+    let path = dirs::config_dir()
+        .unwrap()
+        .join("dispair")
+        .join("player_state.json");
+
+    std::fs::create_dir_all(path.parent().unwrap())
+        .map_err(|e| serde_json::Error::custom(e.to_string()))?;
+
+    let save_file = OpenOptions::new()
+        .read(true)
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(path)
+        .map_err(|e| serde_json::Error::custom(e.to_string()))?;
+
+    serde_json::to_writer(save_file, player_state)?;
+
+    Ok(())
+}
+
+pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
+    let path = dirs::config_dir()
+        .unwrap()
+        .join("dispair")
+        .join("player_state.json");
+
+    let save_file = File::open(path).map_err(|e| serde_json::Error::custom(e.to_string()))?;
+
+    let i: PlayerState = serde_json::from_reader(save_file)?;
+
+    Ok(i)
+}
+
 pub const TICK_RATE: f64 = 30.0;
 pub const FRAME_RATE: f64 = 60.0;
 
 impl App {
     pub fn new() -> Self {
+        let player_state = load_progress().unwrap();
+
         Self {
             game_view: None,
             upgrades_view: None,
             exit: false,
-            player_state: PlayerState::default(),
+            player_state: player_state,
             frame_rate: FRAME_RATE,
             tick_rate: TICK_RATE,
         }
@@ -62,6 +104,7 @@ impl App {
             }
 
             if self.exit {
+                save_progress(&self.player_state)?;
                 break;
             }
         }
@@ -161,7 +204,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut app = App::new();
 
-    let result = app.run().await.wrap_err("whoops")?;
+    let result = app.run().await?;
     if let Err(err) = tui::restore() {
         eprintln!(
             "failed to restore terminal. Run `reset` or restart your terminal to recover: {err}"

@@ -23,15 +23,27 @@ impl PlayerState {
     pub fn refresh(&mut self) {
         self.stats = Stats::default();
 
+        //upgrades 1 PRESERVE
         //upgrade 11: PRESERVE::\conform
-        if !(self.amount_owned(&"11".to_string()) > 0) {
+        if !self.upgrade_owned(&"11".to_string()) {
             self.stats.enemy_spawn_mult = 50.;
             self.stats.timer = 10;
         }
 
         //upgrade 12 grow
-        if self.amount_owned(&"12".to_string()) > 0 {
+        if self.upgrade_owned(&"12".to_string()) {
             self.stats.size += 1;
+        }
+
+        //upgrades 2 STATS
+        //upgrade 211 damage/flat_up
+        if self.upgrade_owned(&"211".to_string()) {
+            self.stats.damage_flat_boost += 1 * self.amount_owned(&"211".to_string()) as i32;
+        }
+
+        //upgrade 212 damage/mult_up
+        if self.upgrade_owned(&"212".to_string()) {
+            self.stats.damage_mult += 0.05 * self.amount_owned(&"212".to_string()) as f64;
         }
     }
 
@@ -67,7 +79,6 @@ pub struct UpgradeNode {
     title: String,
     description: String,
     id: String,
-    value: Option<f64>,
     cost: Option<u32>,
     children: Option<Vec<UpgradeNode>>,
     limit: u32,
@@ -76,7 +87,7 @@ pub struct UpgradeNode {
 
 impl UpgradeNode {
     pub fn has_children(&self) -> bool {
-        self.children.is_some()
+        self.children.is_some() && self.children.clone().unwrap().len() > 0
     }
 
     pub fn get_display_title(&self) -> String {
@@ -104,6 +115,8 @@ pub struct Stats {
     pub health: i32,
 
     pub damage_mult: f64,
+    pub damage_flat_boost: i32,
+
     pub attack_speed_mult: f64,
     pub movement_speed_mult: f64,
 
@@ -124,6 +137,8 @@ impl Default for Stats {
             health: 10,
 
             damage_mult: 1.,
+            damage_flat_boost: 0,
+
             attack_speed_mult: 1.,
             movement_speed_mult: 1.,
 
@@ -304,10 +319,6 @@ impl UpgradesMenu {
             .collect()
     }
 
-    pub fn upgrade_owned(&self, id: &String) -> bool {
-        self.player_state.upgrades.get(id).unwrap_or(&0).clone() > 0
-    }
-
     pub fn render_upgrades(&mut self, frame: &mut Frame) {
         let mut block = Block::bordered().border_set(border::THICK);
         let inner = block.inner(frame.area());
@@ -317,7 +328,7 @@ impl UpgradesMenu {
 
         let text: Vec<ListItem> = Self::node_to_list(current_layer, self.player_state.clone());
 
-        let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Fill(1)]);
+        let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Fill(1)]);
         let [left, right] = horizontal.areas(inner);
 
         let title = Line::from(" dispair ".bold());

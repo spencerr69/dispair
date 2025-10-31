@@ -3,7 +3,6 @@
         "title": "PRESERVE",
         "description": "\\------/",
         "id": "1",
-        "value": null,
         "cost": null,
         "limit": 0,
         "requires": [],
@@ -13,9 +12,8 @@
                 "description": "don't be so obvious.\nmost hostiles no longer perceive you as a threat",
                 "children": null,
                 "id": "11",
-                "value": null,
                 "cost": 1,
-                "limit": 5,
+                "limit": 1,
                 "requires": []
             },
             {
@@ -23,7 +21,6 @@
                 "description": "don't be so weak.\nadd 1 size.",
                 "children": null,
                 "id": "12",
-                "value": null,
                 "cost": 5,
                 "limit": 1,
                 "requires": [
@@ -35,11 +32,50 @@
                 "description": "you open your eyes in a [LOCATION]. the world is ahead of you.",
                 "children": null,
                 "id": "13",
-                "value": null,
                 "cost": 15,
                 "limit": 1,
                 "requires": [
                     "12"
+                ]
+            }
+        ]
+    },
+    {
+        "title": "STATS",
+        "description": "\\---/",
+        "id": "2",
+        "cost": null,
+        "limit": 0,
+        "requires": [
+            "13"
+        ],
+        "children": [
+            {
+                "title": "STATS::\\damage",
+                "description": "\\------------/",
+                "id": "21",
+                "cost": null,
+                "limit": 0,
+                "requires": [],
+                "children": [
+                    {
+                        "title": "STATS::\\damage::\\flat_up",
+                        "description": "increase all METHOD damage by +1",
+                        "id": "211",
+                        "cost": 10,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    },
+                    {
+                        "title": "STATS::\\damage::\\mult_up",
+                        "description": "increase all damage by +5%",
+                        "id": "212",
+                        "cost": 20,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
+                    }
                 ]
             }
         ]
