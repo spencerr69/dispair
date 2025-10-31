@@ -18,6 +18,7 @@ mod coords;
 mod effects;
 mod enemy;
 mod roguegame;
+mod timescaler;
 mod tui;
 mod upgrade;
 mod weapon;

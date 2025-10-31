@@ -12,7 +12,7 @@ use ratatui::{
 };
 use serde::{Deserialize, Serialize, ser::Error};
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlayerState {
     pub upgrades: CurrentUpgrades,
     pub inventory: Inventory,
@@ -83,7 +83,7 @@ impl UpgradeNode {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Inventory {
     pub gold: u32,
 }
@@ -94,7 +94,7 @@ impl Inventory {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Stats {
     pub health: i32,
 
@@ -103,6 +103,7 @@ pub struct Stats {
     pub movement_speed_mult: f64,
 
     pub enemy_spawn_mult: f64,
+    pub enemy_move_mult: f64,
 
     pub size: i32,
 
@@ -122,6 +123,7 @@ impl Default for Stats {
             movement_speed_mult: 1.,
 
             enemy_spawn_mult: 1.,
+            enemy_move_mult: 1.,
 
             width: 20,
             height: 6,

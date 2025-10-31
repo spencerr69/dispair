@@ -6,6 +6,7 @@ use crate::{
     coords::{Direction, Position},
     effects::DamageEffect,
     enemy::*,
+    timescaler::TimeScaler,
     upgrade::PlayerState,
 };
 use crossterm::event::{KeyCode, KeyEvent};
@@ -38,6 +39,10 @@ pub struct RogueGame {
 
     enemy_spawn_ticks: u128,
     enemy_move_ticks: u128,
+
+    enemy_health: i32,
+    enemy_damage: i32,
+
     attack_ticks: u128,
 
     pub game_over: bool,
@@ -46,6 +51,8 @@ pub struct RogueGame {
 
     timer: Duration,
     start_time: Instant,
+
+    timescaler: TimeScaler,
 }
 
 impl RogueGame {
@@ -96,12 +103,17 @@ impl RogueGame {
             attack_ticks,
             enemy_move_ticks,
             enemy_spawn_ticks,
+
+            enemy_damage: 1,
+            enemy_health: 5,
+
             tickcount: 0,
             enemies: vec![],
             game_over: false,
             active_damage_effects: vec![],
             start_time,
             timer,
+            timescaler: TimeScaler::now(),
         };
 
         game.init_character();
@@ -159,6 +171,11 @@ impl RogueGame {
             self.change_low_health_enemies_questionable();
         }
 
+        if self.tickcount % TICK_RATE.floor() as u128 == 0 {
+            self.scale();
+            self.scale_enemies();
+        }
+
         if self.tickcount % self.attack_ticks == 0 {
             let (damage_areas, mut damage_effects) = self.character.attack(&mut self.layer_effects);
             damage_areas.iter().for_each(|area| {
@@ -193,6 +210,23 @@ impl RogueGame {
         self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128;
     }
 
+    fn scale_enemies(&mut self) {
+        let init_enemy_health = 5.;
+        let init_enemy_damage = 1.;
+        let init_enemy_spawn_secs = 0.4 * self.player_state.stats.enemy_spawn_mult;
+        let init_enemy_move_secs = 2. * self.player_state.stats.enemy_move_mult;
+
+        self.enemy_health = (init_enemy_health * self.timescaler.scale_amount / 2.).ceil() as i32;
+        self.enemy_damage = (init_enemy_damage * self.timescaler.scale_amount / 5.).ceil() as i32;
+        self.enemy_spawn_ticks = Self::per_sec_to_tick_count(
+            init_enemy_spawn_secs as f64 / self.timescaler.scale_amount,
+        );
+
+        self.enemy_move_ticks = Self::per_sec_to_tick_count(
+            init_enemy_move_secs as f64 * (self.timescaler.scale_amount / 5.).max(1.),
+        );
+    }
+
     pub fn spawn_enemy(&mut self) {
         self.enemies.push(Enemy::new(
             get_rand_position_on_edge(&self.layer_entities),
@@ -204,6 +238,10 @@ impl RogueGame {
 
     fn get_enemy_worth(&self) -> u32 {
         1
+    }
+
+    fn scale(&mut self) -> f64 {
+        self.timescaler.scale()
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
