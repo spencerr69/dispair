@@ -60,7 +60,7 @@ impl Tui {
         let task = tokio::spawn(async {});
         let mouse = false;
         let paste = false;
-        let mut tui = Self {
+        let tui = Self {
             terminal,
             task,
             cancellation_token,
