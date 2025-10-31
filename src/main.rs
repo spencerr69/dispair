@@ -77,7 +77,12 @@ pub const FRAME_RATE: f64 = 60.0;
 
 impl App {
     pub fn new() -> Self {
-        let player_state = load_progress().unwrap();
+        let player_state: PlayerState;
+        if let Ok(inner_player_state) = load_progress() {
+            player_state = inner_player_state;
+        } else {
+            player_state = PlayerState::default();
+        }
 
         Self {
             game_view: None,
