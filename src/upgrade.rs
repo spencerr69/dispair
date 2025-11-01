@@ -1,6 +1,6 @@
-use std::{collections::HashMap, path::Path, time::Duration};
+use std::{collections::HashMap, time::Duration};
 
-use serde::{Deserialize, Serialize, ser::Error};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlayerState {
@@ -226,9 +226,7 @@ impl Default for Stats {
 pub type UpgradeTree = Vec<UpgradeNode>;
 
 pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
-    let get_file = std::fs::read_to_string(Path::new("src/upgrades.json"))
-        .map_err(|_| serde_json::Error::custom("naurrr"))?;
-    let upgrade_tree: UpgradeTree = serde_json::from_str(get_file.as_str())?;
+    let upgrade_tree: UpgradeTree = serde_json::from_str(include_str!("upgrades.json"))?;
     Ok(upgrade_tree)
 }
 
