@@ -21,16 +21,16 @@ use crate::{
     upgrademenu::{Goto, UpgradesMenu},
 };
 
-mod character;
-mod coords;
-mod effects;
-mod enemy;
-mod roguegame;
-mod timescaler;
-mod tui;
-mod upgrade;
-mod upgrademenu;
-mod weapon;
+pub mod character;
+pub mod coords;
+pub mod effects;
+pub mod enemy;
+pub mod roguegame;
+pub mod timescaler;
+pub mod tui;
+pub mod upgrade;
+pub mod upgrademenu;
+pub mod weapon;
 
 pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error> {
     let path = dirs::config_dir()
