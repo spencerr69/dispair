@@ -73,7 +73,7 @@ pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
 }
 
 pub const TICK_RATE: f64 = 30.0;
-pub const FRAME_RATE: f64 = 60.0;
+pub const FRAME_RATE: f64 = 180.0;
 
 impl App {
     pub fn new() -> Self {

@@ -40,7 +40,7 @@ impl PlayerState {
 
         //upgrade 212 damage/mult_up
         if self.upgrade_owned("212") {
-            self.stats.damage_mult += 0.05 * self.amount_owned("212") as f64;
+            self.stats.damage_mult += 0.1 * self.amount_owned("212") as f64;
         }
 
         //upgrade 221 health/flat_up
@@ -50,12 +50,12 @@ impl PlayerState {
 
         //upgrade 222 health/mult_up
         if self.upgrade_owned("222") {
-            self.stats.health_mult += 0.05 * self.amount_owned("222") as f64;
+            self.stats.health_mult += 0.1 * self.amount_owned("222") as f64;
         }
 
         //upgrade 23 attack_rate
         if self.upgrade_owned("23") {
-            self.stats.attack_speed_mult += 0.10 * self.amount_owned("23") as f64;
+            self.stats.attack_speed_mult += 0.15 * self.amount_owned("23") as f64;
         }
 
         //upgrade 31 MARK
@@ -121,6 +121,14 @@ impl UpgradeNode {
             " > ".to_string() + self.title.as_str()
         } else {
             " ".to_string() + self.title.as_str()
+        }
+    }
+
+    pub fn next_cost(&self, amount_owned: u32) -> u32 {
+        if self.cost.is_none() {
+            0
+        } else {
+            (self.cost.unwrap() as f64 * (1. + 0.2 * (amount_owned as f64))).ceil() as u32
         }
     }
 }

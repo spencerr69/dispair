@@ -65,12 +65,15 @@ impl UpgradesMenu {
     pub fn buy_upgrade(&mut self) -> Result<(), String> {
         if let Some(current_node) = self.get_selected_node() {
             if current_node.cost.is_some() {
+                let next_cost =
+                    current_node.next_cost(self.player_state.amount_owned(&current_node.id));
+
                 if self.player_state.amount_owned(&current_node.id) >= current_node.limit {
                     return Err("Upgrade already owned".to_string());
-                } else if current_node.cost.unwrap() > self.player_state.inventory.gold {
+                } else if next_cost > self.player_state.inventory.gold {
                     return Err("Not enough money".to_string());
                 }
-                self.player_state.inventory.gold -= current_node.cost.unwrap();
+                self.player_state.inventory.gold -= next_cost;
                 let upgrade_count = self.player_state.upgrades.get_mut(&current_node.id);
                 if let Some(count) = upgrade_count {
                     *count += 1;
@@ -176,7 +179,10 @@ impl UpgradesMenu {
         let upgrade_desc = Line::from(current_upgrade.clone().description);
         let mut upgrade_cost = Line::from("");
         if current_upgrade.cost.is_some() {
-            upgrade_cost = Line::from(format!("${}", current_upgrade.cost.unwrap_or(0)));
+            upgrade_cost = Line::from(format!(
+                "${}",
+                current_upgrade.next_cost(self.player_state.amount_owned(&current_upgrade.id))
+            ));
         } else if current_upgrade.has_children() {
             upgrade_cost = Line::from("> enter folder")
         }
