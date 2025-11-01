@@ -3,27 +3,36 @@ use std::time::Duration;
 use crate::{
     character::{Character, Damageable, Movable},
     coords::{Area, Direction, Position},
-    enemy::Enemy,
+    enemy::{Debuff, Debuffable, Enemy},
     roguegame::EntityCharacters,
     upgrade::Stats,
 };
 
 #[derive(Clone)]
-pub struct DamageArea {
+pub struct DamageArea<'a> {
     pub damage_amount: i32,
     pub area: Area,
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,
-    pub mark_chance: u32,
+    pub weapon_stats: Option<&'a Stats>,
 }
 
-impl DamageArea {
+impl<'a> DamageArea<'a> {
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
             if enemy.get_pos().is_in_area(&self.area) {
                 enemy.take_damage(self.damage_amount);
-                enemy.attempt_mark_for_explosion(self.mark_chance);
+
+                // if was hit by a weapon do the following
+                if let Some(stats) = self.weapon_stats {
+                    if stats.mark_chance > 0 {
+                        enemy.try_proc(
+                            Debuff::MarkedForExplosion(stats.mark_explosion_size),
+                            stats.mark_chance,
+                        );
+                    }
+                }
             }
         });
     }
@@ -40,7 +49,7 @@ pub struct Sword {
     base_damage: i32,
     damage_scalar: f32,
     size: i32,
-    mark_chance: u32,
+    stats: Stats,
 }
 
 impl Sword {
@@ -52,7 +61,7 @@ impl Sword {
             base_damage: base_damage + player_stats.damage_flat_boost,
             damage_scalar,
             size: size_base + player_stats.size,
-            mark_chance: player_stats.mark_chance,
+            stats: player_stats,
         }
     }
 }
@@ -87,7 +96,7 @@ impl Weapon for Sword {
             entity: EntityCharacters::AttackBlackout,
             duration: Duration::from_secs_f32(0.01),
             blink: false,
-            mark_chance: self.mark_chance,
+            weapon_stats: Some(&self.stats),
         }
     }
 

@@ -7,15 +7,15 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct DamageEffect {
-    damage_area: DamageArea,
+pub struct DamageEffect<'a> {
+    damage_area: DamageArea<'a>,
 
     start_time: Instant,
     pub complete: bool,
 }
 
-impl DamageEffect {
-    pub fn new(damage_area: DamageArea) -> Self {
+impl<'a> DamageEffect<'a> {
+    pub fn new(damage_area: DamageArea<'a>) -> Self {
         Self {
             damage_area,
             complete: false,

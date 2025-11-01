@@ -22,7 +22,7 @@ use ratatui::{
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
 
-pub struct RogueGame {
+pub struct RogueGame<'a> {
     pub player_state: PlayerState,
 
     character: Character,
@@ -48,7 +48,7 @@ pub struct RogueGame {
 
     pub game_over: bool,
 
-    active_damage_effects: Vec<DamageEffect>,
+    active_damage_effects: Vec<DamageEffect<'a>>,
 
     timer: Duration,
     start_time: Instant,
@@ -56,7 +56,7 @@ pub struct RogueGame {
     timescaler: TimeScaler,
 }
 
-impl RogueGame {
+impl<'a> RogueGame<'a> {
     pub fn new(player_state: PlayerState) -> Self {
         let width = player_state.stats.width;
         let height = player_state.stats.height;
@@ -140,7 +140,7 @@ impl RogueGame {
             self.game_over = true;
         }
 
-        let mut marked_enemies: Vec<Enemy> = Vec::new();
+        let mut debuffed_enemies: Vec<Enemy> = Vec::new();
 
         self.enemies = self
             .enemies
@@ -148,8 +148,8 @@ impl RogueGame {
             .into_iter()
             .filter(|e| {
                 if !e.is_alive() {
-                    if e.marked {
-                        marked_enemies.push(e.clone());
+                    if e.debuffs.len() > 0 {
+                        debuffed_enemies.push(e.clone());
                     }
                     self.player_state.inventory.add_gold(e.get_worth());
                     update_entity_positions(&mut self.layer_entities, e);
@@ -166,14 +166,20 @@ impl RogueGame {
             })
             .collect();
 
-        marked_enemies.iter().for_each(|e| {
-            let mut damage_area = e.explode(self.player_state.stats.mark_explosion_size);
-            damage_area.area.constrain(&self.layer_entities);
-            damage_area.deal_damage(&mut self.enemies);
+        debuffed_enemies.into_iter().for_each(|e| {
+            e.debuffs
+                .iter()
+                .map(|d| d.on_death(e.clone()))
+                .map(|maybe_damage_area| {
+                    if let Some(mut damage_area) = maybe_damage_area {
+                        damage_area.area.constrain(&self.layer_entities.clone());
+                        damage_area.deal_damage(&mut self.enemies);
 
-            let damage_effect = DamageEffect::new(damage_area);
+                        let damage_effect = DamageEffect::new(damage_area);
 
-            self.active_damage_effects.push(damage_effect);
+                        self.active_damage_effects.push(damage_effect);
+                    }
+                });
         });
 
         if self.tickcount % self.enemy_spawn_ticks == 0 {
@@ -349,7 +355,7 @@ impl RogueGame {
     }
 }
 
-impl Widget for &RogueGame {
+impl<'a> Widget for &RogueGame<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let timer = self.timer.saturating_sub(self.start_time.elapsed());
 
