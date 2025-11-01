@@ -22,7 +22,7 @@ use ratatui::{
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
 
-pub struct RogueGame<'a> {
+pub struct RogueGame {
     pub player_state: PlayerState,
 
     character: Character,
@@ -48,7 +48,7 @@ pub struct RogueGame<'a> {
 
     pub game_over: bool,
 
-    active_damage_effects: Vec<DamageEffect<'a>>,
+    active_damage_effects: Vec<DamageEffect>,
 
     timer: Duration,
     start_time: Instant,
@@ -56,7 +56,7 @@ pub struct RogueGame<'a> {
     timescaler: TimeScaler,
 }
 
-impl<'a> RogueGame<'a> {
+impl RogueGame {
     pub fn new(player_state: PlayerState) -> Self {
         let width = player_state.stats.width;
         let height = player_state.stats.height;
@@ -170,7 +170,7 @@ impl<'a> RogueGame<'a> {
             e.debuffs
                 .iter()
                 .map(|d| d.on_death(e.clone()))
-                .map(|maybe_damage_area| {
+                .for_each(|maybe_damage_area| {
                     if let Some(mut damage_area) = maybe_damage_area {
                         damage_area.area.constrain(&self.layer_entities.clone());
                         damage_area.deal_damage(&mut self.enemies);
@@ -355,7 +355,7 @@ impl<'a> RogueGame<'a> {
     }
 }
 
-impl<'a> Widget for &RogueGame<'a> {
+impl Widget for &RogueGame {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let timer = self.timer.saturating_sub(self.start_time.elapsed());
 

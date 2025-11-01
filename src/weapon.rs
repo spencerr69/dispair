@@ -9,23 +9,23 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct DamageArea<'a> {
+pub struct DamageArea {
     pub damage_amount: i32,
     pub area: Area,
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,
-    pub weapon_stats: Option<&'a Stats>,
+    pub weapon_stats: Option<Stats>,
 }
 
-impl<'a> DamageArea<'a> {
+impl DamageArea {
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
             if enemy.get_pos().is_in_area(&self.area) {
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon do the following
-                if let Some(stats) = self.weapon_stats {
+                if let Some(stats) = self.weapon_stats.clone() {
                     if stats.mark_chance > 0 {
                         enemy.try_proc(
                             Debuff::MarkedForExplosion(stats.mark_explosion_size),
@@ -96,7 +96,7 @@ impl Weapon for Sword {
             entity: EntityCharacters::AttackBlackout,
             duration: Duration::from_secs_f32(0.01),
             blink: false,
-            weapon_stats: Some(&self.stats),
+            weapon_stats: Some(self.stats.clone()),
         }
     }
 
