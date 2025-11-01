@@ -11,6 +11,45 @@ use crate::coords::Position;
 use crate::roguegame::*;
 use crate::weapon::DamageArea;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Debuff {
+    MarkedForExplosion(u32),
+}
+
+impl OnDeathEffect for Debuff {
+    fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
+        match self {
+            Debuff::MarkedForExplosion(mark_explosion_size) => {
+                let area = Area {
+                    corner1: Position(
+                        enemy.position.0.saturating_sub(*mark_explosion_size as i32),
+                        enemy.position.1.saturating_sub(*mark_explosion_size as i32),
+                    ),
+                    corner2: Position(
+                        enemy.position.0.saturating_add(*mark_explosion_size as i32),
+                        enemy.position.1.saturating_add(*mark_explosion_size as i32),
+                    ),
+                };
+
+                Some(DamageArea {
+                    damage_amount: enemy.max_health - 1,
+                    area,
+                    entity: EntityCharacters::AttackBlackout,
+                    duration: Duration::from_secs_f64(0.1),
+                    blink: true,
+                    weapon_stats: None,
+                })
+            }
+        }
+    }
+}
+
+impl Debuff {}
+
+pub trait OnDeathEffect {
+    fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
+}
+
 pub trait EnemyBehaviour {
     fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self;
 
@@ -36,18 +75,34 @@ pub struct Enemy {
 
     worth: u32,
 
-    pub marked: bool,
+    pub debuffs: Vec<Debuff>,
 }
 
-impl Enemy {
-    pub fn attempt_mark_for_explosion(&mut self, chance_to_mark: u32) {
+pub trait Debuffable {
+    fn try_proc(&mut self, debuff: Debuff, chance_to_proc: u32);
+}
+
+impl Debuffable for Enemy {
+    fn try_proc(&mut self, debuff: Debuff, chance_to_mark: u32) {
         let mut rng = rand::rng();
 
         let roll = rng.random_range(1..=100);
 
-        if roll <= chance_to_mark {
-            self.marked = true;
+        match debuff {
+            Debuff::MarkedForExplosion(_) => {
+                if roll <= chance_to_mark && self.count_debuff(debuff) < 1 {
+                    self.debuffs.push(debuff);
+                }
+            }
         }
+    }
+}
+
+impl Enemy {
+    pub fn count_debuff(&self, debuff: Debuff) -> u32 {
+        self.debuffs
+            .iter()
+            .fold(0, |acc, e| if e == &debuff { acc + 1 } else { acc })
     }
 
     pub fn explode(&self, mark_explosion_size: u32) -> DamageArea {
@@ -68,7 +123,7 @@ impl Enemy {
             entity: EntityCharacters::AttackBlackout,
             duration: Duration::from_secs_f64(0.1),
             blink: true,
-            mark_chance: 0,
+            weapon_stats: None,
         }
     }
 }
@@ -91,7 +146,7 @@ impl EnemyBehaviour for Enemy {
 
             worth,
 
-            marked: false,
+            debuffs: Vec::new(),
         }
     }
 
