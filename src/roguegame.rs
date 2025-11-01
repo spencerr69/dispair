@@ -190,6 +190,9 @@ impl RogueGame {
             self.enemies.iter_mut().for_each(|enemy| {
                 enemy.update(&mut self.character, &self.layer_entities);
                 update_entity_positions(&mut self.layer_entities, enemy);
+                if is_next_to_character(self.character.get_pos(), enemy.get_prev_pos()) {
+                    enemy.move_back(2, &self.layer_entities);
+                }
             });
             self.change_low_health_enemies_questionable();
         }

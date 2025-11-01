@@ -36,8 +36,43 @@ pub trait Movable {
     fn set_pos(&mut self, new_pos: Position);
     fn get_pos(&self) -> &Position;
     fn move_to(&mut self, new_pos: Position, facing: Direction);
+    fn move_to_safe(&mut self, new_pos: Position, facing: Direction, layer: &Layer) {
+        let mut position = new_pos;
+
+        position.constrain(layer);
+
+        self.move_to(position, facing);
+    }
     fn get_prev_pos(&self) -> &Position;
     fn get_entity_char(&self) -> EntityCharacters;
+    fn get_facing(&self) -> Direction;
+
+    fn move_back(&mut self, steps: i32, layer: &Layer) {
+        let current_direction = self.get_facing();
+
+        match current_direction {
+            Direction::UP => self.move_to_safe(
+                Position(self.get_pos().0, self.get_pos().1 + steps),
+                Direction::DOWN,
+                layer,
+            ),
+            Direction::DOWN => self.move_to_safe(
+                Position(self.get_pos().0, self.get_pos().1 - steps),
+                Direction::UP,
+                layer,
+            ),
+            Direction::LEFT => self.move_to_safe(
+                Position(self.get_pos().0 + steps, self.get_pos().1),
+                Direction::RIGHT,
+                layer,
+            ),
+            Direction::RIGHT => self.move_to_safe(
+                Position(self.get_pos().0 - steps, self.get_pos().1),
+                Direction::LEFT,
+                layer,
+            ),
+        }
+    }
 }
 
 ///Trait for an entity which has health and can be damaged
@@ -100,6 +135,10 @@ impl Character {
 }
 
 impl Movable for Character {
+    fn get_facing(&self) -> Direction {
+        self.facing.clone()
+    }
+
     fn set_pos(&mut self, new_pos: Position) {
         self.prev_position = self.position.clone();
         self.position = new_pos;

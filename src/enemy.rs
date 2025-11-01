@@ -16,6 +16,12 @@ pub enum Debuff {
     MarkedForExplosion(u32),
 }
 
+impl Debuff {}
+
+pub trait OnDeathEffect {
+    fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
+}
+
 impl OnDeathEffect for Debuff {
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
         match self {
@@ -44,12 +50,6 @@ impl OnDeathEffect for Debuff {
     }
 }
 
-impl Debuff {}
-
-pub trait OnDeathEffect {
-    fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
-}
-
 pub trait EnemyBehaviour {
     fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self;
 
@@ -63,12 +63,12 @@ pub struct Enemy {
     position: Position,
     prev_position: Position,
 
-    facing: Direction,
+    pub facing: Direction,
 
     damage: i32,
 
     health: i32,
-    max_health: i32,
+    pub max_health: i32,
     is_alive: bool,
 
     entitychar: EntityCharacters,
@@ -155,6 +155,8 @@ impl EnemyBehaviour for Enemy {
     }
 
     fn update(&mut self, character: &mut Character, layer: &Layer) {
+        self.prev_position = self.position.clone();
+
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);
         }
@@ -189,6 +191,10 @@ impl EnemyBehaviour for Enemy {
 }
 
 impl Movable for Enemy {
+    fn get_facing(&self) -> Direction {
+        self.facing.clone()
+    }
+
     fn get_pos(&self) -> &Position {
         &self.position
     }
