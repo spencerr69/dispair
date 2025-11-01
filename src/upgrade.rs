@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, time::Duration};
 
 use serde::{Deserialize, Serialize, ser::Error};
 
@@ -58,6 +58,12 @@ impl PlayerState {
             self.stats.attack_speed_mult += 0.15 * self.amount_owned("23") as f64;
         }
 
+        //upgrade 24 timer_length
+        if self.upgrade_owned("24") {
+            self.stats.timer =
+                (self.stats.timer as f64 * (1.5 * self.amount_owned("24") as f64)).ceil() as u64;
+        }
+
         //upgrade 31 MARK
         //upgrade 311 mark chance
         if self.upgrade_owned("311") {
@@ -67,6 +73,12 @@ impl PlayerState {
         //upgrade 312 mark size
         if self.upgrade_owned("312") {
             self.stats.mark_explosion_size += 1 * self.amount_owned("312");
+        }
+
+        // upgrade 4 GREED
+        // upgrade 41 hype
+        if self.upgrade_owned("41") {
+            self.stats.time_offset += Duration::from_secs((30 * self.amount_owned("41")).into());
         }
 
         //cleanups
@@ -109,6 +121,7 @@ pub struct UpgradeNode {
     pub children: Option<Vec<UpgradeNode>>,
     pub limit: u32,
     pub requires: Vec<String>,
+    pub costscale_override: Option<f64>,
 }
 
 impl UpgradeNode {
@@ -125,10 +138,15 @@ impl UpgradeNode {
     }
 
     pub fn next_cost(&self, amount_owned: u32) -> u32 {
+        let mut costscale = 1.2;
+        if let Some(over_ride) = self.costscale_override {
+            costscale = over_ride;
+        }
+
         if self.cost.is_none() {
             0
         } else {
-            (self.cost.unwrap() as f64 * (1. + 0.2 * (amount_owned as f64))).ceil() as u32
+            (self.cost.unwrap() as f64 * (costscale.powf(amount_owned as f64))).ceil() as u32
         }
     }
 }
@@ -169,6 +187,8 @@ pub struct Stats {
 
     pub mark_chance: u32,
     pub mark_explosion_size: u32,
+
+    pub time_offset: Duration,
 }
 
 impl Default for Stats {
@@ -197,6 +217,8 @@ impl Default for Stats {
 
             mark_chance: 0,
             mark_explosion_size: 1,
+
+            time_offset: Duration::from_secs(0),
         }
     }
 }

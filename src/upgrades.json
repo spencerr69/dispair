@@ -114,6 +114,15 @@
                 "limit": 3,
                 "requires": [],
                 "children": null
+            },
+            {
+                "title": "STATS::\\timer_length",
+                "description": "increase timer length by +50%",
+                "id": "24",
+                "cost": 50,
+                "limit": 3,
+                "requires": [],
+                "children": null
             }
         ]
     },
@@ -151,9 +160,32 @@
                         "cost": 50,
                         "limit": 5,
                         "requires": [],
-                        "children": null
+                        "children": null,
+                        "costscale_override": 1.5
                     }
                 ]
+            }
+        ]
+    },
+    {
+        "title": "GREED",
+        "description": "\\---/",
+        "id": "4",
+        "cost": null,
+        "limit": 0,
+        "requires": [
+            "311"
+        ],
+        "children": [
+            {
+                "title": "GREED::\\hype",
+                "description": "your arrival is being awaited. +30s to timescale $$how do i explain this lol",
+                "id": "41",
+                "cost": 80,
+                "limit": 3,
+                "requires": [],
+                "children": null,
+                "costscale_override": 1.5
             }
         ]
     }

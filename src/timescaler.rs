@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub struct TimeScaler {
     pub start_time: Instant,
@@ -11,6 +11,11 @@ impl TimeScaler {
             start_time: Instant::now(),
             scale_amount: 1.0,
         }
+    }
+
+    pub fn offset_start_time(mut self, offset: Duration) -> Self {
+        self.start_time -= offset;
+        self
     }
 
     pub fn time_in_secs(&self) -> u64 {

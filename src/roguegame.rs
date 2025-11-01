@@ -95,7 +95,7 @@ impl RogueGame {
 
         let mut game = RogueGame {
             player_state: player_state.clone(),
-            character: Character::new(player_state),
+            character: Character::new(player_state.clone()),
             layer_base: base,
             layer_entities: entities,
             layer_effects: effects,
@@ -115,7 +115,7 @@ impl RogueGame {
             active_damage_effects: vec![],
             start_time,
             timer,
-            timescaler: TimeScaler::now(),
+            timescaler: TimeScaler::now().offset_start_time(player_state.stats.time_offset),
         };
 
         game.init_character();
@@ -248,7 +248,7 @@ impl RogueGame {
         );
 
         self.enemy_worth =
-            (init_enemy_worth as f64 * (self.timescaler.scale_amount / 3.).max(1.)).ceil() as u32;
+            (init_enemy_worth as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u32;
     }
 
     pub fn spawn_enemy(&mut self) {
@@ -356,11 +356,14 @@ impl Widget for &RogueGame {
         let title = Line::from(" dispair.run ".bold());
 
         let instructions = Line::from(vec![
-            " health: ".into(),
+            " Health: ".dark_gray(),
             self.character.get_health().to_string().bold(),
             " ".into(),
-            " time: ".into(),
+            " Time: ".dark_gray(),
             timer.as_secs().to_string().bold().into(),
+            " ".into(),
+            " Gold: ".dark_gray(),
+            self.player_state.inventory.gold.to_string().into(),
             " ".into(),
         ]);
         let block = Block::bordered()

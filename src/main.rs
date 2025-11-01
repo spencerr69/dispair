@@ -14,7 +14,7 @@ use crate::{
     roguegame::RogueGame,
     tui::{Event, Tui},
     upgrade::PlayerState,
-    upgrademenu::UpgradesMenu,
+    upgrademenu::{Goto, UpgradesMenu},
 };
 
 mod character;
@@ -165,14 +165,19 @@ impl App {
                 self.player_state = game.player_state.clone();
                 self.player_state.refresh();
                 self.game_view = None;
+                self.start_upgrades();
             }
         }
 
         if let Some(upgrades_menu) = &mut self.upgrades_view {
-            if upgrades_menu.close {
+            if let Some(close) = upgrades_menu.close.clone() {
                 self.player_state = upgrades_menu.player_state.clone();
                 self.player_state.refresh();
-                self.upgrades_view = None
+                self.upgrades_view = None;
+                match close {
+                    Goto::Game => self.start_game(),
+                    Goto::Menu => {}
+                }
             }
         }
     }

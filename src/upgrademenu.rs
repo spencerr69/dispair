@@ -3,18 +3,24 @@ use ratatui::{
     Frame,
     layout::{Constraint, Layout},
     style::{Style, Stylize},
-    symbols::border,
+    symbols::{self, border},
     text::Line,
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
 
 use crate::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
 
+#[derive(Clone)]
+pub enum Goto {
+    Game,
+    Menu,
+}
+
 pub struct UpgradesMenu {
     pub player_state: PlayerState,
     root_upgrade_tree: UpgradeTree,
     pub upgrade_selection: ListState,
-    pub close: bool,
+    pub close: Option<Goto>,
     pub current_layer: UpgradeTree,
     pub history: Vec<usize>,
 }
@@ -27,7 +33,7 @@ impl UpgradesMenu {
             root_upgrade_tree: upgrade_tree.clone(),
             current_layer: upgrade_tree,
             upgrade_selection: ListState::default(),
-            close: false,
+            close: None,
             history: Vec::new(),
         };
 
@@ -38,8 +44,8 @@ impl UpgradesMenu {
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('w') => self.prev_selection(),
-            KeyCode::Char('s') => self.next_selection(),
+            KeyCode::Char('w') | KeyCode::Up => self.prev_selection(),
+            KeyCode::Char('s') | KeyCode::Down => self.next_selection(),
             KeyCode::Enter => {
                 if let Some(current_node) = self.get_selected_node() {
                     if current_node.has_children() {
@@ -50,12 +56,13 @@ impl UpgradesMenu {
                     }
                 }
             }
+            KeyCode::Char(' ') => self.close = Some(Goto::Game),
 
             KeyCode::Esc => {
                 if self.history.len() > 0 {
                     self.go_back();
                 } else {
-                    self.close = true;
+                    self.close = Some(Goto::Menu);
                 }
             }
             _ => {}
@@ -159,14 +166,17 @@ impl UpgradesMenu {
 
         let text: Vec<ListItem> = Self::node_to_list(current_layer, self.player_state.clone());
 
-        let horizontal = Layout::horizontal([Constraint::Percentage(50), Constraint::Fill(1)]);
+        let horizontal = Layout::horizontal([Constraint::Percentage(70), Constraint::Fill(1)]);
         let [left, right] = horizontal.areas(inner);
 
         let title = Line::from(" dispair ".bold());
-        let instructions = Line::from(vec![" gold: ".into(), gold.to_string().into()]);
+        let gold_amount = Line::from(vec![" gold: ".into(), gold.to_string().into()]);
+        let instructions = Line::from(vec![
+            " <W|UP> Up | <S|DOWN> Down | <SPACE> Start Game | <Esc> Back ".into(),
+        ]);
         block = block
             .title(title.left_aligned())
-            .title_bottom(instructions.right_aligned());
+            .title_bottom(instructions.left_aligned());
 
         let list = List::new(text)
             .highlight_style(Style::new().rapid_blink().bold())
@@ -205,7 +215,7 @@ impl UpgradesMenu {
             "".into(),
             upgrade_amount,
         ])
-        .block(upgrade_block)
+        .block(upgrade_block.title_bottom(gold_amount.centered()))
         .centered()
         .wrap(Wrap { trim: false });
 
