@@ -106,7 +106,7 @@ impl RogueGame {
             enemy_spawn_ticks,
 
             enemy_damage: 1,
-            enemy_health: 5,
+            enemy_health: 3,
             enemy_worth: 1,
 
             tickcount: 0,
@@ -237,7 +237,7 @@ impl RogueGame {
     }
 
     fn scale_enemies(&mut self) {
-        let init_enemy_health = 4.;
+        let init_enemy_health = 3.;
         let init_enemy_damage = 1.;
         let init_enemy_spawn_secs = 0.4 * self.player_state.stats.enemy_spawn_mult;
         let init_enemy_move_secs = 2. * self.player_state.stats.enemy_move_mult;
