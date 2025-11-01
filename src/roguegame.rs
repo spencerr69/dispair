@@ -266,20 +266,20 @@ impl RogueGame {
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
-            KeyCode::Char('s') => move_entity(
+            KeyCode::Char('s') | KeyCode::Down => move_entity(
                 &mut self.layer_entities,
                 &mut self.character,
                 Direction::DOWN,
             ),
-            KeyCode::Char('w') => {
+            KeyCode::Char('w') | KeyCode::Up => {
                 move_entity(&mut self.layer_entities, &mut self.character, Direction::UP)
             }
-            KeyCode::Char('d') => move_entity(
+            KeyCode::Char('d') | KeyCode::Right => move_entity(
                 &mut self.layer_entities,
                 &mut self.character,
                 Direction::RIGHT,
             ),
-            KeyCode::Char('a') => move_entity(
+            KeyCode::Char('a') | KeyCode::Left => move_entity(
                 &mut self.layer_entities,
                 &mut self.character,
                 Direction::LEFT,

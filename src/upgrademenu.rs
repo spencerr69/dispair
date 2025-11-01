@@ -3,7 +3,7 @@ use ratatui::{
     Frame,
     layout::{Constraint, Layout},
     style::{Style, Stylize},
-    symbols::{self, border},
+    symbols::border,
     text::Line,
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
@@ -142,7 +142,9 @@ impl UpgradesMenu {
                     acc && player_state.amount_owned(&current) > 0
                 });
 
-                if node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit {
+                if node.limit == 0 && Self::own_children(node.clone(), player_state.clone())
+                    || (node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit)
+                {
                     Some(ListItem::from(
                         node.get_display_title().clone().bold().italic().dark_gray(),
                     ))
@@ -155,6 +157,19 @@ impl UpgradesMenu {
             .filter(|i| i.is_some())
             .map(|i| i.unwrap())
             .collect()
+    }
+
+    pub fn own_children(upgrade_node: UpgradeNode, player_state: PlayerState) -> bool {
+        if upgrade_node.children.is_none() {
+            return player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit;
+        } else {
+            for child in upgrade_node.children.unwrap() {
+                if !Self::own_children(child, player_state.clone()) {
+                    return false;
+                }
+            }
+            true
+        }
     }
 
     pub fn render_upgrades(&mut self, frame: &mut Frame) {
