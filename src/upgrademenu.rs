@@ -61,6 +61,7 @@ impl UpgradesMenu {
             KeyCode::Esc => {
                 if self.history.len() > 0 {
                     self.go_back();
+                    self.upgrade_selection.select_first();
                 } else {
                     self.close = Some(Goto::Menu);
                 }
@@ -145,11 +146,9 @@ impl UpgradesMenu {
                 if node.limit == 0 && Self::own_children(node.clone(), player_state.clone())
                     || (node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit)
                 {
-                    Some(ListItem::from(
-                        node.get_display_title().clone().bold().italic().dark_gray(),
-                    ))
+                    Some(ListItem::from(node.get_display_title().clone().dark_gray()))
                 } else if have_required {
-                    Some(ListItem::from(node.get_display_title().clone()))
+                    Some(ListItem::from(node.get_display_title().clone().white()))
                 } else {
                     None
                 }
@@ -194,7 +193,7 @@ impl UpgradesMenu {
             .title_bottom(instructions.left_aligned());
 
         let list = List::new(text)
-            .highlight_style(Style::new().rapid_blink().bold())
+            .highlight_style(Style::new().bold())
             .highlight_symbol(">");
 
         let current_upgrade = self.get_selected_node().unwrap_or(UpgradeNode::default());
