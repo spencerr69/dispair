@@ -241,15 +241,5 @@
                 "costscale_override": 2.5
             }
         ]
-    },
-    {
-        "title": "debug",
-        "description": "does whatever i made it do",
-        "id": "9999",
-        "cost": 1,
-        "limit": 1,
-        "requires": [],
-        "children": null,
-        "costscale_override": 1
     }
 ]
