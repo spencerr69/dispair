@@ -15,12 +15,14 @@ use ratatui::{
 use serde::de::Error as serdeError;
 
 use crate::{
+    carnagereport::CarnageReport,
     roguegame::RogueGame,
     tui::{Event, Tui},
     upgrade::PlayerState,
     upgrademenu::{Goto, UpgradesMenu},
 };
 
+pub mod carnagereport;
 pub mod character;
 pub mod coords;
 pub mod effects;
@@ -176,7 +178,7 @@ impl App {
 
     fn ui(&mut self, frame: &mut Frame) {
         if let Some(game) = &self.game_view {
-            frame.render_widget(game, frame.area());
+            game.render(frame)
         } else if let Some(ref mut upgrades_menu) = self.upgrades_view {
             upgrades_menu.render_upgrades(frame);
         } else {
@@ -188,6 +190,12 @@ impl App {
         if let Some(game) = &mut self.game_view {
             game.on_tick();
             if game.game_over {
+                game.carnage_report = Some(CarnageReport::new(
+                    self.player_state.clone().unwrap(),
+                    game.player_state.clone(),
+                ));
+            }
+            if game.exit {
                 self.player_state = Some(game.player_state.clone());
                 self.player_state.as_mut().unwrap().refresh();
                 self.game_view = None;
@@ -265,6 +273,11 @@ pub fn center_horizontal(area: Rect, width: u16) -> Rect {
         .flex(ratatui::layout::Flex::Center)
         .areas(area);
     centered_area
+}
+
+pub fn center(area: Rect, width: u16, height: u16) -> Rect {
+    let centered_area = center_vertical(area, height);
+    center_horizontal(centered_area, width)
 }
 
 #[tokio::main]

@@ -2,6 +2,8 @@ use std::time::{Duration, Instant};
 
 use crate::{
     TICK_RATE,
+    carnagereport::CarnageReport,
+    center,
     character::{Character, Damageable, Movable},
     coords::{Direction, Position},
     effects::DamageEffect,
@@ -12,18 +14,19 @@ use crate::{
 use crossterm::event::{KeyCode, KeyEvent};
 use rand::Rng;
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
+    Frame,
     style::{Style, Stylize},
     symbols::border,
     text::{Line, Span, Text},
-    widgets::{Block, Paragraph, Widget},
+    widgets::{Block, Paragraph},
 };
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
 
 pub struct RogueGame {
     pub player_state: PlayerState,
+
+    pub carnage_report: Option<CarnageReport>,
 
     character: Character,
     layer_base: Layer,
@@ -47,6 +50,7 @@ pub struct RogueGame {
     attack_ticks: u128,
 
     pub game_over: bool,
+    pub exit: bool,
 
     active_damage_effects: Vec<DamageEffect>,
 
@@ -105,6 +109,9 @@ impl RogueGame {
             enemy_move_ticks,
             enemy_spawn_ticks,
 
+            carnage_report: None,
+            exit: false,
+
             enemy_damage: 1,
             enemy_health: 3,
             enemy_worth: 1,
@@ -130,6 +137,10 @@ impl RogueGame {
     }
 
     pub fn on_tick(&mut self) {
+        if self.game_over {
+            return;
+        }
+
         self.tickcount += 1;
 
         if self.start_time.elapsed() >= self.timer {
@@ -288,27 +299,34 @@ impl RogueGame {
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char('s') | KeyCode::Down => move_entity(
-                &mut self.layer_entities,
-                &mut self.character,
-                Direction::DOWN,
-            ),
-            KeyCode::Char('w') | KeyCode::Up => {
-                move_entity(&mut self.layer_entities, &mut self.character, Direction::UP)
+        if let Some(_) = self.carnage_report {
+            match key_event.code {
+                KeyCode::Esc => self.exit = true,
+                _ => {}
             }
-            KeyCode::Char('d') | KeyCode::Right => move_entity(
-                &mut self.layer_entities,
-                &mut self.character,
-                Direction::RIGHT,
-            ),
-            KeyCode::Char('a') | KeyCode::Left => move_entity(
-                &mut self.layer_entities,
-                &mut self.character,
-                Direction::LEFT,
-            ),
-            KeyCode::Esc => self.game_over = true,
-            _ => {}
+        } else {
+            match key_event.code {
+                KeyCode::Char('s') | KeyCode::Down => move_entity(
+                    &mut self.layer_entities,
+                    &mut self.character,
+                    Direction::DOWN,
+                ),
+                KeyCode::Char('w') | KeyCode::Up => {
+                    move_entity(&mut self.layer_entities, &mut self.character, Direction::UP)
+                }
+                KeyCode::Char('d') | KeyCode::Right => move_entity(
+                    &mut self.layer_entities,
+                    &mut self.character,
+                    Direction::RIGHT,
+                ),
+                KeyCode::Char('a') | KeyCode::Left => move_entity(
+                    &mut self.layer_entities,
+                    &mut self.character,
+                    Direction::LEFT,
+                ),
+                KeyCode::Esc => self.game_over = true,
+                _ => {}
+            }
         }
     }
 
@@ -370,10 +388,8 @@ impl RogueGame {
         }
         get_pos(&self.layer_entities, position) == &EntityCharacters::Empty
     }
-}
 
-impl Widget for &RogueGame {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    pub fn render(&self, frame: &mut Frame) {
         let timer = self.timer.saturating_sub(self.start_time.elapsed());
 
         let title = Line::from(" dispair.run ".bold());
@@ -394,10 +410,20 @@ impl Widget for &RogueGame {
             .title_bottom(instructions.right_aligned())
             .border_set(border::THICK);
 
-        Paragraph::new(self.to_text())
-            .centered()
-            .block(block)
-            .render(area, buf);
+        let content_area = center(
+            block.inner(frame.area()),
+            self.layer_base[0].len() as u16,
+            self.layer_base.len() as u16,
+        );
+
+        let content = Paragraph::new(self.to_text()).centered();
+
+        frame.render_widget(block, frame.area());
+        frame.render_widget(content, content_area);
+
+        if let Some(ref mut carnage) = self.carnage_report.clone() {
+            carnage.render(frame);
+        }
     }
 }
 
@@ -405,10 +431,6 @@ pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacter
     let (x, y) = position.get_as_usize();
     &layer[y][x]
 }
-// pub fn get_pos_mut<'a>(layer: &'a mut Layer, position: &Position) -> &'a mut EntityCharacters {
-//     let (x, y) = position.get_as_usize();
-//     &mut layer[y][x]
-// }
 
 pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
     set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty).unwrap_or(());

@@ -1,4 +1,6 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, ops::Sub, time::Duration};
+
+use derive_more::Sub;
 
 use serde::{Deserialize, Serialize};
 
@@ -7,6 +9,22 @@ pub struct PlayerState {
     pub upgrades: CurrentUpgrades,
     pub inventory: Inventory,
     pub stats: Stats,
+}
+
+pub struct PlayerStateDiff {
+    pub inventory: Inventory,
+    pub stats: Stats,
+}
+
+impl Sub for PlayerState {
+    type Output = PlayerStateDiff;
+
+    fn sub(self, other: PlayerState) -> Self::Output {
+        PlayerStateDiff {
+            inventory: self.inventory - other.inventory,
+            stats: self.stats - other.stats,
+        }
+    }
 }
 
 impl PlayerState {
@@ -167,13 +185,23 @@ pub struct Inventory {
     pub gold: u32,
 }
 
+impl Sub for Inventory {
+    type Output = Inventory;
+
+    fn sub(self, other: Inventory) -> Self::Output {
+        Inventory {
+            gold: self.gold.saturating_sub(other.gold),
+        }
+    }
+}
+
 impl Inventory {
     pub fn add_gold(&mut self, amount: u32) {
         self.gold = self.gold.saturating_add(amount);
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Sub)]
 pub struct Stats {
     pub base_health: i32,
     pub health_mult: f64,
