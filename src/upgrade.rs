@@ -126,6 +126,12 @@ impl PlayerState {
             self.stats.enemy_spawn_mult += 0.5 * amount_owned as f64
         }
 
+        //debug
+        if self.upgrade_owned("9999") {
+            self.stats.width = 200;
+            self.stats.height = 100;
+        }
+
         //cleanups
         self.stats.health = (self.stats.base_health as f64 * self.stats.health_mult).ceil() as i32;
     }

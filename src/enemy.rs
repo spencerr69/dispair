@@ -80,6 +80,7 @@ pub struct Enemy {
 
 pub trait Debuffable {
     fn try_proc(&mut self, debuff: Debuff, chance_to_proc: u32);
+    fn count_debuff(&self, debuff: Debuff) -> u32;
 }
 
 impl Debuffable for Enemy {
@@ -96,35 +97,23 @@ impl Debuffable for Enemy {
             }
         }
     }
-}
 
-impl Enemy {
-    pub fn count_debuff(&self, debuff: Debuff) -> u32 {
+    fn count_debuff(&self, debuff: Debuff) -> u32 {
         self.debuffs
             .iter()
             .fold(0, |acc, e| if e == &debuff { acc + 1 } else { acc })
     }
+}
 
-    pub fn explode(&self, mark_explosion_size: u32) -> DamageArea {
-        let area = Area {
-            corner1: Position(
-                self.position.0.saturating_sub(mark_explosion_size as i32),
-                self.position.1.saturating_sub(mark_explosion_size as i32),
-            ),
-            corner2: Position(
-                self.position.0.saturating_add(mark_explosion_size as i32),
-                self.position.1.saturating_add(mark_explosion_size as i32),
-            ),
-        };
+impl Enemy {
+    fn change_style_with_debuff(&mut self) {
+        let style = self.entitychar.style_mut();
 
-        DamageArea {
-            damage_amount: self.max_health - 1,
-            area,
-            entity: EntityCharacters::AttackBlackout,
-            duration: Duration::from_secs_f64(0.1),
-            blink: true,
-            weapon_stats: None,
-        }
+        self.debuffs.iter().for_each(|debuff| match debuff {
+            Debuff::MarkedForExplosion(_, _) => {
+                *style = style.bold().gray();
+            }
+        })
     }
 }
 
@@ -156,6 +145,8 @@ impl EnemyBehaviour for Enemy {
 
     fn update(&mut self, character: &mut Character, layer: &Layer) {
         self.prev_position = self.position.clone();
+
+        self.change_style_with_debuff();
 
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);

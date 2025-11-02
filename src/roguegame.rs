@@ -5,7 +5,7 @@ use crate::{
     carnagereport::CarnageReport,
     center,
     character::{Character, Damageable, Movable},
-    coords::{Direction, Position},
+    coords::{Area, Direction, Position},
     effects::DamageEffect,
     enemy::*,
     timescaler::TimeScaler,
@@ -15,6 +15,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rand::Rng;
 use ratatui::{
     Frame,
+    layout::Rect,
     style::{Style, Stylize},
     symbols::border,
     text::{Line, Span, Text},
@@ -249,10 +250,6 @@ impl RogueGame {
             .collect();
 
         // self.change_low_health_enemies_questionable();
-
-        let spans = self.flatten_to_span();
-
-        self.map_text = Self::spans_to_text(spans);
     }
 
     pub fn update_stats(&mut self) {
@@ -339,26 +336,53 @@ impl RogueGame {
         self.character.set_pos(Position(x, y));
     }
 
-    pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {
-        let mut out: Vec<Vec<Span<'static>>> = self
+    pub fn flatten_to_span(&self, area: Option<Area>) -> Vec<Vec<Span<'static>>> {
+        let (mut x1, mut y1, mut x2, mut y2) = Area::from(self.layer_base.clone()).get_bounds();
+
+        if let Some(inner_area) = area {
+            (x1, y1, x2, y2) = inner_area.get_bounds();
+        }
+
+        let out: Vec<(usize, Vec<(usize, Span<'static>)>)> = self
             .layer_base
             .iter()
-            .map(|line| line.iter().map(|entity| entity.to_styled()).collect())
+            .enumerate()
+            .filter_map(|(i, line)| {
+                if i >= y1 as usize && i <= y2 as usize {
+                    Some((
+                        i,
+                        line.iter()
+                            .enumerate()
+                            .filter_map(|(i, entity)| {
+                                if i >= x1 as usize && i <= x2 as usize {
+                                    Some((i, entity.to_styled()))
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect(),
+                    ))
+                } else {
+                    None
+                }
+            })
             .collect();
 
-        for (y, row) in out.iter_mut().enumerate() {
-            for (x, pos) in row.iter_mut().enumerate() {
-                if self.layer_effects[y][x] != EntityCharacters::Empty
-                    || self.layer_entities[y][x] != EntityCharacters::Empty
-                {
-                    if self.layer_effects[y][x] != EntityCharacters::Empty {
-                        pos.clone_from(&self.layer_effects[y][x].to_styled());
-                    } else {
-                        pos.clone_from(&self.layer_entities[y][x].to_styled());
-                    }
-                }
-            }
-        }
+        let out: Vec<Vec<Span<'_>>> = out
+            .into_iter()
+            .map(|(y, row)| {
+                row.into_iter()
+                    .map(|(x, mut pos)| {
+                        if self.layer_effects[y][x] != EntityCharacters::Empty {
+                            pos.clone_from(&self.layer_effects[y][x].to_styled());
+                        } else if self.layer_entities[y][x] != EntityCharacters::Empty {
+                            pos.clone_from(&self.layer_entities[y][x].to_styled());
+                        }
+                        pos
+                    })
+                    .collect()
+            })
+            .collect();
 
         out
     }
@@ -407,20 +431,71 @@ impl RogueGame {
             .title_bottom(instructions.right_aligned())
             .border_set(border::THICK);
 
-        let content_area = center(
-            block.inner(frame.area()),
-            self.layer_base[0].len() as u16,
-            self.layer_base.len() as u16,
-        );
+        let content_area = block.inner(frame.area());
 
-        let content = Paragraph::new(self.map_text.clone()).centered();
+        let spans = self.flatten_to_span(Some(get_camera_area(
+            content_area,
+            self.get_character_pos(),
+            &self.layer_base,
+        )));
+
+        let centered_area = center(content_area, spans[0].len() as u16, spans.len() as u16);
+
+        let map_text = Self::spans_to_text(spans);
+
+        let content = Paragraph::new(map_text).centered();
 
         frame.render_widget(block, frame.area());
-        frame.render_widget(content, content_area);
+        frame.render_widget(content, centered_area);
 
         if let Some(ref mut carnage) = self.carnage_report.clone() {
             carnage.render(frame);
         }
+    }
+}
+
+pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> Area {
+    let view_height = content_area.height as i32;
+    let view_width = content_area.width as i32;
+
+    let layer_height = layer.len() as i32;
+    let layer_width = layer[0].len() as i32;
+
+    let (player_x, player_y) = player_pos.get();
+
+    // Center the camera on the player
+    let mut camera_x1 = player_x - view_width / 2;
+    let mut camera_y1 = player_y - view_height / 2;
+    let mut camera_x2 = camera_x1 + view_width;
+    let mut camera_y2 = camera_y1 + view_height;
+
+    // Clamp to left edge
+    if camera_x1 < 0 {
+        camera_x1 = 0;
+        camera_x2 = view_width;
+    }
+
+    // Clamp to top edge
+    if camera_y1 < 0 {
+        camera_y1 = 0;
+        camera_y2 = view_height;
+    }
+
+    // Clamp to right edge
+    if camera_x2 > layer_width {
+        camera_x2 = layer_width;
+        camera_x1 = (layer_width - view_width).max(0);
+    }
+
+    // Clamp to bottom edge
+    if camera_y2 > layer_height {
+        camera_y2 = layer_height;
+        camera_y1 = (layer_height - view_height).max(0);
+    }
+
+    Area {
+        corner1: Position(camera_x1, camera_y1),
+        corner2: Position(camera_x2, camera_y2),
     }
 }
 
@@ -551,6 +626,14 @@ impl EntityCharacters {
 
     pub fn replace(&mut self, new_entity: EntityCharacters) {
         *self = new_entity;
+    }
+
+    pub fn style_mut(&mut self) -> &mut Style {
+        match self {
+            EntityCharacters::Character(style) => style,
+            EntityCharacters::Enemy(style) => style,
+            _ => panic!("Cannot get style_mut for non-styled entity"),
+        }
     }
 
     pub fn is_char(&self) -> bool {

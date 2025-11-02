@@ -61,6 +61,15 @@ pub struct Area {
     pub corner2: Position,
 }
 
+impl From<Layer> for Area {
+    fn from(value: Layer) -> Self {
+        Self {
+            corner1: Position(0, 0),
+            corner2: Position(value[0].len() as i32, value.len() as i32),
+        }
+    }
+}
+
 impl Area {
     pub fn new(corner1: Position, corner2: Position) -> Self {
         Area { corner1, corner2 }
