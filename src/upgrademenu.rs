@@ -163,9 +163,10 @@ impl UpgradesMenu {
             acc && player_state.amount_owned(&current) > 0
         });
 
-        if !have_required {
-            true
-        } else if upgrade_node.children.is_none() {
+        if upgrade_node.children.is_none() {
+            if !have_required {
+                return true;
+            }
             return player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit;
         } else {
             for child in upgrade_node.children.unwrap() {
