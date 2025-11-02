@@ -29,6 +29,11 @@ impl DamageEffect {
     }
 
     pub fn update(&mut self, layer: &mut Layer) {
+        change_area(
+            layer,
+            self.damage_area.area.clone(),
+            &EntityCharacters::Empty,
+        );
         if Instant::now().duration_since(self.start_time) >= self.damage_area.duration {
             change_area(
                 layer,
@@ -42,12 +47,6 @@ impl DamageEffect {
                     layer,
                     self.damage_area.area.clone(),
                     &self.damage_area.entity,
-                );
-            } else {
-                change_area(
-                    layer,
-                    self.damage_area.area.clone(),
-                    &EntityCharacters::Empty,
                 );
             }
         }

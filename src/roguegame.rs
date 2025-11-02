@@ -243,6 +243,10 @@ impl RogueGame {
         update_layer(&mut self.layer_entities, &self.enemies, &self.character);
         self.camera_area =
             get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
+
+        let spans = self.flatten_to_span(Some(self.camera_area.clone()));
+
+        self.map_text = Self::spans_to_text(spans);
     }
 
     pub fn on_frame(&mut self) {
@@ -443,13 +447,12 @@ impl RogueGame {
 
         let content_area = self.view_area;
 
-        let spans = self.flatten_to_span(Some(self.camera_area.clone()));
+        let height = self.map_text.lines.len() as u16;
+        let width = self.map_text.lines[0].iter().len() as u16;
 
-        let centered_area = center(content_area, spans[0].len() as u16, spans.len() as u16);
+        let centered_area = center(content_area, width, height);
 
-        let map_text = Self::spans_to_text(spans);
-
-        let content = Paragraph::new(map_text).centered();
+        let content = Paragraph::new(self.map_text.clone()).centered();
 
         frame.render_widget(block, frame.area());
         frame.render_widget(content, centered_area);

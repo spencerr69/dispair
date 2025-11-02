@@ -130,6 +130,9 @@ impl PlayerState {
         if self.upgrade_owned("9999") {
             self.stats.width = 200;
             self.stats.height = 100;
+            self.stats.enemy_spawn_mult = 12.;
+            self.stats.enemy_move_mult = 3.;
+            self.stats.base_health = 10000;
         }
 
         //cleanups
