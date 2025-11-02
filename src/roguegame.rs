@@ -28,6 +28,8 @@ pub struct RogueGame {
 
     pub carnage_report: Option<CarnageReport>,
 
+    pub map_text: Text<'static>,
+
     character: Character,
     layer_base: Layer,
     layer_entities: Layer,
@@ -109,6 +111,8 @@ impl RogueGame {
             enemy_move_ticks,
             enemy_spawn_ticks,
 
+            map_text: Text::from(""),
+
             carnage_report: None,
             exit: false,
 
@@ -163,13 +167,7 @@ impl RogueGame {
                         debuffed_enemies.push(e.clone());
                     }
                     self.player_state.inventory.add_gold(e.get_worth());
-                    update_entity_positions(&mut self.layer_entities, e);
-                    set_entity(
-                        &mut self.layer_entities,
-                        e.get_pos(),
-                        EntityCharacters::Empty,
-                    )
-                    .unwrap_or(());
+
                     return false;
                 } else {
                     return true;
@@ -200,7 +198,7 @@ impl RogueGame {
         if self.tickcount % self.enemy_move_ticks == 0 {
             self.enemies.iter_mut().for_each(|enemy| {
                 enemy.update(&mut self.character, &self.layer_entities);
-                update_entity_positions(&mut self.layer_entities, enemy);
+                // update_entity_positions(&mut self.layer_entities, enemy);
 
                 if self.player_state.stats.shove_amount > 0
                     && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
@@ -219,7 +217,7 @@ impl RogueGame {
                     );
                 }
             });
-            self.change_low_health_enemies_questionable();
+            // self.change_low_health_enemies_questionable();
         }
 
         if self.tickcount % TICK_RATE.floor() as u128 == 0 {
@@ -234,6 +232,8 @@ impl RogueGame {
             });
             self.active_damage_effects.append(&mut damage_effects)
         }
+
+        update_layer(&mut self.layer_entities, &self.enemies, &self.character);
     }
 
     pub fn on_frame(&mut self) {
@@ -248,13 +248,11 @@ impl RogueGame {
             .filter(|damage_effect| !damage_effect.complete)
             .collect();
 
-        self.change_low_health_enemies_questionable();
-    }
+        // self.change_low_health_enemies_questionable();
 
-    pub fn change_low_health_enemies_questionable(&mut self) {
-        self.enemies.iter().for_each(|enemy| {
-            update_entity_positions(&mut self.layer_entities, enemy);
-        });
+        let spans = self.flatten_to_span();
+
+        self.map_text = Self::spans_to_text(spans);
     }
 
     pub fn update_stats(&mut self) {
@@ -339,7 +337,6 @@ impl RogueGame {
         );
 
         self.character.set_pos(Position(x, y));
-        update_entity_positions(&mut self.layer_entities, &self.character);
     }
 
     pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {
@@ -366,10 +363,10 @@ impl RogueGame {
         out
     }
 
-    pub fn to_text(&self) -> Text<'static> {
-        let map = self.flatten_to_span();
+    pub fn spans_to_text(spans: Vec<Vec<Span<'_>>>) -> Text<'_> {
+        let map = spans;
 
-        let out: Text<'static> = map
+        let out: Text<'_> = map
             .into_iter()
             .map(|style_line| Line::default().spans(style_line))
             .collect();
@@ -416,7 +413,7 @@ impl RogueGame {
             self.layer_base.len() as u16,
         );
 
-        let content = Paragraph::new(self.to_text()).centered();
+        let content = Paragraph::new(self.map_text.clone()).centered();
 
         frame.render_widget(block, frame.area());
         frame.render_widget(content, content_area);
@@ -432,9 +429,24 @@ pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacter
     &layer[y][x]
 }
 
-pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
-    set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty).unwrap_or(());
-    set_entity(layer, entity.get_pos(), entity.get_entity_char()).unwrap_or(());
+pub fn clear_layer(layer: &mut Layer) {
+    layer.iter_mut().for_each(|row| {
+        row.iter_mut()
+            .for_each(|ent| ent.replace(EntityCharacters::Empty))
+    });
+}
+
+pub fn update_layer(layer_entities: &mut Layer, enemies: &Vec<Enemy>, character: &Character) {
+    clear_layer(layer_entities);
+
+    enemies.iter().for_each(|enemy| {
+        let (x, y) = enemy.get_pos().get_as_usize();
+
+        layer_entities[y][x] = enemy.get_entity_char();
+    });
+
+    let (char_x, char_y) = character.get_pos().get_as_usize();
+    layer_entities[char_y][char_x] = character.get_entity_char();
 }
 
 pub fn set_entity(
@@ -465,7 +477,7 @@ pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Dire
 
     if can_stand(layer, &new_pos) {
         entity.move_to(new_pos, direction);
-        update_entity_positions(layer, entity);
+        // update_entity_positions(layer, entity);
     } else {
         entity.move_to(entity.get_pos().clone(), direction);
     }
@@ -520,8 +532,6 @@ pub enum EntityCharacters {
     Empty,
     AttackBlackout,
 }
-
-//hurt style .gray().italic()
 
 impl EntityCharacters {
     pub fn to_styled(&self) -> Span<'static> {
