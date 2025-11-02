@@ -159,7 +159,13 @@ impl UpgradesMenu {
     }
 
     pub fn own_children(upgrade_node: UpgradeNode, player_state: PlayerState) -> bool {
-        if upgrade_node.children.is_none() {
+        let have_required = upgrade_node.requires.iter().fold(true, |acc, current| {
+            acc && player_state.amount_owned(&current) > 0
+        });
+
+        if !have_required {
+            true
+        } else if upgrade_node.children.is_none() {
             return player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit;
         } else {
             for child in upgrade_node.children.unwrap() {

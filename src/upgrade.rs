@@ -82,6 +82,12 @@ impl PlayerState {
                 (self.stats.timer as f64 * (1.5 * self.amount_owned("24") as f64)).ceil() as u64;
         }
 
+        //upgrade 25 movement_speed
+        if self.upgrade_owned("25") {
+            self.stats.movement_speed_mult =
+                self.stats.movement_speed_mult + (0.5 * self.amount_owned("25") as f64)
+        }
+
         //upgrade 31 MARK
         //upgrade 311 mark chance
         if self.upgrade_owned("311") {
@@ -108,6 +114,16 @@ impl PlayerState {
         // upgrade 41 hype
         if self.upgrade_owned("41") {
             self.stats.time_offset += Duration::from_secs((30 * self.amount_owned("41")).into());
+        }
+
+        // upgrade 42 growth
+        if self.upgrade_owned("42") {
+            let amount_owned = self.amount_owned("42");
+            let growth_amount = 2 * amount_owned;
+
+            self.stats.width += growth_amount as usize;
+            self.stats.height += growth_amount as usize;
+            self.stats.enemy_spawn_mult += 0.5 * amount_owned as f64
         }
 
         //cleanups

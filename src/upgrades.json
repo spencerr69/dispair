@@ -117,13 +117,24 @@
             },
             {
                 "title": "STATS::\\timer_length",
-                "description": "increase timer length by +50%",
+                "description": "increase timer length by x50%",
                 "id": "24",
                 "cost": 50,
                 "limit": 3,
                 "requires": [],
                 "children": null,
                 "costscale_override": 2.0
+            },
+            {
+                "title": "STATS::\\movement_speed",
+                "description": "increase movement speed by +50%",
+                "id": "25",
+                "cost": 70,
+                "limit": 3,
+                "requires": [
+                    "42"
+                ],
+                "children": null
             }
         ]
     },
@@ -215,7 +226,19 @@
                 "limit": 3,
                 "requires": [],
                 "children": null,
-                "costscale_override": 1.5
+                "costscale_override": 2.5
+            },
+            {
+                "title": "GREED::\\context_growth",
+                "description": "increase map size by +2 width and +2 height. warning: enemies will spawn quicker",
+                "id": "42",
+                "cost": 300,
+                "limit": 3,
+                "requires": [
+                    "41"
+                ],
+                "children": null,
+                "costscale_override": 2.5
             }
         ]
     }
