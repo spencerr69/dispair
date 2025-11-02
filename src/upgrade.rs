@@ -75,6 +75,17 @@ impl PlayerState {
             self.stats.mark_explosion_size += 1 * self.amount_owned("312");
         }
 
+        //upgrade 32 shove
+        //upgrade 321 shove amount
+        if self.upgrade_owned("321") {
+            self.stats.shove_amount += 1 * self.amount_owned("321");
+        }
+
+        //upgrade 322 shove damage
+        if self.upgrade_owned("322") {
+            self.stats.shove_damage += 1 * self.amount_owned("322");
+        }
+
         // upgrade 4 GREED
         // upgrade 41 hype
         if self.upgrade_owned("41") {
@@ -188,6 +199,9 @@ pub struct Stats {
     pub mark_chance: u32,
     pub mark_explosion_size: u32,
 
+    pub shove_amount: u32,
+    pub shove_damage: u32,
+
     pub time_offset: Duration,
 }
 
@@ -217,6 +231,9 @@ impl Default for Stats {
 
             mark_chance: 0,
             mark_explosion_size: 1,
+
+            shove_amount: 0,
+            shove_damage: 0,
 
             time_offset: Duration::from_secs(0),
         }

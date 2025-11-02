@@ -122,7 +122,8 @@
                 "cost": 50,
                 "limit": 3,
                 "requires": [],
-                "children": null
+                "children": null,
+                "costscale_override": 2.0
             }
         ]
     },
@@ -162,6 +163,35 @@
                         "requires": [],
                         "children": null,
                         "costscale_override": 1.5
+                    }
+                ]
+            },
+            {
+                "title": "EFFECT::\\shove",
+                "description": "shove enemies back",
+                "id": "32",
+                "cost": null,
+                "limit": 0,
+                "requires": [],
+                "children": [
+                    {
+                        "title": "EFFECT::\\shove::\\num_steps",
+                        "description": "shove enemies back +1 step when they hit you",
+                        "id": "321",
+                        "cost": 50,
+                        "limit": 3,
+                        "costscale_override": 2,
+                        "requires": [],
+                        "children": null
+                    },
+                    {
+                        "title": "EFFECT::\\shove::\\damage",
+                        "description": "deal +1 damage when shoving enemies",
+                        "id": "322",
+                        "cost": 100,
+                        "limit": 3,
+                        "requires": [],
+                        "children": null
                     }
                 ]
             }

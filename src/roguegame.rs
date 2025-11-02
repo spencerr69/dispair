@@ -190,8 +190,22 @@ impl RogueGame {
             self.enemies.iter_mut().for_each(|enemy| {
                 enemy.update(&mut self.character, &self.layer_entities);
                 update_entity_positions(&mut self.layer_entities, enemy);
-                if is_next_to_character(self.character.get_pos(), enemy.get_prev_pos()) {
-                    enemy.move_back(2, &self.layer_entities);
+
+                if self.player_state.stats.shove_amount > 0
+                    && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
+                {
+                    if self.player_state.stats.shove_damage > 0 {
+                        enemy.take_damage(
+                            (self.player_state.stats.shove_damage as f64
+                                * self.player_state.stats.damage_mult)
+                                .ceil() as i32,
+                        );
+                    }
+
+                    enemy.move_back(
+                        self.player_state.stats.shove_amount as i32,
+                        &self.layer_entities,
+                    );
                 }
             });
             self.change_low_health_enemies_questionable();
@@ -464,10 +478,10 @@ pub fn is_next_to_character(char_position: &Position, position: &Position) -> bo
     let (x, y) = position.get_as_usize();
     let (char_x, char_y) = char_position.get_as_usize();
 
-    if x >= char_x.saturating_sub(1)
-        && char_x.saturating_add(1) >= x
-        && y >= char_y.saturating_sub(1)
-        && char_y.saturating_add(1) >= y
+    if x == char_x.saturating_add(1) && y == char_y
+        || x == char_x.saturating_sub(1) && y == char_y
+        || y == char_y.saturating_add(1) && x == char_x
+        || y == char_y.saturating_sub(1) && x == char_x
     {
         true
     } else {
