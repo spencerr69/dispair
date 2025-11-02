@@ -28,7 +28,10 @@ impl DamageArea {
                 if let Some(stats) = self.weapon_stats.clone() {
                     if stats.mark_chance > 0 {
                         enemy.try_proc(
-                            Debuff::MarkedForExplosion(stats.mark_explosion_size),
+                            Debuff::MarkedForExplosion(
+                                stats.mark_explosion_size,
+                                (6. * stats.damage_mult).ceil() as i32,
+                            ),
                             stats.mark_chance,
                         );
                     }

@@ -13,7 +13,7 @@ use crate::weapon::DamageArea;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Debuff {
-    MarkedForExplosion(u32),
+    MarkedForExplosion(u32, i32),
 }
 
 impl Debuff {}
@@ -25,20 +25,20 @@ pub trait OnDeathEffect {
 impl OnDeathEffect for Debuff {
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
         match self {
-            Debuff::MarkedForExplosion(mark_explosion_size) => {
+            Debuff::MarkedForExplosion(explosion_size, explosion_damage) => {
                 let area = Area {
                     corner1: Position(
-                        enemy.position.0.saturating_sub(*mark_explosion_size as i32),
-                        enemy.position.1.saturating_sub(*mark_explosion_size as i32),
+                        enemy.position.0.saturating_sub(*explosion_size as i32),
+                        enemy.position.1.saturating_sub(*explosion_size as i32),
                     ),
                     corner2: Position(
-                        enemy.position.0.saturating_add(*mark_explosion_size as i32),
-                        enemy.position.1.saturating_add(*mark_explosion_size as i32),
+                        enemy.position.0.saturating_add(*explosion_size as i32),
+                        enemy.position.1.saturating_add(*explosion_size as i32),
                     ),
                 };
 
                 Some(DamageArea {
-                    damage_amount: enemy.max_health - 1,
+                    damage_amount: *explosion_damage,
                     area,
                     entity: EntityCharacters::AttackBlackout,
                     duration: Duration::from_secs_f64(0.1),
@@ -89,7 +89,7 @@ impl Debuffable for Enemy {
         let roll = rng.random_range(1..=100);
 
         match debuff {
-            Debuff::MarkedForExplosion(_) => {
+            Debuff::MarkedForExplosion(_, _) => {
                 if roll <= chance_to_mark && self.count_debuff(debuff) < 1 {
                     self.debuffs.push(debuff);
                 }
