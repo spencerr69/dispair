@@ -167,13 +167,7 @@ impl RogueGame {
                         debuffed_enemies.push(e.clone());
                     }
                     self.player_state.inventory.add_gold(e.get_worth());
-                    // update_entity_positions(&mut self.layer_entities, e);
-                    // set_entity(
-                    //     &mut self.layer_entities,
-                    //     e.get_pos(),
-                    //     EntityCharacters::Empty,
-                    // )
-                    // .unwrap_or(());
+
                     return false;
                 } else {
                     return true;
@@ -261,12 +255,6 @@ impl RogueGame {
         self.map_text = Self::spans_to_text(spans);
     }
 
-    // pub fn change_low_health_enemies_questionable(&mut self) {
-    //     self.enemies.iter().for_each(|enemy| {
-    //         update_entity_positions(&mut self.layer_entities, enemy);
-    //     });
-    // }
-
     pub fn update_stats(&mut self) {
         self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128;
     }
@@ -349,7 +337,6 @@ impl RogueGame {
         );
 
         self.character.set_pos(Position(x, y));
-        // update_entity_positions(&mut self.layer_entities, &self.character);
     }
 
     pub fn flatten_to_span(&self) -> Vec<Vec<Span<'static>>> {
@@ -462,11 +449,6 @@ pub fn update_layer(layer_entities: &mut Layer, enemies: &Vec<Enemy>, character:
     layer_entities[char_y][char_x] = character.get_entity_char();
 }
 
-// pub fn update_entity_positions(layer: &mut Layer, entity: &impl Movable) {
-//     set_entity(layer, entity.get_prev_pos(), EntityCharacters::Empty).unwrap_or(());
-//     set_entity(layer, entity.get_pos(), entity.get_entity_char()).unwrap_or(());
-// }
-
 pub fn set_entity(
     layer: &mut Vec<Vec<EntityCharacters>>,
     position: &Position,
@@ -550,8 +532,6 @@ pub enum EntityCharacters {
     Empty,
     AttackBlackout,
 }
-
-//hurt style .gray().italic()
 
 impl EntityCharacters {
     pub fn to_styled(&self) -> Span<'static> {
