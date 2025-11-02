@@ -61,6 +61,9 @@ pub struct RogueGame {
     start_time: Instant,
 
     timescaler: TimeScaler,
+
+    view_area: Rect,
+    camera_area: Area,
 }
 
 impl RogueGame {
@@ -128,6 +131,9 @@ impl RogueGame {
             start_time,
             timer,
             timescaler: TimeScaler::now().offset_start_time(player_state.stats.time_offset),
+
+            view_area: Rect::new(0, 0, width as u16, height as u16),
+            camera_area: Area::new(Position(0, 0), Position(width as i32, height as i32)),
         };
 
         game.init_character();
@@ -235,6 +241,8 @@ impl RogueGame {
         }
 
         update_layer(&mut self.layer_entities, &self.enemies, &self.character);
+        self.camera_area =
+            get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
     }
 
     pub fn on_frame(&mut self) {
@@ -410,7 +418,7 @@ impl RogueGame {
         get_pos(&self.layer_entities, position) == &EntityCharacters::Empty
     }
 
-    pub fn render(&self, frame: &mut Frame) {
+    pub fn render(&mut self, frame: &mut Frame) {
         let timer = self.timer.saturating_sub(self.start_time.elapsed());
 
         let title = Line::from(" dispair.run ".bold());
@@ -431,13 +439,11 @@ impl RogueGame {
             .title_bottom(instructions.right_aligned())
             .border_set(border::THICK);
 
-        let content_area = block.inner(frame.area());
+        self.view_area = block.inner(frame.area());
 
-        let spans = self.flatten_to_span(Some(get_camera_area(
-            content_area,
-            self.get_character_pos(),
-            &self.layer_base,
-        )));
+        let content_area = self.view_area;
+
+        let spans = self.flatten_to_span(Some(self.camera_area.clone()));
 
         let centered_area = center(content_area, spans[0].len() as u16, spans.len() as u16);
 

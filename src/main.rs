@@ -177,7 +177,7 @@ impl App {
     }
 
     fn ui(&mut self, frame: &mut Frame) {
-        if let Some(game) = &self.game_view {
+        if let Some(ref mut game) = self.game_view {
             game.render(frame)
         } else if let Some(ref mut upgrades_menu) = self.upgrades_view {
             upgrades_menu.render_upgrades(frame);
