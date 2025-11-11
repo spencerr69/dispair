@@ -125,7 +125,7 @@ impl Character {
         let damage_effects: Vec<DamageEffect> = damage_areas
             .clone()
             .into_iter()
-            .map(|damage_area| DamageEffect::new(damage_area))
+            .map(|damage_area| DamageEffect::from(damage_area))
             .collect();
         damage_effects
             .iter()

@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use ratatui::style::{Style, Stylize};
+
 use crate::{
     character::{Character, Damageable, Movable},
     coords::{Area, Direction, Position},
@@ -96,7 +98,7 @@ impl Weapon for Sword {
         DamageArea {
             area: new_area,
             damage_amount: (self.get_damage() as f64 * wielder.strength).ceil() as i32,
-            entity: EntityCharacters::AttackBlackout,
+            entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
             duration: Duration::from_secs_f32(0.01),
             blink: false,
             weapon_stats: Some(self.stats.clone()),

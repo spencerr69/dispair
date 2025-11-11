@@ -70,6 +70,15 @@ impl From<Layer> for Area {
     }
 }
 
+impl From<Position> for Area {
+    fn from(value: Position) -> Self {
+        Self {
+            corner1: value.clone(),
+            corner2: value,
+        }
+    }
+}
+
 impl Area {
     pub fn new(corner1: Position, corner2: Position) -> Self {
         Area { corner1, corner2 }

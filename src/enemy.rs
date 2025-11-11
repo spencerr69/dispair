@@ -8,6 +8,7 @@ use crate::character::*;
 use crate::coords::Area;
 use crate::coords::Direction;
 use crate::coords::Position;
+use crate::effects::DamageEffect;
 use crate::roguegame::*;
 use crate::weapon::DamageArea;
 
@@ -40,7 +41,7 @@ impl OnDeathEffect for Debuff {
                 Some(DamageArea {
                     damage_amount: *explosion_damage,
                     area,
-                    entity: EntityCharacters::AttackBlackout,
+                    entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
                     duration: Duration::from_secs_f64(0.1),
                     blink: true,
                     weapon_stats: None,
@@ -55,7 +56,12 @@ pub trait EnemyBehaviour {
 
     fn get_worth(&self) -> u32;
 
-    fn update(&mut self, character: &mut Character, layer: &Layer);
+    fn update(
+        &mut self,
+        character: &mut Character,
+        layer: &Layer,
+        damage_effects: &mut Vec<DamageEffect>,
+    );
 }
 
 #[derive(Clone)]
@@ -143,13 +149,24 @@ impl EnemyBehaviour for Enemy {
         self.worth.clone()
     }
 
-    fn update(&mut self, character: &mut Character, layer: &Layer) {
+    fn update(
+        &mut self,
+        character: &mut Character,
+        layer: &Layer,
+        damage_effects: &mut Vec<DamageEffect>,
+    ) {
         self.prev_position = self.position.clone();
 
         self.change_style_with_debuff();
 
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);
+            damage_effects.push(DamageEffect::new(
+                Area::from(character.get_pos().clone()),
+                EntityCharacters::AttackBlackout(Style::new().bold().dark_gray()),
+                Duration::from_secs_f64(0.2),
+                true,
+            ));
         }
 
         let (dist_x, dist_y) = self.position.get_distance(character.get_pos());

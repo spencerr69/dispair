@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::{
     coords::Area,
@@ -14,8 +14,27 @@ pub struct DamageEffect {
     pub complete: bool,
 }
 
+impl From<DamageArea> for DamageEffect {
+    fn from(damage_area: DamageArea) -> Self {
+        Self {
+            damage_area,
+            complete: false,
+            start_time: Instant::now(),
+        }
+    }
+}
+
 impl DamageEffect {
-    pub fn new(damage_area: DamageArea) -> Self {
+    pub fn new(area: Area, entity: EntityCharacters, duration: Duration, blink: bool) -> Self {
+        let damage_area = DamageArea {
+            damage_amount: 0,
+            area,
+            entity,
+            duration,
+            blink,
+            weapon_stats: None,
+        };
+
         Self {
             damage_area,
             complete: false,

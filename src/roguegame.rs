@@ -191,7 +191,7 @@ impl RogueGame {
                         damage_area.area.constrain(&self.layer_entities.clone());
                         damage_area.deal_damage(&mut self.enemies);
 
-                        let damage_effect = DamageEffect::new(damage_area);
+                        let damage_effect = DamageEffect::from(damage_area);
 
                         self.active_damage_effects.push(damage_effect);
                     }
@@ -204,7 +204,11 @@ impl RogueGame {
 
         if self.tickcount % self.enemy_move_ticks == 0 {
             self.enemies.iter_mut().for_each(|enemy| {
-                enemy.update(&mut self.character, &self.layer_entities);
+                enemy.update(
+                    &mut self.character,
+                    &self.layer_entities,
+                    &mut self.active_damage_effects,
+                );
                 // update_entity_positions(&mut self.layer_entities, enemy);
 
                 if self.player_state.stats.shove_amount > 0
@@ -614,7 +618,7 @@ pub enum EntityCharacters {
     Character(Style),
     Enemy(Style),
     Empty,
-    AttackBlackout,
+    AttackBlackout(Style),
 }
 
 impl EntityCharacters {
@@ -627,8 +631,8 @@ impl EntityCharacters {
             }
             EntityCharacters::Enemy(style) => Span::from("x").white().style(style.clone()),
             EntityCharacters::Empty => Span::from(" "),
-            EntityCharacters::AttackBlackout => {
-                Span::from(ratatui::symbols::block::FULL).bold().white()
+            EntityCharacters::AttackBlackout(style) => {
+                Span::from(ratatui::symbols::block::FULL).style(style.clone())
             }
         }
     }
