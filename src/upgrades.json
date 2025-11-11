@@ -241,5 +241,37 @@
                 "costscale_override": 2.5
             }
         ]
+    },
+    {
+        "title": "SIGHT",
+        "description": "\\---/",
+        "id": "5",
+        "cost": null,
+        "limit": 0,
+        "requires": [
+            "42"
+        ],
+        "children": [
+            {
+                "title": "SIGHT::\\hypervision_H",
+                "description": "increase map width by +50. (((and enemy speed up and gold up)))",
+                "id": "51",
+                "cost": 1000,
+                "limit": 3,
+                "requires": [],
+                "children": null,
+                "costscale_override": 2.5
+            },
+            {
+                "title": "SIGHT::\\hypervision_V",
+                "description": "increase map height by +50. (((and enemy speed up and gold up)))",
+                "id": "52",
+                "cost": 1000,
+                "limit": 3,
+                "requires": [],
+                "children": null,
+                "costscale_override": 2.5
+            }
+        ]
     }
 ]

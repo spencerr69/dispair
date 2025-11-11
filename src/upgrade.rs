@@ -126,6 +126,27 @@ impl PlayerState {
             self.stats.enemy_spawn_mult += 0.5 * amount_owned as f64
         }
 
+        if self.upgrade_owned("51") {
+            let amount_owned = self.amount_owned("51");
+            let growth_amount = 50 * amount_owned;
+
+            self.stats.width += growth_amount as usize;
+            self.stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
+
+            self.stats.gold_mult += 0.3 * amount_owned as f64;
+            self.stats.enemy_move_mult += 0.05 * amount_owned as f64;
+        }
+
+        if self.upgrade_owned("52") {
+            let amount_owned = self.amount_owned("52");
+            let growth_amount = 50 * amount_owned;
+
+            self.stats.height += growth_amount as usize;
+            self.stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
+            self.stats.gold_mult += 0.3 * amount_owned as f64;
+            self.stats.enemy_move_mult += 0.05 * amount_owned as f64;
+        }
+
         //debug
         // if self.upgrade_owned("9999") {
         //     self.stats.width = 200;
@@ -242,6 +263,8 @@ pub struct Stats {
     pub enemy_spawn_mult: f64,
     pub enemy_move_mult: f64,
 
+    pub gold_mult: f64,
+
     pub size: i32,
 
     pub width: usize,
@@ -274,6 +297,8 @@ impl Default for Stats {
 
             enemy_spawn_mult: 1.,
             enemy_move_mult: 1.,
+
+            gold_mult: 1.,
 
             width: 20,
             height: 6,
