@@ -11,7 +11,7 @@ use crate::common::{
     timescaler::TimeScaler,
     upgrade::PlayerState,
 };
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::{KeyCode, KeyEvent};
 use rand::Rng;
 use ratatui::{
     Frame,

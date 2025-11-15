@@ -1,8 +1,25 @@
 use std::error::Error;
+use std::io;
 
 pub mod common;
+
+#[cfg(not(target_family = "wasm"))]
 pub mod terminal;
+
+#[cfg(target_family = "wasm")]
 pub mod wasm;
+
+#[cfg(target_family = "wasm")]
+pub type KeyCode = ratzilla::event::KeyCode;
+
+#[cfg(not(target_family = "wasm"))]
+pub type KeyCode = crossterm::event::KeyCode;
+
+#[cfg(target_family = "wasm")]
+pub type KeyEvent = ratzilla::event::KeyEvent;
+
+#[cfg(not(target_family = "wasm"))]
+pub type KeyEvent = crossterm::event::KeyEvent;
 
 #[cfg(not(target_family = "wasm"))]
 #[tokio::main]
@@ -20,4 +37,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         );
     }
     Ok(result)
+}
+
+#[cfg(target_family = "wasm")]
+fn main() -> io::Result<()> {
+    use std::{cell::RefCell, rc::Rc};
+
+    use crate::wasm::app::App;
+
+    let app = App::new();
+
+    let _result = App::run(Rc::new(RefCell::new(app)));
+
+    Ok(())
 }

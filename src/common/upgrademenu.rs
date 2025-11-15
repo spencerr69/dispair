@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},

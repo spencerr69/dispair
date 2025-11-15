@@ -1,18 +1,20 @@
-use crate::common::{FRAME_RATE, TICK_RATE, center_horizontal, center_vertical};
-use std::fs::{File, OpenOptions};
+use std::{cell::RefCell, io, rc::Rc, time::Instant};
 
-use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{
-    Frame,
+use ratzilla::{
+    WebGl2Backend, WebRenderer,
+    event::{KeyCode, KeyEvent},
+};
+
+use crate::common::{TICK_RATE, center_horizontal, center_vertical};
+
+use ratzilla::ratatui::{
+    Frame, Terminal,
     layout::{Constraint, Layout},
     style::{Style, Stylize},
     symbols::border,
     text::Text,
     widgets::{Block, List, ListItem, ListState},
 };
-use serde::de::Error as serdeError;
-
-use super::tui::{Event, Tui};
 
 use crate::common::{
     carnagereport::CarnageReport,
@@ -55,15 +57,20 @@ use crate::common::{
 
 //     Ok(i)
 // }
+pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
+    let i: PlayerState = PlayerState::default();
+
+    Ok(i)
+}
 
 pub struct App {
     game_view: Option<RogueGame>,
     upgrades_view: Option<UpgradesMenu>,
     exit: bool,
     player_state: Option<PlayerState>,
-    pub frame_rate: f64,
-    pub tick_rate: f64,
     current_selection: ListState,
+    last_frame: Instant,
+    pub tick_rate: f64,
 }
 
 impl App {
@@ -73,9 +80,9 @@ impl App {
             upgrades_view: None,
             exit: false,
             player_state: None,
-            frame_rate: FRAME_RATE,
-            tick_rate: TICK_RATE,
             current_selection: ListState::default(),
+            last_frame: Instant::now(),
+            tick_rate: TICK_RATE,
         };
 
         out.current_selection.select_first();
@@ -83,45 +90,44 @@ impl App {
         out
     }
 
-    pub async fn run(&mut self) -> color_eyre::Result<()> {
-        let mut tui = Tui::new()?
-            .frame_rate(self.frame_rate)
-            .tick_rate(self.tick_rate);
+    pub fn run(this: Rc<RefCell<Self>>) -> io::Result<()> {
+        let backend = WebGl2Backend::new()?;
+        let terminal = Terminal::new(backend)?;
 
-        tui.enter()?;
+        let tick_delay = std::time::Duration::from_secs_f64(1.0 / this.borrow().tick_rate);
 
-        loop {
-            tui.draw(|f| self.ui(f))?;
+        let self_ref_key = this.clone();
+        let self_ref_draw = self_ref_key.clone();
 
-            if let Some(event) = tui.next().await {
-                self.handle_event(event);
+        terminal.on_key_event({
+            move |key_event| {
+                let maybe_reference = self_ref_key.try_borrow_mut();
+
+                if let Ok(mut reference) = maybe_reference {
+                    reference.handle_key_event(key_event);
+                }
             }
+        });
 
-            if self.exit {
-                break;
+        terminal.draw_web(move |f| {
+            let maybe_reference = self_ref_draw.try_borrow_mut();
+
+            if let Ok(mut reference) = maybe_reference {
+                let last_frame = reference.last_frame.clone();
+
+                if Instant::now().duration_since(last_frame) < tick_delay {
+                    reference.on_tick();
+                }
+
+                reference.on_frame();
+                reference.ui(f);
             }
-        }
+        });
 
         Ok(())
     }
 
-    pub fn handle_event(&mut self, event: Event) {
-        match event {
-            Event::Tick => {
-                self.on_tick();
-            }
-            Event::Render => {
-                self.on_frame();
-            }
-            Event::Key(key_event) => self.handle_key_event(key_event),
-            _ => {}
-        }
-    }
-
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
-        if !key_event.is_press() {
-            return;
-        }
         if let Some(game) = &mut self.game_view {
             game.handle_key_event(key_event);
         } else if let Some(upgrades_menu) = &mut self.upgrades_view {
@@ -194,7 +200,7 @@ impl App {
                 self.upgrades_view = None;
                 match close {
                     Goto::Game => self.start_game(),
-                    Goto::Menu => save_progress(&self.player_state.clone().unwrap()).unwrap_or(()),
+                    Goto::Menu => {} // Goto::Menu => save_progress(&self.player_state.clone().unwrap()).unwrap_or(()),
                 }
             }
         }
@@ -241,6 +247,6 @@ impl App {
         frame.render_widget(block, frame.area());
 
         frame.render_widget(title, title_area);
-        frame.render_stateful_widget(options, options_area, &mut self.current_selection);
+        frame.render_stateful_widget(options, options_area, &mut self.current_selection)
     }
 }
