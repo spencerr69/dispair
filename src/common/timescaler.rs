@@ -32,7 +32,7 @@ impl TimeScaler {
 mod tests {
     use std::time::{Duration, Instant};
 
-    use crate::timescaler::TimeScaler;
+    use crate::common::timescaler::TimeScaler;
 
     #[test]
     fn scale_at_0s() {

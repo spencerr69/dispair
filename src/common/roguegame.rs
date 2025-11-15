@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::{
+use crate::common::{
     TICK_RATE,
     carnagereport::CarnageReport,
     center,

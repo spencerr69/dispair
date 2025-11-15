@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
 
-use crate::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
+use crate::common::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
 
 #[derive(Clone)]
 pub enum Goto {

@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, Clear},
 };
 
-use crate::{
+use crate::common::{
     center_horizontal, center_vertical,
     upgrade::{PlayerState, PlayerStateDiff},
 };

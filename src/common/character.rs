@@ -1,6 +1,6 @@
 use ratatui::style::{Style, Stylize};
 
-use crate::{
+use crate::common::{
     coords::{Direction, Position},
     effects::DamageEffect,
     roguegame::Layer,
@@ -9,7 +9,7 @@ use crate::{
 };
 use std::time::SystemTime;
 
-use crate::roguegame::EntityCharacters;
+use crate::common::roguegame::EntityCharacters;
 
 pub struct Character {
     position: Position,

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use ratatui::style::{Style, Stylize};
 
-use crate::{
+use crate::common::{
     character::{Character, Damageable, Movable},
     coords::{Area, Direction, Position},
     enemy::{Debuff, Debuffable, Enemy},

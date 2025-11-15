@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use crate::{
+use crate::common::{
     coords::Area,
     roguegame::{EntityCharacters, Layer, get_pos, set_entity},
     weapon::DamageArea,
