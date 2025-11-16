@@ -167,9 +167,9 @@ impl Movable for Character {
         self.facing = facing;
 
         let attempt_time = Instant::now();
-        let difference = attempt_time.duration_since(self.last_moved).as_millis();
+        let difference = attempt_time.duration_since(self.last_moved).as_millis() as u64;
         // this is what movement speed controls vv
-        let timeout = 100 / self.movement_speed as u128;
+        let timeout = 100 / self.movement_speed as u64;
 
         if difference > timeout {
             self.set_pos(new_pos);

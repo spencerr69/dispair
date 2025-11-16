@@ -9,6 +9,7 @@ pub mod character;
 pub mod coords;
 pub mod effects;
 pub mod enemy;
+pub mod pickups;
 pub mod roguegame;
 pub mod timescaler;
 pub mod upgrade;

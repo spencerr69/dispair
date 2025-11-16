@@ -281,6 +281,17 @@
                 "requires": [],
                 "children": null,
                 "costscale_override": 2
+            },
+            {
+                "title": "SIGHT::\\look_deeper",
+                "description": "look below.",
+                "id": "53",
+                "cost": 2000,
+                "limit": 1,
+                "requires": [
+                    "52",
+                    "51"
+                ]
             }
         ]
     }

@@ -33,26 +33,46 @@ use crate::common::{
 
 /// Saves the player's progress to local storage.
 pub fn save_progress(player_state: &PlayerState) -> Result<(), JsValue> {
-    web_sys::window()
-        .expect("Failed to get window")
-        .local_storage()?
-        .expect("local storage doesn't exist")
-        .set_item(
-            "player_state",
-            &serde_json::to_string(player_state).unwrap(),
-        )
+    let window = web_sys::window();
+
+    let mut out = Ok(());
+
+    let value: String = serde_json::to_string(player_state)
+        .map_err(|_| JsValue::from_str("Failed to serialize player state"))?;
+
+    if let Some(window) = window {
+        let local_storage = window
+            .local_storage()
+            .map_err(|_| JsValue::from_str("Failed to access local storage"))?;
+
+        if let Some(storage) = local_storage {
+            out = storage
+                .set_item("player_state", &value)
+                .map_err(|_| JsValue::from_str("Failed to save player state"));
+        }
+    }
+
+    out
 }
 
 /// Loads the player's progress from local storage.
 pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
-    let value = web_sys::window()
-        .expect("no global `window` exists")
-        .local_storage()
-        .map_err(|_| serde_json::Error::custom("oops!"))?
-        .expect("local storage no exist")
-        .get_item("player_state")
-        .map_err(|_| serde_json::Error::custom("help"))?
-        .unwrap_or("".into());
+    let window = web_sys::window();
+
+    let mut value = "".to_string();
+
+    if let Some(window) = window {
+        let local_storage = window
+            .local_storage()
+            .map_err(|_| serde_json::Error::custom("oops!"))?;
+
+        if let Some(storage) = local_storage {
+            let out = storage
+                .get_item("player_state")
+                .map_err(|_| serde_json::Error::custom("local storage no exist"))?;
+            value = out.unwrap_or("".into());
+        }
+    }
 
     let i: PlayerState = serde_json::from_str(&value)?;
 
@@ -207,7 +227,12 @@ impl App {
                 match close {
                     Goto::Game => self.start_game(),
                     Goto::Menu => {
-                        save_progress(&self.player_state.clone().unwrap()).expect("couldn't save")
+                        save_progress(&self.player_state.clone().unwrap())
+                            .map_err(|_| {
+                                web_sys::console::log_1(&JsValue::from_str("couldn't save"));
+                                JsValue::from_str("couldn't save")
+                            })
+                            .unwrap_or(());
                     }
                 }
             }

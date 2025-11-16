@@ -15,6 +15,7 @@ use crate::common::{
     coords::{Area, Direction, Position},
     effects::DamageEffect,
     enemy::*,
+    pickups::{Pickupable, PowerupOrb},
     timescaler::TimeScaler,
     upgrade::PlayerState,
 };
@@ -44,24 +45,25 @@ pub struct RogueGame {
 
     character: Character,
     layer_base: Layer,
+    layer_pickups: Layer,
     layer_entities: Layer,
     layer_effects: Layer,
 
-    tickcount: u128,
+    tickcount: u64,
 
     height: usize,
     width: usize,
 
     enemies: Vec<Enemy>,
 
-    enemy_spawn_ticks: u128,
-    enemy_move_ticks: u128,
+    enemy_spawn_ticks: u64,
+    enemy_move_ticks: u64,
 
     enemy_health: i32,
     enemy_damage: i32,
     enemy_worth: u32,
 
-    attack_ticks: u128,
+    attack_ticks: u64,
 
     /// A flag indicating whether the game is over.
     pub game_over: bool,
@@ -69,6 +71,8 @@ pub struct RogueGame {
     pub exit: bool,
 
     active_damage_effects: Vec<DamageEffect>,
+
+    pickups: Vec<Box<dyn Pickupable>>,
 
     timer: Duration,
     start_time: Instant,
@@ -87,6 +91,7 @@ impl RogueGame {
         let mut base: Layer = Vec::from(Vec::new());
         let mut entities: Layer = Vec::from(Vec::new());
         let mut effects: Layer = Vec::from(Vec::new());
+        let mut pickups: Layer = Vec::from(Vec::new());
 
         let mut rng = rand::rng();
 
@@ -94,6 +99,7 @@ impl RogueGame {
             let mut baseline = Vec::new();
             let mut entityline = Vec::new();
             let mut effectsline = Vec::new();
+            let mut pickupsline = Vec::new();
             for _ in 0..width {
                 let choice = rng.random_range(0..=1);
                 match choice {
@@ -102,10 +108,12 @@ impl RogueGame {
                 }
                 entityline.push(EntityCharacters::Empty);
                 effectsline.push(EntityCharacters::Empty);
+                pickupsline.push(EntityCharacters::Empty);
             }
             base.push(baseline);
             entities.push(entityline);
             effects.push(effectsline);
+            pickups.push(pickupsline);
         }
 
         let attack_ticks = Self::per_sec_to_tick_count(1.5);
@@ -122,6 +130,7 @@ impl RogueGame {
             layer_base: base,
             layer_entities: entities,
             layer_effects: effects,
+            layer_pickups: pickups,
             height,
             width,
             attack_ticks,
@@ -139,6 +148,7 @@ impl RogueGame {
 
             tickcount: 0,
             enemies: vec![],
+            pickups: vec![],
             game_over: false,
             active_damage_effects: vec![],
             start_time,
@@ -152,12 +162,22 @@ impl RogueGame {
         game.init_character();
         game.update_stats();
 
+        if game.player_state.upgrade_owned("53") {
+            game.spawn_orb();
+        }
+
         game
     }
 
-    pub fn per_sec_to_tick_count(per_sec: f64) -> u128 {
+    pub fn per_sec_to_tick_count(per_sec: f64) -> u64 {
         let per_tick = TICK_RATE / per_sec;
-        per_tick.ceil() as u128
+        per_tick.ceil() as u64
+    }
+
+    pub fn spawn_orb(&mut self) {
+        let position = get_rand_position_on_layer(&self.layer_base);
+
+        self.pickups.push(Box::new(PowerupOrb::new(position)));
     }
 
     pub fn on_tick(&mut self) {
@@ -244,7 +264,7 @@ impl RogueGame {
             // self.change_low_health_enemies_questionable();
         }
 
-        if self.tickcount % TICK_RATE.floor() as u128 == 0 {
+        if self.tickcount % TICK_RATE.floor() as u64 == 0 {
             self.scale();
             self.scale_enemies();
         }
@@ -257,7 +277,13 @@ impl RogueGame {
             self.active_damage_effects.append(&mut damage_effects)
         }
 
-        update_layer(&mut self.layer_entities, &self.enemies, &self.character);
+        update_layer_entities(&mut self.layer_entities, &self.enemies, &self.character);
+
+        self.pickups
+            .iter_mut()
+            .for_each(|pickup| pickup.animate(self.tickcount % 1000));
+        update_layer_pickups(&mut self.layer_pickups, &self.pickups);
+
         self.camera_area =
             get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
 
@@ -282,7 +308,7 @@ impl RogueGame {
     }
 
     pub fn update_stats(&mut self) {
-        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u128;
+        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u64;
     }
 
     fn scale_enemies(&mut self) {
@@ -406,6 +432,8 @@ impl RogueGame {
                             pos.clone_from(&self.layer_effects[y][x].to_styled());
                         } else if self.layer_entities[y][x] != EntityCharacters::Empty {
                             pos.clone_from(&self.layer_entities[y][x].to_styled());
+                        } else if self.layer_pickups[y][x] != EntityCharacters::Empty {
+                            pos.clone_from(&self.layer_pickups[y][x].to_styled());
                         }
                         pos
                     })
@@ -538,7 +566,11 @@ pub fn clear_layer(layer: &mut Layer) {
     });
 }
 
-pub fn update_layer(layer_entities: &mut Layer, enemies: &Vec<Enemy>, character: &Character) {
+pub fn update_layer_entities(
+    layer_entities: &mut Layer,
+    enemies: &Vec<Enemy>,
+    character: &Character,
+) {
     clear_layer(layer_entities);
 
     enemies.iter().for_each(|enemy| {
@@ -549,6 +581,16 @@ pub fn update_layer(layer_entities: &mut Layer, enemies: &Vec<Enemy>, character:
 
     let (char_x, char_y) = character.get_pos().get_as_usize();
     layer_entities[char_y][char_x] = character.get_entity_char();
+}
+
+pub fn update_layer_pickups(layer_pickups: &mut Layer, pickups: &Vec<Box<dyn Pickupable>>) {
+    clear_layer(layer_pickups);
+
+    pickups.iter().for_each(|pickup| {
+        let (x, y) = pickup.get_pos().get_as_usize();
+
+        layer_pickups[y][x] = pickup.get_entity_char().clone();
+    });
 }
 
 pub fn set_entity(
@@ -610,6 +652,14 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     position
 }
 
+pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
+    let mut rng = rand::rng();
+
+    let x = rng.random_range(0..layer[0].len() as i32);
+    let y = rng.random_range(0..layer.len() as i32);
+    Position::new(x, y)
+}
+
 pub fn is_next_to_character(char_position: &Position, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
     let (char_x, char_y) = char_position.get_as_usize();
@@ -633,6 +683,7 @@ pub enum EntityCharacters {
     Enemy(Style),
     Empty,
     AttackBlackout(Style),
+    Orb(Style),
 }
 
 impl EntityCharacters {
@@ -648,6 +699,7 @@ impl EntityCharacters {
             EntityCharacters::AttackBlackout(style) => {
                 Span::from(ratatui::symbols::block::FULL).style(style.clone())
             }
+            EntityCharacters::Orb(style) => Span::from("o").style(style.clone()),
         }
     }
 
