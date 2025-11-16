@@ -315,7 +315,6 @@ impl Default for Stats {
 
             mark_chance: 0,
             mark_explosion_size: 1,
-
             shove_amount: 0,
             shove_damage: 0,
 
@@ -328,6 +327,13 @@ pub type UpgradeTree = Vec<UpgradeNode>;
 
 pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
     let upgrade_tree: UpgradeTree = serde_json::from_str(include_str!("upgrades.json"))?;
+
+    #[cfg(not(debug_assertions))]
+    let upgrade_tree = upgrade_tree
+        .into_iter()
+        .filter(|node| node.id != "9999")
+        .collect();
+
     Ok(upgrade_tree)
 }
 
