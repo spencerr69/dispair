@@ -238,10 +238,12 @@ impl Tui {
     }
 }
 
-/// Restores the terminal to its original state.
+/// Restores the terminal to its original state without requiring self.
 pub fn restore() -> io::Result<()> {
     crossterm::execute!(std::io::stderr(), LeaveAlternateScreen, cursor::Show)?;
     crossterm::terminal::disable_raw_mode()?;
+    crossterm::execute!(std::io::stderr(), DisableBracketedPaste)?;
+    crossterm::execute!(std::io::stderr(), DisableMouseCapture)?;
     Ok(())
 }
 
@@ -261,6 +263,6 @@ impl DerefMut for Tui {
 
 impl Drop for Tui {
     fn drop(&mut self) {
-        self.exit().unwrap();
+        let _ = self.exit();
     }
 }

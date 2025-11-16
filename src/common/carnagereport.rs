@@ -33,7 +33,7 @@ impl CarnageReport {
     }
 
     /// Renders the carnage report to the screen.
-    pub fn render(&mut self, frame: &mut Frame) {
+    pub fn render(&self, frame: &mut Frame) {
         let area = popup_area(frame.area(), 50, 30);
 
         let popup = Block::bordered()
