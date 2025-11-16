@@ -153,6 +153,7 @@ impl PlayerState {
         }
 
         //debug
+        #[cfg(debug_assertions)]
         if self.upgrade_owned("9999") {
             self.stats.width = 200;
             self.stats.height = 100;
