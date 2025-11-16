@@ -1,3 +1,7 @@
+//! This module defines weapons, damage areas, and their interactions in the game.
+//! It includes a `Weapon` trait, a `Sword` implementation, and a `DamageArea` struct
+//! for handling attacks and their effects on enemies.
+
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
 
@@ -14,6 +18,7 @@ use crate::common::{
     upgrade::Stats,
 };
 
+/// Represents an area where damage is applied, created by a weapon attack.
 #[derive(Clone)]
 pub struct DamageArea {
     pub damage_amount: i32,
@@ -25,6 +30,7 @@ pub struct DamageArea {
 }
 
 impl DamageArea {
+    /// Deals damage to any enemies within the `DamageArea`.
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
             if enemy.get_pos().is_in_area(&self.area) {
@@ -47,13 +53,17 @@ impl DamageArea {
     }
 }
 
+/// A trait for any weapon that can be used to attack.
 pub trait Weapon {
+    /// Creates a `DamageArea` representing the attack.
     fn attack(&self, wielder: &Character) -> DamageArea;
 
+    /// Calculates and returns the base damage of the weapon.
     ///Damage should be rounded up to nearest int.
     fn get_damage(&self) -> i32;
 }
 
+/// A struct representing a sword weapon.
 pub struct Sword {
     base_damage: i32,
     damage_scalar: f32,
@@ -62,6 +72,7 @@ pub struct Sword {
 }
 
 impl Sword {
+    /// Creates a new `Sword` with stats based on the player's current `Stats`.
     pub fn new(player_stats: Stats) -> Self {
         let size_base = 1;
         let base_damage = 2;
@@ -76,6 +87,7 @@ impl Sword {
 }
 
 impl Weapon for Sword {
+    /// Performs an attack with the sword, creating a `DamageArea` in front of the wielder.
     fn attack(&self, wielder: &Character) -> DamageArea {
         let (x, y) = wielder.get_pos().clone().get();
         let direction = wielder.facing.clone();
@@ -109,6 +121,7 @@ impl Weapon for Sword {
         }
     }
 
+    /// Returns the damage of the sword, calculated from its base damage and scalar.
     fn get_damage(&self) -> i32 {
         return (self.base_damage as f32 * self.damage_scalar).ceil() as i32;
     }

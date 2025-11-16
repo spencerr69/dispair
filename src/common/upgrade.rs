@@ -1,3 +1,6 @@
+//! This module defines the data structures for player state, upgrades, and stats.
+//! It includes logic for applying upgrades and calculating player stats.
+
 use std::{collections::HashMap, ops::Sub};
 
 #[cfg(not(target_family = "wasm"))]
@@ -9,6 +12,7 @@ use derive_more::Sub;
 
 use serde::{Deserialize, Serialize};
 
+/// Represents the complete state of the player, including upgrades, inventory, and stats.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlayerState {
     pub upgrades: CurrentUpgrades,
@@ -16,8 +20,11 @@ pub struct PlayerState {
     pub stats: Stats,
 }
 
+/// Represents the difference between two `PlayerState` instances.
 pub struct PlayerStateDiff {
+    /// The difference in the player's inventory.
     pub inventory: Inventory,
+    /// The difference in the player's stats.
     pub stats: Stats,
 }
 
@@ -33,6 +40,7 @@ impl Sub for PlayerState {
 }
 
 impl PlayerState {
+    /// Refreshes the player's stats based on their current upgrades.
     pub fn refresh(&mut self) {
         self.stats = Stats::default();
 
@@ -166,10 +174,12 @@ impl PlayerState {
         self.stats.health = (self.stats.base_health as f64 * self.stats.health_mult).ceil() as i32;
     }
 
+    /// Returns the number of times an upgrade has been purchased.
     pub fn amount_owned(&self, id: &str) -> u32 {
         self.upgrades.get(id).unwrap_or(&0).clone()
     }
 
+    /// Checks if the player owns at least one of a specific upgrade.
     pub fn upgrade_owned(&self, id: &str) -> bool {
         self.upgrades.get(id).unwrap_or(&0).clone() > 0
     }
@@ -191,8 +201,10 @@ impl Default for PlayerState {
     }
 }
 
+/// A type alias for a map of upgrade IDs to the number of times they have been purchased.
 pub type CurrentUpgrades = HashMap<String, u32>;
 
+/// Represents a single node in the upgrade tree.
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
 pub struct UpgradeNode {
     pub title: String,
@@ -206,10 +218,12 @@ pub struct UpgradeNode {
 }
 
 impl UpgradeNode {
+    /// Checks if the upgrade node has any children.
     pub fn has_children(&self) -> bool {
         self.children.is_some() && self.children.clone().unwrap().len() > 0
     }
 
+    /// Returns the display title for the upgrade.
     pub fn get_display_title(&self) -> String {
         if self.children.is_some() {
             " > ".to_string() + self.title.as_str()
@@ -218,6 +232,7 @@ impl UpgradeNode {
         }
     }
 
+    /// Calculates the cost of the next purchase of this upgrade.
     pub fn next_cost(&self, amount_owned: u32) -> u32 {
         let mut costscale = 1.2;
         if let Some(over_ride) = self.costscale_override {
@@ -232,8 +247,10 @@ impl UpgradeNode {
     }
 }
 
+/// Represents the player's inventory.
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Inventory {
+    /// The amount of gold the player has.
     pub gold: u32,
 }
 
@@ -248,11 +265,13 @@ impl Sub for Inventory {
 }
 
 impl Inventory {
+    /// Adds a specified amount of gold to the player's inventory.
     pub fn add_gold(&mut self, amount: u32) {
         self.gold = self.gold.saturating_add(amount);
     }
 }
 
+/// Represents the player's stats.
 #[derive(Serialize, Deserialize, Debug, Clone, Sub)]
 pub struct Stats {
     pub base_health: i32,
@@ -323,8 +342,10 @@ impl Default for Stats {
     }
 }
 
+/// A type alias for a vector of `UpgradeNode`s, representing the entire upgrade tree.
 pub type UpgradeTree = Vec<UpgradeNode>;
 
+/// Loads the upgrade tree from the `upgrades.json` file.
 pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
     let upgrade_tree: UpgradeTree = serde_json::from_str(include_str!("upgrades.json"))?;
 
@@ -337,6 +358,7 @@ pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
     Ok(upgrade_tree)
 }
 
+/// Recursively traverses the upgrade tree and creates a map of all possible upgrades, initialized to 0.
 pub fn get_current_upgrades(
     upgrade_tree: UpgradeTree,
     mut acc: CurrentUpgrades,

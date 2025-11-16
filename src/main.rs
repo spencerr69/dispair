@@ -1,3 +1,6 @@
+//! The main entry point for the application, responsible for initializing and running
+//! the appropriate version (terminal or WASM) of the game.
+
 pub mod common;
 
 #[cfg(not(target_family = "wasm"))]
@@ -18,6 +21,7 @@ pub type KeyEvent = ratzilla::event::KeyEvent;
 #[cfg(not(target_family = "wasm"))]
 pub type KeyEvent = crossterm::event::KeyEvent;
 
+/// The main entry point for the terminal application.
 #[cfg(not(target_family = "wasm"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -36,6 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(result)
 }
 
+/// The main entry point for the WASM application.
 #[cfg(target_family = "wasm")]
 fn main() -> std::io::Result<()> {
     use std::{cell::RefCell, rc::Rc};

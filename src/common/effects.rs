@@ -1,3 +1,6 @@
+//! This module handles visual and gameplay effects, such as damage indicators.
+//! It defines the `DamageEffect` struct, which represents a temporary effect in a given area.
+
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
 
@@ -10,6 +13,7 @@ use crate::common::{
     weapon::DamageArea,
 };
 
+/// Represents a visual effect that occurs over a specified area for a certain duration.
 #[derive(Clone)]
 pub struct DamageEffect {
     damage_area: DamageArea,
@@ -19,6 +23,7 @@ pub struct DamageEffect {
 }
 
 impl From<DamageArea> for DamageEffect {
+    /// Creates a `DamageEffect` from a `DamageArea`.
     fn from(damage_area: DamageArea) -> Self {
         Self {
             damage_area,
@@ -29,6 +34,7 @@ impl From<DamageArea> for DamageEffect {
 }
 
 impl DamageEffect {
+    /// Creates a new `DamageEffect` with the specified parameters.
     pub fn new(area: Area, entity: EntityCharacters, duration: Duration, blink: bool) -> Self {
         let damage_area = DamageArea {
             damage_amount: 0,
@@ -46,11 +52,13 @@ impl DamageEffect {
         }
     }
 
+    /// Applies the effect to the specified layer.
     pub fn take_effect(&self, layer: &mut Layer) {
         let area = &self.damage_area.area;
         change_area(layer, area.clone(), &self.damage_area.entity);
     }
 
+    /// Updates the effect's state, handling its duration and visual representation.
     pub fn update(&mut self, layer: &mut Layer) {
         change_area(
             layer,
@@ -76,6 +84,7 @@ impl DamageEffect {
     }
 }
 
+/// Changes the entity character within a specified area of a layer.
 pub fn change_area(layer: &mut Layer, area: Area, entity: &EntityCharacters) {
     area.clone().into_iter().for_each(|mut position| {
         position.constrain(layer);

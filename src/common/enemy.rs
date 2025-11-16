@@ -1,3 +1,5 @@
+//! This module defines the `Enemy` struct and its related traits and behaviors.
+//! It includes logic for enemy movement, health, attacks, and debuffs.
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
 
@@ -13,6 +15,7 @@ use crate::common::{
     roguegame::*, weapon::DamageArea,
 };
 
+/// Represents debuffs that can be applied to enemies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Debuff {
     MarkedForExplosion(u32, i32),
@@ -20,7 +23,9 @@ pub enum Debuff {
 
 impl Debuff {}
 
+/// A trait for effects that trigger when an enemy dies.
 pub trait OnDeathEffect {
+    /// Called when an enemy dies, potentially creating a `DamageArea`.
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
 }
 
@@ -52,11 +57,15 @@ impl OnDeathEffect for Debuff {
     }
 }
 
+/// A trait defining the behavior of an enemy.
 pub trait EnemyBehaviour {
+    /// Creates a new enemy with the given properties.
     fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self;
 
+    /// Gets the amount of gold the enemy is worth.
     fn get_worth(&self) -> u32;
 
+    /// Updates the enemy's state, including movement and attacks.
     fn update(
         &mut self,
         character: &mut Character,
@@ -65,6 +74,7 @@ pub trait EnemyBehaviour {
     );
 }
 
+/// Represents an enemy in the game.
 #[derive(Clone)]
 pub struct Enemy {
     position: Position,
@@ -85,8 +95,11 @@ pub struct Enemy {
     pub debuffs: Vec<Debuff>,
 }
 
+/// A trait for entities that can have debuffs applied to them.
 pub trait Debuffable {
+    /// Attempts to apply a debuff with a certain chance of success.
     fn try_proc(&mut self, debuff: Debuff, chance_to_proc: u32);
+    /// Counts the number of a specific debuff on the entity.
     fn count_debuff(&self, debuff: Debuff) -> u32;
 }
 
@@ -113,6 +126,7 @@ impl Debuffable for Enemy {
 }
 
 impl Enemy {
+    /// Changes the enemy's style based on its active debuffs.
     fn change_style_with_debuff(&mut self) {
         let style = self.entitychar.style_mut();
 

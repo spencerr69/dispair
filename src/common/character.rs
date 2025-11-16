@@ -1,3 +1,5 @@
+//! This module defines the `Character` struct and related traits for movable and damageable entities.
+//! It handles character movement, health, attacks, and other core gameplay mechanics.
 use ratatui::style::{Style, Stylize};
 
 use crate::common::{
@@ -16,6 +18,7 @@ use web_time::Instant;
 
 use crate::common::roguegame::EntityCharacters;
 
+/// Represents the player character in the game.
 pub struct Character {
     position: Position,
     prev_position: Position,
@@ -36,11 +39,15 @@ pub struct Character {
     entitychar: EntityCharacters,
 }
 
-///Trait for an entity which can move
+/// A trait for entities that can move within the game world.
 pub trait Movable {
+    /// Sets the new position of the entity.
     fn set_pos(&mut self, new_pos: Position);
+    /// Gets the current position of the entity.
     fn get_pos(&self) -> &Position;
+    /// Moves the entity to a new position with a specified facing direction.
     fn move_to(&mut self, new_pos: Position, facing: Direction);
+    /// Moves the entity to a new position safely, ensuring it stays within the layer boundaries.
     fn move_to_safe(&mut self, new_pos: Position, facing: Direction, layer: &Layer) {
         let mut position = new_pos;
 
@@ -48,10 +55,14 @@ pub trait Movable {
 
         self.move_to(position, facing);
     }
+    /// Gets the previous position of the entity.
     fn get_prev_pos(&self) -> &Position;
+    /// Gets the character representation of the entity.
     fn get_entity_char(&self) -> EntityCharacters;
+    /// Gets the current facing direction of the entity.
     fn get_facing(&self) -> Direction;
 
+    /// Moves the entity back a certain number of steps from its current facing direction.
     fn move_back(&mut self, steps: i32, layer: &Layer) {
         let current_direction = self.get_facing();
 
@@ -80,21 +91,23 @@ pub trait Movable {
     }
 }
 
-///Trait for an entity which has health and can be damaged
+/// A trait for entities that have health and can take damage.
 pub trait Damageable {
+    /// Gets the current health of the entity.
     fn get_health(&self) -> &i32;
 
-    /// take_damage can also heal if damage is provided as negative
+    /// Applies damage to the entity. Can also be used for healing by providing a negative value.
     fn take_damage(&mut self, damage: i32);
 
-    /// Function to be called when entity dies.
+    /// Handles the death of the entity.
     fn die(&mut self);
 
-    /// return if entity is alive
+    /// Checks if the entity is alive.
     fn is_alive(&self) -> bool;
 }
 
 impl Character {
+    /// Creates a new `Character` instance based on the provided `PlayerState`.
     pub fn new(player_state: PlayerState) -> Self {
         let max_health = player_state.stats.health;
         Character {
@@ -117,6 +130,7 @@ impl Character {
         }
     }
 
+    /// Performs an attack, generating damage areas and effects.
     pub fn attack(&self, layer_effects: &mut Layer) -> (Vec<DamageArea>, Vec<DamageEffect>) {
         let damage_areas: Vec<DamageArea> = self
             .weapons

@@ -1,3 +1,5 @@
+//! This module provides a terminal user interface (TUI) abstraction for the application.
+//! It handles terminal initialization, event handling, and rendering.
 use std::{
     io,
     ops::{Deref, DerefMut},
@@ -22,22 +24,36 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
+/// Represents an event that can occur in the terminal.
 #[derive(Clone, Debug)]
 pub enum Event {
+    /// The TUI has been initialized.
     Init,
+    /// The user has requested to quit the application.
     Quit,
+    /// An error has occurred.
     Error,
+    /// The TUI has been closed.
     Closed,
+    /// A tick event has occurred.
     Tick,
+    /// A render event has occurred.
     Render,
+    /// The terminal has gained focus.
     FocusGained,
+    /// The terminal has lost focus.
     FocusLost,
+    /// A string has been pasted into the terminal.
     Paste(String),
+    /// A key has been pressed.
     Key(KeyEvent),
+    /// A mouse event has occurred.
     Mouse(MouseEvent),
+    /// The terminal has been resized.
     Resize(u16, u16),
 }
 
+/// A struct that represents the terminal user interface.
 pub struct Tui {
     pub terminal: ratatui::Terminal<Backend<std::io::Stderr>>,
     pub task: JoinHandle<()>,
@@ -51,6 +67,7 @@ pub struct Tui {
 }
 
 impl Tui {
+    /// Creates a new `Tui` instance.
     pub fn new() -> Result<Self> {
         let tick_rate = 4.0;
         let frame_rate = 60.0;
@@ -77,16 +94,19 @@ impl Tui {
         Ok(tui)
     }
 
+    /// Sets the tick rate of the TUI.
     pub fn tick_rate(mut self, tick_rate: f64) -> Self {
         self.tick_rate = tick_rate;
         self
     }
 
+    /// Sets the frame rate of the TUI.
     pub fn frame_rate(mut self, frame_rate: f64) -> Self {
         self.frame_rate = frame_rate;
         self
     }
 
+    /// Starts the TUI event loop.
     pub fn start(&mut self) {
         let tick_delay = std::time::Duration::from_secs_f64(1.0 / self.tick_rate);
         let render_delay = std::time::Duration::from_secs_f64(1.0 / self.frame_rate);
@@ -150,6 +170,7 @@ impl Tui {
         });
     }
 
+    /// Stops the TUI event loop.
     pub fn stop(&self) -> Result<()> {
         self.cancel();
         let mut counter = 0;
@@ -166,6 +187,7 @@ impl Tui {
         Ok(())
     }
 
+    /// Enters the alternate screen and enables raw mode.
     pub fn enter(&mut self) -> Result<()> {
         crossterm::terminal::enable_raw_mode()?;
         crossterm::execute!(std::io::stderr(), EnterAlternateScreen, cursor::Hide)?;
@@ -179,6 +201,7 @@ impl Tui {
         Ok(())
     }
 
+    /// Exits the alternate screen and disables raw mode.
     pub fn exit(&mut self) -> Result<()> {
         self.stop()?;
         if crossterm::terminal::is_raw_mode_enabled()? {
@@ -195,26 +218,17 @@ impl Tui {
         Ok(())
     }
 
+    /// Cancels the TUI event loop.
     pub fn cancel(&self) {
         self.cancellation_token.cancel();
     }
 
-    // pub fn suspend(&mut self) -> Result<()> {
-    //     self.exit()?;
-    //     #[cfg(not(windows))]
-    //     signal_hook::low_level::raise(signal_hook::consts::signal::SIGTSTP)?;
-    //     Ok(())
-    // }
-
-    // pub fn resume(&mut self) -> Result<()> {
-    //     self.enter()?;
-    //     Ok(())
-    // }
-
+    /// Returns the next event from the event queue.
     pub async fn next(&mut self) -> Option<Event> {
         self.event_rx.recv().await
     }
 
+    /// Sets a panic hook to restore the terminal state on panic.
     pub fn set_panic_hook(&self) {
         let hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |panic_info| {
@@ -224,6 +238,7 @@ impl Tui {
     }
 }
 
+/// Restores the terminal to its original state.
 pub fn restore() -> io::Result<()> {
     crossterm::execute!(std::io::stderr(), LeaveAlternateScreen, cursor::Show)?;
     crossterm::terminal::disable_raw_mode()?;
