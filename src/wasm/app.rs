@@ -1,9 +1,14 @@
-use std::{cell::RefCell, io, rc::Rc, time::Instant};
+use std::{cell::RefCell, io, rc::Rc};
+
+use serde::de::Error;
+use web_time::Instant;
 
 use ratzilla::{
-    WebGl2Backend, WebRenderer,
+    DomBackend, WebRenderer,
     event::{KeyCode, KeyEvent},
 };
+
+use web_sys::wasm_bindgen::JsValue;
 
 use crate::common::{TICK_RATE, center_horizontal, center_vertical};
 
@@ -23,42 +28,28 @@ use crate::common::{
     upgrademenu::{Goto, UpgradesMenu},
 };
 
-// pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error> {
-//     let path = dirs::config_dir()
-//         .unwrap()
-//         .join("dispair")
-//         .join("player_state.json");
+pub fn save_progress(player_state: &PlayerState) -> Result<(), JsValue> {
+    web_sys::window()
+        .expect("Failed to get window")
+        .local_storage()?
+        .expect("local storage doesn't exist")
+        .set_item(
+            "player_state",
+            &serde_json::to_string(player_state).unwrap(),
+        )
+}
 
-//     std::fs::create_dir_all(path.parent().unwrap())
-//         .map_err(|e| serde_json::Error::custom(e.to_string()))?;
-
-//     let save_file = OpenOptions::new()
-//         .read(true)
-//         .create(true)
-//         .write(true)
-//         .truncate(true)
-//         .open(path)
-//         .map_err(|e| serde_json::Error::custom(e.to_string()))?;
-
-//     serde_json::to_writer(save_file, player_state)?;
-
-//     Ok(())
-// }
-
-// pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
-//     let path = dirs::config_dir()
-//         .unwrap()
-//         .join("dispair")
-//         .join("player_state.json");
-
-//     let save_file = File::open(path).map_err(|e| serde_json::Error::custom(e.to_string()))?;
-
-//     let i: PlayerState = serde_json::from_reader(save_file)?;
-
-//     Ok(i)
-// }
 pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
-    let i: PlayerState = PlayerState::default();
+    let value = web_sys::window()
+        .expect("no global `window` exists")
+        .local_storage()
+        .map_err(|_| serde_json::Error::custom("oops!"))?
+        .expect("local storage no exist")
+        .get_item("player_state")
+        .map_err(|_| serde_json::Error::custom("help"))?
+        .unwrap_or("".into());
+
+    let i: PlayerState = serde_json::from_str(&value)?;
 
     Ok(i)
 }
@@ -91,7 +82,7 @@ impl App {
     }
 
     pub fn run(this: Rc<RefCell<Self>>) -> io::Result<()> {
-        let backend = WebGl2Backend::new()?;
+        let backend = DomBackend::new()?;
         let terminal = Terminal::new(backend)?;
 
         let tick_delay = std::time::Duration::from_secs_f64(1.0 / this.borrow().tick_rate);
@@ -115,8 +106,9 @@ impl App {
             if let Ok(mut reference) = maybe_reference {
                 let last_frame = reference.last_frame.clone();
 
-                if Instant::now().duration_since(last_frame) < tick_delay {
+                if Instant::now().duration_since(last_frame) >= tick_delay {
                     reference.on_tick();
+                    reference.last_frame = Instant::now();
                 }
 
                 reference.on_frame();
@@ -200,7 +192,9 @@ impl App {
                 self.upgrades_view = None;
                 match close {
                     Goto::Game => self.start_game(),
-                    Goto::Menu => {} // Goto::Menu => save_progress(&self.player_state.clone().unwrap()).unwrap_or(()),
+                    Goto::Menu => {
+                        save_progress(&self.player_state.clone().unwrap()).expect("couldn't save")
+                    }
                 }
             }
         }

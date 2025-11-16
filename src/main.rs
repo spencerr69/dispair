@@ -1,6 +1,3 @@
-use std::error::Error;
-use std::io;
-
 pub mod common;
 
 #[cfg(not(target_family = "wasm"))]
@@ -23,7 +20,7 @@ pub type KeyEvent = crossterm::event::KeyEvent;
 
 #[cfg(not(target_family = "wasm"))]
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use crate::terminal::app::App;
 
     color_eyre::install()?;
@@ -40,14 +37,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 #[cfg(target_family = "wasm")]
-fn main() -> io::Result<()> {
+fn main() -> std::io::Result<()> {
     use std::{cell::RefCell, rc::Rc};
 
     use crate::wasm::app::App;
 
     let app = App::new();
 
-    let _result = App::run(Rc::new(RefCell::new(app)));
-
-    Ok(())
+    App::run(Rc::new(RefCell::new(app)))
 }

@@ -7,14 +7,19 @@ use crate::common::{
     upgrade::PlayerState,
     weapon::{DamageArea, Sword, Weapon},
 };
-use std::time::SystemTime;
+
+#[cfg(not(target_family = "wasm"))]
+use std::time::Instant;
+
+#[cfg(target_family = "wasm")]
+use web_time::Instant;
 
 use crate::common::roguegame::EntityCharacters;
 
 pub struct Character {
     position: Position,
     prev_position: Position,
-    last_moved: SystemTime,
+    last_moved: Instant,
     pub facing: Direction,
 
     pub movement_speed: f64,
@@ -95,7 +100,7 @@ impl Character {
         Character {
             position: Position(0, 0),
             prev_position: Position(0, 0),
-            last_moved: SystemTime::now(),
+            last_moved: Instant::now(),
             facing: Direction::UP,
             movement_speed: player_state.stats.movement_speed_mult,
             strength: player_state.stats.damage_mult,
@@ -147,11 +152,8 @@ impl Movable for Character {
     fn move_to(&mut self, new_pos: Position, facing: Direction) {
         self.facing = facing;
 
-        let attempt_time = SystemTime::now();
-        let difference = attempt_time
-            .duration_since(self.last_moved)
-            .unwrap()
-            .as_millis();
+        let attempt_time = Instant::now();
+        let difference = attempt_time.duration_since(self.last_moved).as_millis();
         // this is what movement speed controls vv
         let timeout = 100 / self.movement_speed as u128;
 

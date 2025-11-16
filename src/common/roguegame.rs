@@ -1,4 +1,8 @@
+#[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
+
+#[cfg(target_family = "wasm")]
+use web_time::{Duration, Instant};
 
 use crate::common::{
     TICK_RATE,
