@@ -1,8 +1,12 @@
+#[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
+
+#[cfg(target_family = "wasm")]
+use web_time::Duration;
 
 use ratatui::style::{Style, Stylize};
 
-use crate::{
+use crate::common::{
     character::{Character, Damageable, Movable},
     coords::{Area, Direction, Position},
     enemy::{Debuff, Debuffable, Enemy},

@@ -1,4 +1,8 @@
+#[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
+
+#[cfg(target_family = "wasm")]
+use web_time::{Duration, Instant};
 
 pub struct TimeScaler {
     pub start_time: Instant,
@@ -30,9 +34,13 @@ impl TimeScaler {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(target_family = "wasm"))]
     use std::time::{Duration, Instant};
 
-    use crate::timescaler::TimeScaler;
+    #[cfg(target_family = "wasm")]
+    use web_time::{Duration, Instant};
+
+    use crate::common::timescaler::TimeScaler;
 
     #[test]
     fn scale_at_0s() {

@@ -1,5 +1,15 @@
 [
     {
+        "title": "debug",
+        "description": "debug",
+        "id": "9999",
+        "cost": 0,
+        "limit": 1,
+        "requires": [],
+        "children": null,
+        "costscale_override": null
+    },
+    {
         "title": "PRESERVE",
         "description": "\\------/",
         "id": "1",

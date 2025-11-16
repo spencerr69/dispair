@@ -1,16 +1,17 @@
+#[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
+
+#[cfg(target_family = "wasm")]
+use web_time::Duration;
 
 use rand::Rng;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 
-use crate::character::*;
-use crate::coords::Area;
-use crate::coords::Direction;
-use crate::coords::Position;
-use crate::effects::DamageEffect;
-use crate::roguegame::*;
-use crate::weapon::DamageArea;
+use crate::common::{
+    character::*, coords::Area, coords::Direction, coords::Position, effects::DamageEffect,
+    roguegame::*, weapon::DamageArea,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Debuff {

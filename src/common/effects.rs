@@ -1,6 +1,10 @@
+#[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
 
-use crate::{
+#[cfg(target_family = "wasm")]
+use web_time::{Duration, Instant};
+
+use crate::common::{
     coords::Area,
     roguegame::{EntityCharacters, Layer, get_pos, set_entity},
     weapon::DamageArea,

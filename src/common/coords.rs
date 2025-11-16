@@ -1,4 +1,4 @@
-use crate::roguegame::Layer;
+use crate::common::roguegame::Layer;
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Position(pub i32, pub i32);
@@ -109,7 +109,7 @@ impl IntoIterator for Area {
 
 #[cfg(test)]
 mod tests {
-    use crate::roguegame::EntityCharacters;
+    use crate::common::roguegame::EntityCharacters;
 
     use super::*;
 

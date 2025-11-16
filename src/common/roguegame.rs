@@ -1,6 +1,10 @@
+#[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
 
-use crate::{
+#[cfg(target_family = "wasm")]
+use web_time::{Duration, Instant};
+
+use crate::common::{
     TICK_RATE,
     carnagereport::CarnageReport,
     center,
@@ -11,7 +15,7 @@ use crate::{
     timescaler::TimeScaler,
     upgrade::PlayerState,
 };
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::{KeyCode, KeyEvent};
 use rand::Rng;
 use ratatui::{
     Frame,
