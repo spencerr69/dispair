@@ -1,3 +1,6 @@
+//! This module defines the main application structure for the terminal UI.
+//! It handles the main loop, event handling, and switching between different views (menu, game, upgrades).
+
 use crate::common::{FRAME_RATE, TICK_RATE, center_horizontal, center_vertical};
 use std::fs::{File, OpenOptions};
 
@@ -21,6 +24,7 @@ use crate::common::{
     upgrademenu::{Goto, UpgradesMenu},
 };
 
+/// Saves the player's progress to a JSON file.
 pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error> {
     let path = dirs::config_dir()
         .unwrap()
@@ -43,6 +47,7 @@ pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error
     Ok(())
 }
 
+/// Loads the player's progress from a JSON file.
 pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
     let path = dirs::config_dir()
         .unwrap()
@@ -56,6 +61,7 @@ pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
     Ok(i)
 }
 
+/// The main application struct, which manages the state of the different views.
 pub struct App {
     game_view: Option<RogueGame>,
     upgrades_view: Option<UpgradesMenu>,
@@ -67,6 +73,7 @@ pub struct App {
 }
 
 impl App {
+    /// Creates a new `App` instance.
     pub fn new() -> Self {
         let mut out = Self {
             game_view: None,
@@ -83,6 +90,7 @@ impl App {
         out
     }
 
+    /// Runs the main application loop.
     pub async fn run(&mut self) -> color_eyre::Result<()> {
         let mut tui = Tui::new()?
             .frame_rate(self.frame_rate)
@@ -105,6 +113,7 @@ impl App {
         Ok(())
     }
 
+    /// Handles events from the terminal.
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::Tick => {
@@ -118,6 +127,7 @@ impl App {
         }
     }
 
+    /// Handles key press events.
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         if !key_event.is_press() {
             return;
@@ -218,6 +228,7 @@ impl App {
         }
     }
 
+    /// Renders the main menu.
     pub fn render_menu(&mut self, frame: &mut Frame) {
         let block = Block::bordered().border_set(border::DOUBLE);
 

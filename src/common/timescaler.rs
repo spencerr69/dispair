@@ -1,15 +1,22 @@
+//! This module provides a `TimeScaler` that dynamically adjusts a scaling factor
+//! over time. This is used to increase the game's difficulty as time progresses.
+
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
 
 #[cfg(target_family = "wasm")]
 use web_time::{Duration, Instant};
 
+/// Handles the scaling of game difficulty over time.
 pub struct TimeScaler {
+    /// The time at which the scaling began.
     pub start_time: Instant,
+    /// The current scaling factor.
     pub scale_amount: f64,
 }
 
 impl TimeScaler {
+    /// Creates a new `TimeScaler` with the start time set to now.
     pub fn now() -> Self {
         Self {
             start_time: Instant::now(),
@@ -17,15 +24,18 @@ impl TimeScaler {
         }
     }
 
+    /// Offsets the start time by a given `Duration`.
     pub fn offset_start_time(mut self, offset: Duration) -> Self {
         self.start_time -= offset;
         self
     }
 
+    /// Returns the elapsed time in seconds since the `start_time`.
     pub fn time_in_secs(&self) -> u64 {
         self.start_time.elapsed().as_secs()
     }
 
+    /// Calculates the new scaling factor based on the elapsed time.
     pub fn scale(&mut self) -> f64 {
         self.scale_amount = (1.007_f64).powf(self.time_in_secs() as f64) * 2. - 1.;
         self.scale_amount

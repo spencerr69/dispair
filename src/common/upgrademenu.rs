@@ -1,3 +1,5 @@
+//! This module provides the UI and logic for the upgrade menu.
+//! It allows the player to navigate and purchase upgrades for their character.
 use crate::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
@@ -10,12 +12,14 @@ use ratatui::{
 
 use crate::common::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
 
+/// An enum representing the possible destinations when closing the upgrade menu.
 #[derive(Clone)]
 pub enum Goto {
     Game,
     Menu,
 }
 
+/// A struct that manages the state and rendering of the upgrades menu.
 pub struct UpgradesMenu {
     pub player_state: PlayerState,
     root_upgrade_tree: UpgradeTree,
@@ -26,6 +30,7 @@ pub struct UpgradesMenu {
 }
 
 impl UpgradesMenu {
+    /// Creates a new `UpgradesMenu` instance.
     pub fn new(player_state: PlayerState) -> Self {
         let upgrade_tree = get_upgrade_tree().unwrap();
         let mut menu = Self {
@@ -42,6 +47,7 @@ impl UpgradesMenu {
         menu
     }
 
+    /// Handles key events for the upgrade menu.
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('w') | KeyCode::Up => self.prev_selection(),
@@ -70,6 +76,7 @@ impl UpgradesMenu {
         }
     }
 
+    /// Attempts to buy the currently selected upgrade.
     pub fn buy_upgrade(&mut self) -> Result<(), String> {
         if let Some(current_node) = self.get_selected_node() {
             if current_node.cost.is_some() {
@@ -97,14 +104,17 @@ impl UpgradesMenu {
         }
     }
 
+    /// Selects the previous item in the upgrade list.
     pub fn prev_selection(&mut self) {
         self.upgrade_selection.select_previous();
     }
 
+    /// Selects the next item in the upgrade list.
     pub fn next_selection(&mut self) {
         self.upgrade_selection.select_next();
     }
 
+    /// Navigates back to the previous layer in the upgrade tree.
     pub fn go_back(&mut self) {
         self.history.pop();
         self.current_layer = self.root_upgrade_tree.clone();
@@ -113,6 +123,7 @@ impl UpgradesMenu {
         }
     }
 
+    /// Returns the currently selected `UpgradeNode`.
     pub fn get_selected_node(&self) -> Option<UpgradeNode> {
         let selected_index = self.upgrade_selection.selected()?;
         if self.current_layer.len() > selected_index {
@@ -122,6 +133,7 @@ impl UpgradesMenu {
         }
     }
 
+    /// Navigates into the children of the currently selected upgrade node.
     pub fn navigate_into_upgrade(&mut self) -> Option<()> {
         let selected_index = self.upgrade_selection.selected()?;
         if let Some(ref children) = self.current_layer[selected_index].children {
@@ -132,6 +144,7 @@ impl UpgradesMenu {
         None
     }
 
+    /// Converts a vector of `UpgradeNode`s to a vector of `ListItem`s for rendering.
     pub fn node_to_list(
         upgrade_nodes: Vec<UpgradeNode>,
         player_state: PlayerState,
@@ -158,6 +171,7 @@ impl UpgradesMenu {
             .collect()
     }
 
+    /// Recursively checks if all children of an upgrade node are owned.
     pub fn own_children(upgrade_node: UpgradeNode, player_state: PlayerState) -> bool {
         let have_required = upgrade_node.requires.iter().fold(true, |acc, current| {
             acc && player_state.amount_owned(&current) > 0
@@ -178,6 +192,7 @@ impl UpgradesMenu {
         }
     }
 
+    /// Renders the upgrades menu to the frame.
     pub fn render_upgrades(&mut self, frame: &mut Frame) {
         let mut block = Block::bordered().border_set(border::THICK);
         let inner = block.inner(frame.area());

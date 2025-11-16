@@ -1,3 +1,6 @@
+//! This module defines the main application structure for the WASM version of the game.
+//! It handles the main game loop, event handling, and rendering of the different views.
+
 use std::{cell::RefCell, io, rc::Rc};
 
 use serde::de::Error;
@@ -28,6 +31,7 @@ use crate::common::{
     upgrademenu::{Goto, UpgradesMenu},
 };
 
+/// Saves the player's progress to local storage.
 pub fn save_progress(player_state: &PlayerState) -> Result<(), JsValue> {
     web_sys::window()
         .expect("Failed to get window")
@@ -39,6 +43,7 @@ pub fn save_progress(player_state: &PlayerState) -> Result<(), JsValue> {
         )
 }
 
+/// Loads the player's progress from local storage.
 pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
     let value = web_sys::window()
         .expect("no global `window` exists")
@@ -54,6 +59,7 @@ pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
     Ok(i)
 }
 
+/// The main application struct, which manages the game's state and views.
 pub struct App {
     game_view: Option<RogueGame>,
     upgrades_view: Option<UpgradesMenu>,
@@ -65,6 +71,7 @@ pub struct App {
 }
 
 impl App {
+    /// Creates a new `App` instance.
     pub fn new() -> Self {
         let mut out = Self {
             game_view: None,
@@ -81,6 +88,7 @@ impl App {
         out
     }
 
+    /// Runs the main application loop.
     pub fn run(this: Rc<RefCell<Self>>) -> io::Result<()> {
         let backend = DomBackend::new()?;
         let terminal = Terminal::new(backend)?;
@@ -119,6 +127,7 @@ impl App {
         Ok(())
     }
 
+    /// Handles key events.
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         if let Some(game) = &mut self.game_view {
             game.handle_key_event(key_event);
@@ -135,14 +144,17 @@ impl App {
         }
     }
 
+    /// Selects the next item in the menu.
     fn select_next(&mut self) {
         self.current_selection.select_next();
     }
 
+    /// Selects the previous item in the menu.
     fn select_prev(&mut self) {
         self.current_selection.select_previous();
     }
 
+    /// Confirms the current selection in the menu.
     fn confirm_curr(&mut self) {
         match self.current_selection.selected() {
             Some(0) => {
@@ -158,6 +170,7 @@ impl App {
         }
     }
 
+    /// Renders the UI for the current view.
     fn ui(&mut self, frame: &mut Frame) {
         if let Some(ref mut game) = self.game_view {
             game.render(frame)
@@ -168,6 +181,7 @@ impl App {
         }
     }
 
+    /// Called on each game tick.
     fn on_tick(&mut self) {
         if let Some(game) = &mut self.game_view {
             game.on_tick();
@@ -200,24 +214,28 @@ impl App {
         }
     }
 
+    /// Called on each frame.
     fn on_frame(&mut self) {
         if let Some(game) = &mut self.game_view {
             game.on_frame();
         }
     }
 
+    /// Starts the game view.
     fn start_game(&mut self) {
         if let Some(player_state) = &self.player_state {
             self.game_view = Some(RogueGame::new(player_state.clone()));
         }
     }
 
+    /// Starts the upgrades view.
     fn start_upgrades(&mut self) {
         if let Some(player_state) = &self.player_state {
             self.upgrades_view = Some(UpgradesMenu::new(player_state.clone()));
         }
     }
 
+    /// Renders the main menu.
     pub fn render_menu(&mut self, frame: &mut Frame) {
         let block = Block::bordered().border_set(border::DOUBLE);
 

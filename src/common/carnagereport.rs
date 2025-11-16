@@ -11,6 +11,7 @@ use crate::common::{
     upgrade::{PlayerState, PlayerStateDiff},
 };
 
+/// Displays the results of a game level to the player.
 #[derive(Clone)]
 pub struct CarnageReport {
     prev_player_state: PlayerState,
@@ -18,6 +19,7 @@ pub struct CarnageReport {
 }
 
 impl CarnageReport {
+    /// Creates a new `CarnageReport`.
     pub fn new(prev_player_state: PlayerState, new_player_state: PlayerState) -> Self {
         return Self {
             prev_player_state,
@@ -25,10 +27,12 @@ impl CarnageReport {
         };
     }
 
+    /// Calculates the difference between the player's state before and after the level.
     pub fn get_diff(&self) -> PlayerStateDiff {
         return self.new_player_state.clone() - self.prev_player_state.clone();
     }
 
+    /// Renders the carnage report to the screen.
     pub fn render(&mut self, frame: &mut Frame) {
         let area = popup_area(frame.area(), 50, 30);
 
@@ -53,6 +57,7 @@ impl CarnageReport {
     }
 }
 
+/// Helper function to create a centered popup area.
 fn popup_area(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
     let vertical = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
     let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);

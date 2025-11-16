@@ -1,9 +1,13 @@
+//! This module defines coordinate-related structs and enums, such as `Position`, `Area`, and `Direction`.
+//! It provides functionality for working with positions and areas within the game world.
 use crate::common::roguegame::Layer;
 
+/// Represents a 2D position with x and y coordinates.
 #[derive(Clone, Default, Debug, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Position(pub i32, pub i32);
 
 impl Position {
+    /// Creates a new `Position`, ensuring that coordinates are not negative.
     pub fn new(x: i32, y: i32) -> Self {
         let new_x: i32;
         let new_y: i32;
@@ -21,25 +25,30 @@ impl Position {
         Position(new_x, new_y)
     }
 
+    /// Returns the (x, y) coordinates of the position.
     pub fn get(&self) -> (i32, i32) {
         (self.0, self.1)
     }
 
+    /// Returns the (x, y) coordinates as `usize`.
     pub fn get_as_usize(&self) -> (usize, usize) {
         (self.0.max(0) as usize, self.1.max(0) as usize)
     }
 
+    /// Constrains the position to be within the boundaries of the given layer.
     pub fn constrain(&mut self, layer: &Layer) {
         self.0 = self.0.max(0).min(layer[0].len() as i32 - 1);
         self.1 = self.1.max(0).min(layer.len() as i32 - 1);
     }
 
+    /// Calculates the (dx, dy) distance between two positions.
     pub fn get_distance(&self, other: &Position) -> (i32, i32) {
         let (self_x, self_y) = self.get();
         let (other_x, other_y) = other.get();
         (other_x - self_x, other_y - self_y)
     }
 
+    /// Checks if the position is within the given area.
     pub fn is_in_area(&self, area: &Area) -> bool {
         let (x, y) = self.get();
         let (min_x, min_y, max_x, max_y) = area.get_bounds();
@@ -47,6 +56,7 @@ impl Position {
     }
 }
 
+/// Represents the four cardinal directions.
 #[derive(Clone)]
 pub enum Direction {
     LEFT,
@@ -55,6 +65,7 @@ pub enum Direction {
     DOWN,
 }
 
+/// Represents a rectangular area defined by two corner positions.
 #[derive(Clone)]
 pub struct Area {
     pub corner1: Position,
@@ -80,10 +91,12 @@ impl From<Position> for Area {
 }
 
 impl Area {
+    /// Creates a new `Area` from two corner positions.
     pub fn new(corner1: Position, corner2: Position) -> Self {
         Area { corner1, corner2 }
     }
 
+    /// Returns the bounding box of the area as (min_x, min_y, max_x, max_y).
     pub fn get_bounds(&self) -> (i32, i32, i32, i32) {
         let (x1, y1) = self.corner1.get();
         let (x2, y2) = self.corner2.get();
@@ -91,6 +104,7 @@ impl Area {
         (x1.min(x2), y1.min(y2), x1.max(x2), y1.max(y2))
     }
 
+    /// Constrains the area to be within the boundaries of the given layer.
     pub fn constrain(&mut self, layer: &Layer) {
         self.corner1.constrain(layer);
         self.corner2.constrain(layer);

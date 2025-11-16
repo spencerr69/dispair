@@ -1,3 +1,6 @@
+//! This module implements the core game logic for the roguelike.
+//! It manages game state, character movement, enemy behavior, and rendering.
+
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
 
@@ -28,11 +31,15 @@ use ratatui::{
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
 
+/// Represents the main game state and logic.
 pub struct RogueGame {
+    /// The player's current state, including stats and inventory.
     pub player_state: PlayerState,
 
+    /// The carnage report, which is displayed at the end of a level.
     pub carnage_report: Option<CarnageReport>,
 
+    /// The rendered map text.
     pub map_text: Text<'static>,
 
     character: Character,
@@ -56,7 +63,9 @@ pub struct RogueGame {
 
     attack_ticks: u128,
 
+    /// A flag indicating whether the game is over.
     pub game_over: bool,
+    /// A flag indicating whether the game should exit.
     pub exit: bool,
 
     active_damage_effects: Vec<DamageEffect>,
@@ -418,6 +427,7 @@ impl RogueGame {
         out
     }
 
+    /// Returns the character's current position.
     pub fn get_character_pos(&self) -> &Position {
         self.character.get_pos()
     }
@@ -653,8 +663,9 @@ impl EntityCharacters {
         }
     }
 
+    /// Checks if the entity is a player character.
     pub fn is_char(&self) -> bool {
-        match *self {
+        match self {
             EntityCharacters::Character(_) => true,
             _ => false,
         }
