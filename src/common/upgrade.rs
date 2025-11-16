@@ -1,4 +1,9 @@
-use std::{collections::HashMap, ops::Sub, time::Duration};
+use std::{collections::HashMap, ops::Sub};
+
+#[cfg(not(target_family = "wasm"))]
+use std::time::Duration;
+#[cfg(target_family = "wasm")]
+use web_time::Duration;
 
 use derive_more::Sub;
 
