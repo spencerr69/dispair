@@ -2,15 +2,15 @@
 //! over time. This is used to increase the game's difficulty as time progresses.
 
 #[cfg(not(target_family = "wasm"))]
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime};
 
 #[cfg(target_family = "wasm")]
-use web_time::{Duration, Instant};
+use web_time::{Duration, SystemTime};
 
 /// Handles the scaling of game difficulty over time.
 pub struct TimeScaler {
     /// The time at which the scaling began.
-    pub start_time: Instant,
+    pub start_time: SystemTime,
     /// The current scaling factor.
     pub scale_amount: f64,
 }
@@ -19,7 +19,7 @@ impl TimeScaler {
     /// Creates a new `TimeScaler` with the start time set to now.
     pub fn now() -> Self {
         Self {
-            start_time: Instant::now(),
+            start_time: SystemTime::now(),
             scale_amount: 1.0,
         }
     }
@@ -32,7 +32,11 @@ impl TimeScaler {
 
     /// Returns the elapsed time in seconds since the `start_time`.
     pub fn time_in_secs(&self) -> u64 {
-        self.start_time.elapsed().as_secs()
+        if let Ok(elapsed) = self.start_time.elapsed() {
+            elapsed.as_secs()
+        } else {
+            0
+        }
     }
 
     /// Calculates the new scaling factor based on the elapsed time.
@@ -45,10 +49,10 @@ impl TimeScaler {
 #[cfg(test)]
 mod tests {
     #[cfg(not(target_family = "wasm"))]
-    use std::time::{Duration, Instant};
+    use std::time::{Duration, SystemTime};
 
     #[cfg(target_family = "wasm")]
-    use web_time::{Duration, Instant};
+    use web_time::{Duration, SystemTime};
 
     use crate::common::timescaler::TimeScaler;
 
@@ -62,7 +66,7 @@ mod tests {
     #[test]
     fn scale_at_10s() {
         let mut scaler = TimeScaler::now();
-        scaler.start_time = Instant::now() - Duration::from_secs(10);
+        scaler.start_time = SystemTime::now() - Duration::from_secs(10);
         println!("\n10s: {}\n", scaler.scale());
         assert!(scaler.scale_amount <= 1.2);
     }
@@ -70,7 +74,7 @@ mod tests {
     #[test]
     fn scale_at_60s() {
         let mut scaler = TimeScaler::now();
-        scaler.start_time = Instant::now() - Duration::from_secs(60);
+        scaler.start_time = SystemTime::now() - Duration::from_secs(60);
         println!("\n60s: {}\n", scaler.scale());
         assert!(scaler.scale_amount <= 2.1);
     }
@@ -78,7 +82,7 @@ mod tests {
     #[test]
     fn scale_at_120s() {
         let mut scaler = TimeScaler::now();
-        scaler.start_time = Instant::now() - Duration::from_secs(120);
+        scaler.start_time = SystemTime::now() - Duration::from_secs(120);
         println!("\n120s: {}\n", scaler.scale());
         assert!(scaler.scale_amount <= 3.8);
     }
@@ -86,7 +90,7 @@ mod tests {
     #[test]
     fn scale_at_180s() {
         let mut scaler = TimeScaler::now();
-        scaler.start_time = Instant::now() - Duration::from_secs(180);
+        scaler.start_time = SystemTime::now() - Duration::from_secs(180);
         println!("\n180s: {}\n", scaler.scale());
         assert!(scaler.scale_amount <= 6.1);
     }
@@ -94,7 +98,7 @@ mod tests {
     #[test]
     fn scale_at_300s() {
         let mut scaler = TimeScaler::now();
-        scaler.start_time = Instant::now() - Duration::from_secs(300);
+        scaler.start_time = SystemTime::now() - Duration::from_secs(300);
         println!("\n300s: {}\n", scaler.scale());
         assert!(scaler.scale_amount <= 15.25)
     }
@@ -102,7 +106,7 @@ mod tests {
     #[test]
     fn scale_at_600s() {
         let mut scaler = TimeScaler::now();
-        scaler.start_time = Instant::now() - Duration::from_secs(600);
+        scaler.start_time = SystemTime::now() - Duration::from_secs(600);
         println!("\n600s: {}\n", scaler.scale());
         assert!(scaler.scale_amount <= 131.);
     }

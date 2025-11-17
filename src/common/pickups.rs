@@ -39,15 +39,15 @@ impl Pickupable for PowerupOrb {
         } else {
             if let EntityCharacters::Orb(style) = &mut self.entity_char {
                 *style = match style.fg {
-                    None => style.fg(Color::Red),
+                    None => style.fg(Color::LightRed),
                     Some(colour) => match colour {
-                        Color::Red => style.fg(Color::Yellow),
-                        Color::Yellow => style.fg(Color::Green),
-                        Color::Green => style.fg(Color::Blue),
-                        Color::Blue => style.fg(Color::Magenta),
-                        Color::Magenta => style.fg(Color::Cyan),
-                        Color::Cyan => style.fg(Color::Red),
-                        _ => style.fg(Color::Red),
+                        Color::LightRed => style.fg(Color::LightYellow),
+                        Color::LightYellow => style.fg(Color::LightGreen),
+                        Color::LightGreen => style.fg(Color::LightBlue),
+                        Color::LightBlue => style.fg(Color::LightMagenta),
+                        Color::LightMagenta => style.fg(Color::LightCyan),
+                        Color::LightCyan => style.fg(Color::LightRed),
+                        _ => style.fg(Color::LightRed),
                     },
                 };
             }
