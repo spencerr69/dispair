@@ -85,8 +85,8 @@ pub struct RogueGame {
 
 impl RogueGame {
     pub fn new(player_state: PlayerState) -> Self {
-        let width = player_state.stats.width;
-        let height = player_state.stats.height;
+        let width = player_state.stats.game_stats.width;
+        let height = player_state.stats.game_stats.height;
 
         let mut base: Layer = Vec::from(Vec::new());
         let mut entities: Layer = Vec::from(Vec::new());
@@ -119,10 +119,10 @@ impl RogueGame {
         let attack_ticks = Self::per_sec_to_tick_count(1.5);
         let enemy_move_ticks = Self::per_sec_to_tick_count(2.);
         let enemy_spawn_ticks =
-            Self::per_sec_to_tick_count(0.4 * player_state.stats.enemy_spawn_mult);
+            Self::per_sec_to_tick_count(0.4 * player_state.stats.game_stats.enemy_spawn_mult);
 
         let start_time = Instant::now();
-        let timer = Duration::from_secs(player_state.stats.timer);
+        let timer = Duration::from_secs(player_state.stats.game_stats.timer);
 
         let mut game = RogueGame {
             player_state: player_state.clone(),
@@ -153,7 +153,8 @@ impl RogueGame {
             active_damage_effects: vec![],
             start_time,
             timer,
-            timescaler: TimeScaler::now().offset_start_time(player_state.stats.time_offset),
+            timescaler: TimeScaler::now()
+                .offset_start_time(player_state.stats.game_stats.time_offset),
 
             view_area: Rect::new(0, 0, width as u16, height as u16),
             camera_area: Area::new(Position(0, 0), Position(width as i32, height as i32)),

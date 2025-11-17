@@ -12,6 +12,8 @@ use derive_more::Sub;
 
 use serde::{Deserialize, Serialize};
 
+use crate::common::enemy::Debuff;
+
 /// Represents the complete state of the player, including upgrades, inventory, and stats.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlayerState {
@@ -24,8 +26,6 @@ pub struct PlayerState {
 pub struct PlayerStateDiff {
     /// The difference in the player's inventory.
     pub inventory: Inventory,
-    /// The difference in the player's stats.
-    pub stats: Stats,
 }
 
 impl Sub for PlayerState {
@@ -34,7 +34,6 @@ impl Sub for PlayerState {
     fn sub(self, other: PlayerState) -> Self::Output {
         PlayerStateDiff {
             inventory: self.inventory - other.inventory,
-            stats: self.stats - other.stats,
         }
     }
 }
@@ -42,91 +41,105 @@ impl Sub for PlayerState {
 impl PlayerState {
     /// Refreshes the player's stats based on their current upgrades.
     pub fn refresh(&mut self) {
-        self.stats = Stats::default();
+        let mut game_stats = GameStats::default();
+        let mut player_stats = PlayerStats::default();
+        let mut weapon_stats = WeaponStats::default();
 
         //upgrades 1 PRESERVE
         //upgrade 11: PRESERVE::\conform
         if !self.upgrade_owned("11") {
-            self.stats.enemy_spawn_mult = 50.;
-            self.stats.timer = 10;
+            game_stats.enemy_spawn_mult = 50.;
+            game_stats.timer = 10;
         }
 
         //upgrade 12 grow
         if self.upgrade_owned("12") {
-            self.stats.size += 1;
+            weapon_stats.size += 1;
         }
 
         //upgrade 13 become
         if self.upgrade_owned("13") {
-            self.stats.enemy_spawn_mult += 0.8;
-            self.stats.height += 5;
-            self.stats.width += 5;
+            game_stats.enemy_spawn_mult += 0.8;
+            game_stats.height += 5;
+            game_stats.width += 5;
         }
 
         //upgrades 2 STATS
         //upgrade 211 damage/flat_up
         if self.upgrade_owned("211") {
-            self.stats.damage_flat_boost += 1 * self.amount_owned("211") as i32;
+            weapon_stats.damage_flat_boost += 1 * self.amount_owned("211") as i32;
         }
 
         //upgrade 212 damage/mult_up
         if self.upgrade_owned("212") {
-            self.stats.damage_mult += 0.1 * self.amount_owned("212") as f64;
+            player_stats.damage_mult += 0.1 * self.amount_owned("212") as f64;
         }
 
         //upgrade 221 health/flat_up
         if self.upgrade_owned("221") {
-            self.stats.base_health += 1 * self.amount_owned("221") as i32;
+            player_stats.base_health += 1 * self.amount_owned("221") as i32;
         }
 
         //upgrade 222 health/mult_up
         if self.upgrade_owned("222") {
-            self.stats.health_mult += 0.1 * self.amount_owned("222") as f64;
+            player_stats.health_mult += 0.1 * self.amount_owned("222") as f64;
         }
 
         //upgrade 23 attack_rate
         if self.upgrade_owned("23") {
-            self.stats.attack_speed_mult += 0.15 * self.amount_owned("23") as f64;
+            game_stats.attack_speed_mult += 0.15 * self.amount_owned("23") as f64;
         }
 
         //upgrade 24 timer_length
         if self.upgrade_owned("24") {
-            self.stats.timer =
-                (self.stats.timer as f64 * (1.5 * self.amount_owned("24") as f64)).ceil() as u64;
+            game_stats.timer =
+                (game_stats.timer as f64 * (1.5 * self.amount_owned("24") as f64)).ceil() as u64;
         }
 
         //upgrade 25 movement_speed
         if self.upgrade_owned("25") {
-            self.stats.movement_speed_mult =
-                self.stats.movement_speed_mult + (0.5 * self.amount_owned("25") as f64)
+            player_stats.movement_speed_mult =
+                player_stats.movement_speed_mult + (0.5 * self.amount_owned("25") as f64)
         }
 
         //upgrade 31 MARK
         //upgrade 311 mark chance
         if self.upgrade_owned("311") {
-            self.stats.mark_chance += 2 * self.amount_owned("311");
+            weapon_stats.procs.insert(
+                "mark".into(),
+                Proc {
+                    stats: ProcStats {
+                        chance: 2 * self.amount_owned("311"),
+                        damage: 6,
+                        size: Some(1),
+                        misc_value: None,
+                    },
+                    debuff: Debuff::MarkedForExplosion,
+                },
+            );
         }
 
         //upgrade 312 mark size
         if self.upgrade_owned("312") {
-            self.stats.mark_explosion_size += 1 * self.amount_owned("312");
+            weapon_stats.procs.get_mut("mark").unwrap().stats.size =
+                Some(1 + self.amount_owned("312") as i32);
         }
 
         //upgrade 32 shove
         //upgrade 321 shove amount
         if self.upgrade_owned("321") {
-            self.stats.shove_amount += 1 * self.amount_owned("321");
+            player_stats.shove_amount += 1 * self.amount_owned("321");
         }
 
         //upgrade 322 shove damage
         if self.upgrade_owned("322") {
-            self.stats.shove_damage += 1 * self.amount_owned("322");
+            player_stats.shove_damage += 1 * self.amount_owned("322");
         }
 
         // upgrade 4 GREED
         // upgrade 41 hype
         if self.upgrade_owned("41") {
-            self.stats.time_offset += Duration::from_secs((30 * self.amount_owned("41")).into());
+            game_stats.time_offset += Duration::from_secs((30 * self.amount_owned("41")).into());
         }
 
         // upgrade 42 growth
@@ -134,44 +147,51 @@ impl PlayerState {
             let amount_owned = self.amount_owned("42");
             let growth_amount = 2 * amount_owned;
 
-            self.stats.width += growth_amount as usize;
-            self.stats.height += growth_amount as usize;
-            self.stats.enemy_spawn_mult += 0.5 * amount_owned as f64
+            game_stats.width += growth_amount as usize;
+            game_stats.height += growth_amount as usize;
+            game_stats.enemy_spawn_mult += 0.5 * amount_owned as f64
         }
 
         if self.upgrade_owned("51") {
             let amount_owned = self.amount_owned("51");
             let growth_amount = 50 * amount_owned;
 
-            self.stats.width += growth_amount as usize;
-            self.stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
+            game_stats.width += growth_amount as usize;
+            game_stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
 
-            self.stats.gold_mult += 0.3 * amount_owned as f64;
-            self.stats.enemy_move_mult += 0.05 * amount_owned as f64;
+            game_stats.gold_mult += 0.3 * amount_owned as f64;
+            game_stats.enemy_move_mult += 0.05 * amount_owned as f64;
         }
 
         if self.upgrade_owned("52") {
             let amount_owned = self.amount_owned("52");
             let growth_amount = 50 * amount_owned;
 
-            self.stats.height += growth_amount as usize;
-            self.stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
-            self.stats.gold_mult += 0.3 * amount_owned as f64;
-            self.stats.enemy_move_mult += 0.05 * amount_owned as f64;
+            game_stats.height += growth_amount as usize;
+            game_stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
+            game_stats.gold_mult += 0.3 * amount_owned as f64;
+            game_stats.enemy_move_mult += 0.05 * amount_owned as f64;
         }
 
         //debug
         #[cfg(debug_assertions)]
         if self.upgrade_owned("9999") {
-            self.stats.width = 200;
-            self.stats.height = 100;
-            self.stats.enemy_spawn_mult = 12.;
-            self.stats.enemy_move_mult = 3.;
-            self.stats.base_health = 10000;
+            game_stats.width = 200;
+            game_stats.height = 100;
+            game_stats.enemy_spawn_mult = 12.;
+            game_stats.enemy_move_mult = 3.;
+            player_stats.base_health = 10000;
         }
 
         //cleanups
-        self.stats.health = (self.stats.base_health as f64 * self.stats.health_mult).ceil() as i32;
+        player_stats.health =
+            (player_stats.base_health as f64 * player_stats.health_mult).ceil() as i32;
+
+        self.stats = Stats {
+            game_stats,
+            player_stats,
+            weapon_stats,
+        }
     }
 
     /// Returns the number of times an upgrade has been purchased.
@@ -272,72 +292,99 @@ impl Inventory {
 }
 
 /// Represents the player's stats.
-#[derive(Serialize, Deserialize, Debug, Clone, Sub)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Stats {
+    pub game_stats: GameStats,
+    pub player_stats: PlayerStats,
+    pub weapon_stats: WeaponStats,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GameStats {
+    pub enemy_spawn_mult: f64,
+    pub enemy_move_mult: f64,
+    pub attack_speed_mult: f64,
+    pub gold_mult: f64,
+    pub width: usize,
+    pub height: usize,
+
+    pub timer: u64,
+    pub time_offset: Duration,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Sub)]
+pub struct PlayerStats {
     pub base_health: i32,
     pub health_mult: f64,
 
     pub health: i32,
 
     pub damage_mult: f64,
-    pub damage_flat_boost: i32,
-
-    pub attack_speed_mult: f64,
-    pub movement_speed_mult: f64,
-
-    pub enemy_spawn_mult: f64,
-    pub enemy_move_mult: f64,
-
-    pub gold_mult: f64,
-
-    pub size: i32,
-
-    pub width: usize,
-    pub height: usize,
-
-    pub timer: u64,
-
-    pub mark_chance: u32,
-    pub mark_explosion_size: u32,
 
     pub shove_amount: u32,
     pub shove_damage: u32,
 
-    pub time_offset: Duration,
+    pub movement_speed_mult: f64,
 }
 
-impl Default for Stats {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct WeaponStats {
+    pub damage_flat_boost: i32,
+
+    pub procs: HashMap<String, Proc>,
+
+    pub size: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ProcStats {
+    pub chance: u32,
+    pub size: Option<i32>,
+    pub damage: u32,
+    pub misc_value: Option<u32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Proc {
+    pub stats: ProcStats,
+    pub debuff: Debuff,
+}
+
+impl Default for GameStats {
+    fn default() -> Self {
+        Self {
+            enemy_spawn_mult: 1.,
+            enemy_move_mult: 1.,
+            attack_speed_mult: 1.,
+            gold_mult: 1.,
+            height: 6,
+            width: 20,
+            time_offset: Duration::from_secs(0),
+            timer: 60,
+        }
+    }
+}
+
+impl Default for PlayerStats {
     fn default() -> Self {
         Self {
             base_health: 10,
-            health_mult: 1.,
-
-            health: 10,
-
             damage_mult: 1.,
-            damage_flat_boost: 0,
-
-            attack_speed_mult: 1.,
+            health: 10,
+            health_mult: 1.,
             movement_speed_mult: 1.,
-
-            enemy_spawn_mult: 1.,
-            enemy_move_mult: 1.,
-
-            gold_mult: 1.,
-
-            width: 20,
-            height: 6,
-
-            size: 0,
-
-            timer: 60,
-
-            mark_chance: 0,
-            mark_explosion_size: 1,
             shove_amount: 0,
             shove_damage: 0,
+        }
+    }
+}
 
-            time_offset: Duration::from_secs(0),
+impl Default for WeaponStats {
+    fn default() -> Self {
+        Self {
+            damage_flat_boost: 0,
+            size: 1,
+            procs: HashMap::new(),
         }
     }
 }

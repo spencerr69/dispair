@@ -3,6 +3,8 @@
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
 
+use serde::Deserialize;
+use serde::Serialize;
 #[cfg(target_family = "wasm")]
 use web_time::Duration;
 
@@ -10,15 +12,16 @@ use rand::Rng;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 
+use crate::common::upgrade::Proc;
 use crate::common::{
     character::*, coords::Area, coords::Direction, coords::Position, effects::DamageEffect,
     roguegame::*, weapon::DamageArea,
 };
 
 /// Represents debuffs that can be applied to enemies.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Debuff {
-    MarkedForExplosion(u32, i32),
+    MarkedForExplosion,
 }
 
 impl Debuff {}
@@ -29,10 +32,10 @@ pub trait OnDeathEffect {
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
 }
 
-impl OnDeathEffect for Debuff {
+impl OnDeathEffect for Proc {
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
-        match self {
-            Debuff::MarkedForExplosion(explosion_size, explosion_damage) => {
+        match self.debuff {
+            Debuff::MarkedForExplosion => {
                 let area = Area {
                     corner1: Position(
                         enemy.position.0.saturating_sub(*explosion_size as i32),
