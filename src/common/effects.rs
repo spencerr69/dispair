@@ -94,10 +94,10 @@ impl DamageEffect {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use std::time::Duration;
     ///
-    /// let mut effect = DamageEffect::new(/* area */ /* entity */, Duration::from_secs(0), false);
+    /// let mut effect = DamageEffect::new(area, entity, Duration::from_secs(0), false);
     /// effect.delay(Duration::from_millis(500));
     /// ```
     pub fn delay(&mut self, delay: Duration) {
