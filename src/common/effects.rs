@@ -121,16 +121,18 @@ impl DamageEffect {
     /// // `active_area`/`active_entity` reflect whether the effect has started and whether it is blinking.
     /// ```
     pub fn update(&mut self) {
-        //handle beginning
-        if self.start_time > Instant::now() {
+        let now = Instant::now();
+
+        if now < self.start_time {
+            //hasn't started yet
             self.active_area = Area::origin();
             self.active_entity = EntityCharacters::Empty;
-        } else if self.start_time <= Instant::now() {
+        } else {
             self.active_area = self.damage_area.area.clone();
             self.active_entity = self.damage_area.entity.clone();
         }
 
-        if Instant::now().duration_since(self.start_time) >= self.damage_area.duration {
+        if now.duration_since(self.start_time) >= self.damage_area.duration {
             self.complete = true
         } else if self.damage_area.blink {
             if self.active_entity == self.damage_area.entity {

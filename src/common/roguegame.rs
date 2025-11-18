@@ -227,23 +227,18 @@ impl RogueGame {
 
         let mut debuffed_enemies: Vec<Enemy> = Vec::new();
 
-        self.enemies = self
-            .enemies
-            .clone()
-            .into_iter()
-            .filter(|e| {
-                if !e.is_alive() {
-                    if e.debuffs.len() > 0 {
-                        debuffed_enemies.push(e.clone());
-                    }
-                    self.player_state.inventory.add_gold(e.get_worth());
+        self.enemies.retain(|e| {
+            if !e.is_alive() {
+                if e.debuffs.len() > 0 {
+                    debuffed_enemies.push(e.clone());
+                }
+                self.player_state.inventory.add_gold(e.get_worth());
 
-                    return false;
-                } else {
-                    return true;
-                };
-            })
-            .collect();
+                return false;
+            } else {
+                return true;
+            };
+        });
 
         debuffed_enemies.into_iter().for_each(|e| {
             e.debuffs
@@ -337,12 +332,7 @@ impl RogueGame {
     pub fn on_frame(&mut self) {
         update_layer_effects(&mut self.layer_effects, &mut self.active_damage_effects);
 
-        self.active_damage_effects = self
-            .active_damage_effects
-            .clone()
-            .into_iter()
-            .filter(|effect| !effect.complete)
-            .collect();
+        self.active_damage_effects.retain(|effect| !effect.complete)
 
         // self.change_low_health_enemies_questionable();
     }
@@ -502,7 +492,12 @@ impl RogueGame {
         if let Some(inner_area) = area {
             (x1, y1, x2, y2) = inner_area.get_bounds();
         } else {
-            (x1, y1, x2, y2) = Area::from(self.layer_base.clone()).get_bounds();
+            (x1, y1, x2, y2) = (
+                0,
+                0,
+                self.layer_base[0].len() as i32 - 1,
+                self.layer_base.len() as i32 - 1,
+            );
         }
 
         let out: Vec<(usize, Vec<(usize, Span<'static>)>)> = self

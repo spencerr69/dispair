@@ -130,14 +130,18 @@ impl Character {
     /// assert_eq!(c.health, c.max_health);
     /// ```
     pub fn new(player_state: PlayerState) -> Self {
-        let max_health = player_state.stats.player_stats.health;
+        let stats = player_state.stats;
+        let weapon_stats = stats.weapon_stats.clone();
+        let max_health = stats.player_stats.health;
+        let player_stats = stats.player_stats;
+
         Character {
             position: Position(0, 0),
             prev_position: Position(0, 0),
             last_moved: Instant::now(),
             facing: Direction::UP,
 
-            stats: player_state.stats.player_stats,
+            stats: player_stats,
 
             // player_stats: player_state.stats.clone(),
             health: max_health,
@@ -147,8 +151,8 @@ impl Character {
             entitychar: EntityCharacters::Character(Style::default()),
 
             weapons: vec![
-                Box::new(Flash::new(player_state.stats.weapon_stats.clone())),
-                Box::new(Pillar::new(player_state.stats.weapon_stats)),
+                Box::new(Flash::new(weapon_stats.clone())),
+                Box::new(Pillar::new(weapon_stats)),
             ],
             // weapons: vec![],
         }
@@ -218,7 +222,7 @@ impl Movable for Character {
         let attempt_time = Instant::now();
         let difference = attempt_time.duration_since(self.last_moved).as_millis() as u64;
         // this is what movement speed controls vv
-        let timeout = 100 / self.stats.movement_speed_mult as u64;
+        let timeout = (100.0 / self.stats.movement_speed_mult.max(0.01)).round() as u64;
 
         if difference > timeout {
             self.set_pos(new_pos);
