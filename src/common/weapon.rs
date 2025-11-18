@@ -15,7 +15,7 @@ use crate::common::{
     coords::{Area, Direction, Position},
     enemy::{Debuff, Debuffable, Enemy},
     roguegame::EntityCharacters,
-    upgrade::Stats,
+    upgrade::{Stats, WeaponStats},
 };
 
 /// Represents an area where damage is applied, created by a weapon attack.
@@ -26,7 +26,7 @@ pub struct DamageArea {
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,
-    pub weapon_stats: Option<Stats>,
+    pub weapon_stats: Option<WeaponStats>,
 }
 
 impl DamageArea {
@@ -38,14 +38,12 @@ impl DamageArea {
 
                 // if was hit by a weapon do the following
                 if let Some(stats) = self.weapon_stats.clone() {
-                    if stats.mark_chance > 0 {
-                        enemy.try_proc(
-                            Debuff::MarkedForExplosion(
-                                stats.mark_explosion_size,
-                                (6. * stats.damage_mult).ceil() as i32,
-                            ),
-                            stats.mark_chance,
-                        );
+                    if !stats.procs.is_empty() {
+                        stats.procs.iter().for_each(|(_key, proc)| {
+                            if proc.chance > 0 {
+                                enemy.try_proc(proc);
+                            }
+                        })
                     }
                 }
             }

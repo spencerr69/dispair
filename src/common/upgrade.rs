@@ -12,7 +12,7 @@ use derive_more::Sub;
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::enemy::Debuff;
+use crate::common::enemy::{Debuff, DebuffTypes};
 
 /// Represents the complete state of the player, including upgrades, inventory, and stats.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -108,21 +108,29 @@ impl PlayerState {
             weapon_stats.procs.insert(
                 "mark".into(),
                 Proc {
-                    stats: ProcStats {
-                        chance: 2 * self.amount_owned("311"),
-                        damage: 6,
-                        size: Some(1),
-                        misc_value: None,
+                    chance: 2 * self.amount_owned("311"),
+
+                    debuff: Debuff {
+                        stats: DebuffStats {
+                            size: Some(1),
+                            damage: Some(6),
+                            misc_value: None,
+                        },
+                        debuff_type: DebuffTypes::MarkedForExplosion,
                     },
-                    debuff: Debuff::MarkedForExplosion,
                 },
             );
         }
 
         //upgrade 312 mark size
         if self.upgrade_owned("312") {
-            weapon_stats.procs.get_mut("mark").unwrap().stats.size =
-                Some(1 + self.amount_owned("312") as i32);
+            weapon_stats
+                .procs
+                .get_mut("mark")
+                .unwrap()
+                .debuff
+                .stats
+                .size = Some(1 + self.amount_owned("312") as i32);
         }
 
         //upgrade 32 shove
@@ -337,16 +345,15 @@ pub struct WeaponStats {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ProcStats {
-    pub chance: u32,
+pub struct DebuffStats {
     pub size: Option<i32>,
-    pub damage: u32,
+    pub damage: Option<i32>,
     pub misc_value: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Proc {
-    pub stats: ProcStats,
+    pub chance: u32,
     pub debuff: Debuff,
 }
 

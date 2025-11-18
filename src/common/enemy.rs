@@ -12,6 +12,7 @@ use rand::Rng;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 
+use crate::common::upgrade::DebuffStats;
 use crate::common::upgrade::Proc;
 use crate::common::{
     character::*, coords::Area, coords::Direction, coords::Position, effects::DamageEffect,
@@ -20,8 +21,14 @@ use crate::common::{
 
 /// Represents debuffs that can be applied to enemies.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Debuff {
+pub enum DebuffTypes {
     MarkedForExplosion,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Debuff {
+    pub debuff_type: DebuffTypes,
+    pub stats: DebuffStats,
 }
 
 impl Debuff {}
@@ -32,29 +39,33 @@ pub trait OnDeathEffect {
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
 }
 
-impl OnDeathEffect for Proc {
+impl OnDeathEffect for Debuff {
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
-        match self.debuff {
-            Debuff::MarkedForExplosion => {
-                let area = Area {
-                    corner1: Position(
-                        enemy.position.0.saturating_sub(*explosion_size as i32),
-                        enemy.position.1.saturating_sub(*explosion_size as i32),
-                    ),
-                    corner2: Position(
-                        enemy.position.0.saturating_add(*explosion_size as i32),
-                        enemy.position.1.saturating_add(*explosion_size as i32),
-                    ),
-                };
+        match self.debuff_type {
+            DebuffTypes::MarkedForExplosion => {
+                if let Some(size) = self.stats.size {
+                    let area = Area {
+                        corner1: Position(
+                            enemy.position.0.saturating_sub(size),
+                            enemy.position.1.saturating_sub(size),
+                        ),
+                        corner2: Position(
+                            enemy.position.0.saturating_add(size),
+                            enemy.position.1.saturating_add(size),
+                        ),
+                    };
 
-                Some(DamageArea {
-                    damage_amount: *explosion_damage,
-                    area,
-                    entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
-                    duration: Duration::from_secs_f64(0.1),
-                    blink: true,
-                    weapon_stats: None,
-                })
+                    Some(DamageArea {
+                        damage_amount: self.stats.damage.unwrap_or(0),
+                        area,
+                        entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
+                        duration: Duration::from_secs_f64(0.1),
+                        blink: true,
+                        weapon_stats: None,
+                    })
+                } else {
+                    None
+                }
             }
         }
     }
@@ -101,30 +112,34 @@ pub struct Enemy {
 /// A trait for entities that can have debuffs applied to them.
 pub trait Debuffable {
     /// Attempts to apply a debuff with a certain chance of success.
-    fn try_proc(&mut self, debuff: Debuff, chance_to_proc: u32);
+    fn try_proc(&mut self, proc: &Proc);
     /// Counts the number of a specific debuff on the entity.
-    fn count_debuff(&self, debuff: Debuff) -> u32;
+    fn count_debuff(&self, debuff: &Debuff) -> u32;
 }
 
 impl Debuffable for Enemy {
-    fn try_proc(&mut self, debuff: Debuff, chance_to_mark: u32) {
+    fn try_proc(&mut self, proc: &Proc) {
         let mut rng = rand::rng();
 
         let roll = rng.random_range(1..=100);
 
-        match debuff {
-            Debuff::MarkedForExplosion(_, _) => {
-                if roll <= chance_to_mark && self.count_debuff(debuff) < 1 {
-                    self.debuffs.push(debuff);
+        match proc.debuff.debuff_type {
+            DebuffTypes::MarkedForExplosion => {
+                if roll <= proc.chance && self.count_debuff(&proc.debuff) < 1 {
+                    self.debuffs.push(proc.debuff.clone());
                 }
             }
         }
     }
 
-    fn count_debuff(&self, debuff: Debuff) -> u32 {
-        self.debuffs
-            .iter()
-            .fold(0, |acc, e| if e == &debuff { acc + 1 } else { acc })
+    fn count_debuff(&self, debuff: &Debuff) -> u32 {
+        self.debuffs.iter().fold(0, |acc, e| {
+            if e.debuff_type == debuff.debuff_type {
+                acc + 1
+            } else {
+                acc
+            }
+        })
     }
 }
 
@@ -133,11 +148,13 @@ impl Enemy {
     fn change_style_with_debuff(&mut self) {
         let style = self.entitychar.style_mut();
 
-        self.debuffs.iter().for_each(|debuff| match debuff {
-            Debuff::MarkedForExplosion(_, _) => {
-                *style = style.bold().gray();
-            }
-        })
+        self.debuffs
+            .iter()
+            .for_each(|debuff| match debuff.debuff_type {
+                DebuffTypes::MarkedForExplosion => {
+                    *style = style.bold().gray();
+                }
+            })
     }
 }
 
