@@ -40,6 +40,22 @@ pub trait OnDeathEffect {
 }
 
 impl OnDeathEffect for Debuff {
+    /// Produces an optional area-of-effect damage specification to emit when this debuff triggers on an enemy's death.
+    ///
+    /// If the debuff is `MarkedForExplosion` and `stats.size` is `Some(size)`, returns a `DamageArea` describing a square area centered on the enemy with radius `size`, using `stats.damage` (or `0` if absent) as the damage amount, an `AttackMist` visual styled dark gray, a duration of 0.15 seconds, `blink = false`, and no `weapon_stats`. If `stats.size` is `None`, returns `None`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Construct a debuff that produces a 1-tile explosion dealing 5 damage.
+    /// let debuff = Debuff {
+    ///     debuff_type: DebuffTypes::MarkedForExplosion,
+    ///     stats: DebuffStats { size: Some(1), damage: Some(5), ..Default::default() },
+    /// };
+    /// let enemy = Enemy::new(Position(2, 2), 1, 1, 1);
+    /// let area = debuff.on_death(enemy).expect("expected damage area");
+    /// assert_eq!(area.damage_amount, 5);
+    /// ```
     fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
         match self.debuff_type {
             DebuffTypes::MarkedForExplosion => {
@@ -118,6 +134,22 @@ pub trait Debuffable {
 }
 
 impl Debuffable for Enemy {
+    /// Attempts to apply the given `Proc`'s debuff to the enemy based on the proc's chance; if the proc succeeds and the enemy does not already have that debuff, the debuff is appended to the enemy's debuff list.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut enemy = Enemy::new(Position::new(0, 0), 1, 10, 5);
+    /// let proc = Proc {
+    ///     debuff: Debuff {
+    ///         debuff_type: DebuffTypes::MarkedForExplosion,
+    ///         stats: DebuffStats { size: Some(1), damage: Some(5) },
+    ///     },
+    ///     chance: 100, // guaranteed for example
+    /// };
+    /// enemy.try_proc(&proc);
+    /// assert_eq!(enemy.count_debuff(&proc.debuff), 1);
+    /// ```
     fn try_proc(&mut self, proc: &Proc) {
         let mut rng = rand::rng();
 
@@ -132,6 +164,24 @@ impl Debuffable for Enemy {
         }
     }
 
+    /// Counts how many active debuffs share the same debuff type as the provided `debuff`.
+    ///
+    /// # Parameters
+    ///
+    /// - `debuff`: The debuff whose `debuff_type` is used for matching against the enemy's active debuffs.
+    ///
+    /// # Returns
+    ///
+    /// `u32` number of debuffs in `self.debuffs` whose `debuff_type` equals `debuff.debuff_type`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Given an enemy with several debuffs, `count_debuff` reports how many share the same type.
+    /// // (Constructing `Enemy` and `Debuff` values is omitted for brevity; this illustrates intended usage.)
+    /// // let n = enemy.count_debuff(&some_debuff);
+    /// // assert_eq!(n, 2);
+    /// ```
     fn count_debuff(&self, debuff: &Debuff) -> u32 {
         self.debuffs.iter().fold(0, |acc, e| {
             if e.debuff_type == debuff.debuff_type {
@@ -144,7 +194,20 @@ impl Debuffable for Enemy {
 }
 
 impl Enemy {
-    /// Changes the enemy's style based on its active debuffs.
+    /// Update the enemy's visual style to reflect any active debuffs.
+    ///
+    /// Currently applies styling for `DebuffTypes::MarkedForExplosion` by making the
+    /// enemy's character style bold and gray.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Constructing an Enemy depends on your project's Position type:
+    /// // let mut enemy = Enemy::new(Position::new(0, 0), 1, 10, 5);
+    /// // enemy.debuffs.push(Debuff { debuff_type: DebuffTypes::MarkedForExplosion, stats: DebuffStats { size: Some(1), damage: Some(5) } });
+    /// // enemy.change_style_with_debuff();
+    /// // assert!(enemy.get_entity_char().style.is_bold());
+    /// ```
     fn change_style_with_debuff(&mut self) {
         let style = self.entitychar.style_mut();
 

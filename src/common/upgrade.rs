@@ -31,6 +31,21 @@ pub struct PlayerStateDiff {
 impl Sub for PlayerState {
     type Output = PlayerStateDiff;
 
+    /// Compute the difference between two player states, producing a PlayerStateDiff that contains the inventory delta.
+    ///
+    /// The resulting `PlayerStateDiff`'s `inventory` equals `self.inventory - other.inventory`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut a = PlayerState::default();
+    /// a.inventory = Inventory { gold: 10 };
+    /// let mut b = PlayerState::default();
+    /// b.inventory = Inventory { gold: 4 };
+    ///
+    /// let diff = a - b;
+    /// assert_eq!(diff.inventory.gold, 6);
+    /// ```
     fn sub(self, other: PlayerState) -> Self::Output {
         PlayerStateDiff {
             inventory: self.inventory - other.inventory,
@@ -359,6 +374,26 @@ pub struct Proc {
 }
 
 impl Default for GameStats {
+    /// Baseline game-level modifiers used when no upgrades are applied.
+    ///
+    /// The defaults are:
+    /// - `enemy_spawn_mult = 1.0`
+    /// - `enemy_move_mult = 1.0`
+    /// - `attack_speed_mult = 1.0`
+    /// - `gold_mult = 1.0`
+    /// - `width = 20`
+    /// - `height = 6`
+    /// - `timer = 60`
+    /// - `time_offset = 0s`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let gs = GameStats::default();
+    /// assert_eq!(gs.timer, 60);
+    /// assert_eq!(gs.width, 20);
+    /// assert_eq!(gs.enemy_spawn_mult, 1.0);
+    /// ```
     fn default() -> Self {
         Self {
             enemy_spawn_mult: 1.,
@@ -374,6 +409,29 @@ impl Default for GameStats {
 }
 
 impl Default for PlayerStats {
+    /// Constructs a PlayerStats with baseline health, damage, movement, and shove defaults.
+    ///
+    /// Fields are initialized to:
+    /// - base_health: 10
+    /// - health: 10
+    /// - health_mult: 1.0
+    /// - damage_mult: 1.0
+    /// - movement_speed_mult: 1.0
+    /// - shove_amount: 0
+    /// - shove_damage: 0
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let stats = PlayerStats::default();
+    /// assert_eq!(stats.base_health, 10);
+    /// assert_eq!(stats.health, 10);
+    /// assert_eq!(stats.health_mult, 1.0);
+    /// assert_eq!(stats.damage_mult, 1.0);
+    /// assert_eq!(stats.movement_speed_mult, 1.0);
+    /// assert_eq!(stats.shove_amount, 0);
+    /// assert_eq!(stats.shove_damage, 0);
+    /// ```
     fn default() -> Self {
         Self {
             base_health: 10,
@@ -388,6 +446,16 @@ impl Default for PlayerStats {
 }
 
 impl Default for WeaponStats {
+    /// Creates a default `WeaponStats` with zero damage boost, zero size, and no procs.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let ws = WeaponStats::default();
+    /// assert_eq!(ws.damage_flat_boost, 0);
+    /// assert_eq!(ws.size, 0);
+    /// assert!(ws.procs.is_empty());
+    /// ```
     fn default() -> Self {
         Self {
             damage_flat_boost: 0,
