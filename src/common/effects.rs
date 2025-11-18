@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use web_time::{Duration, Instant};
 
 use crate::common::{
-    coords::Area,
+    coords::{Area, Position},
     roguegame::{EntityCharacters, Layer, get_pos, set_entity},
     weapon::DamageArea,
 };
@@ -20,15 +20,21 @@ pub struct DamageEffect {
 
     start_time: Instant,
     pub complete: bool,
+
+    pub active_area: Area,
+    pub active_entity: EntityCharacters,
 }
 
 impl From<DamageArea> for DamageEffect {
     /// Creates a `DamageEffect` from a `DamageArea`.
     fn from(damage_area: DamageArea) -> Self {
         Self {
-            damage_area,
+            damage_area: damage_area.clone(),
             complete: false,
             start_time: Instant::now(),
+
+            active_area: damage_area.area,
+            active_entity: damage_area.entity,
         }
     }
 }
@@ -38,8 +44,8 @@ impl DamageEffect {
     pub fn new(area: Area, entity: EntityCharacters, duration: Duration, blink: bool) -> Self {
         let damage_area = DamageArea {
             damage_amount: 0,
-            area,
-            entity,
+            area: area.clone(),
+            entity: entity.clone(),
             duration,
             blink,
             weapon_stats: None,
@@ -49,17 +55,33 @@ impl DamageEffect {
             damage_area,
             complete: false,
             start_time: Instant::now(),
+
+            active_area: area,
+            active_entity: entity,
         }
+    }
+
+    pub fn delay(&mut self, delay: Duration) {
+        self.start_time += delay;
     }
 
     /// Applies the effect to the specified layer.
     pub fn take_effect(&self, layer: &mut Layer) {
         let area = &self.damage_area.area;
-        change_area(layer, area.clone(), &self.damage_area.entity);
+        if !(self.start_time > Instant::now()) {
+            change_area(layer, area.clone(), &self.damage_area.entity);
+        }
     }
 
     /// Updates the effect's state, handling its duration and visual representation.
     pub fn update(&mut self, layer: &mut Layer) {
+        if self.start_time <= Instant::now() {
+            change_area(
+                layer,
+                self.damage_area.area.clone(),
+                &self.damage_area.entity,
+            );
+        }
         if Instant::now().duration_since(self.start_time) >= self.damage_area.duration {
             change_area(
                 layer,
@@ -83,6 +105,8 @@ impl DamageEffect {
             }
         }
     }
+
+    fn get_instructions(&self) -> Vec<(Position, EntityCharacters)> {}
 }
 
 /// Changes the entity character within a specified area of a layer.
