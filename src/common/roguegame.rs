@@ -393,10 +393,11 @@ impl RogueGame {
     }
 
     pub fn flatten_to_span(&self, area: Option<Area>) -> Vec<Vec<Span<'static>>> {
-        let (mut x1, mut y1, mut x2, mut y2) = Area::from(self.layer_base.clone()).get_bounds();
-
+        let (x1, y1, x2, y2);
         if let Some(inner_area) = area {
             (x1, y1, x2, y2) = inner_area.get_bounds();
+        } else {
+            (x1, y1, x2, y2) = Area::from(self.layer_base.clone()).get_bounds();
         }
 
         let out: Vec<(usize, Vec<(usize, Span<'static>)>)> = self
