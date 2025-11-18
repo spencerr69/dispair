@@ -290,7 +290,7 @@ impl EnemyBehaviour for Enemy {
             }
         }
 
-        if can_stand(layer, &desired_pos) {
+        if can_stand(layer, &desired_pos) && &desired_pos != character.get_pos() {
             self.move_to(desired_pos, desired_facing);
         }
     }
