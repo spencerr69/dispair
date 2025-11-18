@@ -911,8 +911,8 @@ mod tests {
     fn renderspeed() {
         let mut player_state = PlayerState::default();
 
-        player_state.stats.game_stats.width = 1000;
-        player_state.stats.game_stats.height = 1000;
+        player_state.stats.width = 1000;
+        player_state.stats.height = 1000;
 
         let mut rogue_game = RogueGame::new(player_state);
 
@@ -936,8 +936,8 @@ mod tests {
     fn updatedrenderspeed() {
         let mut player_state = PlayerState::default();
 
-        player_state.stats.game_stats.width = 1000;
-        player_state.stats.game_stats.height = 1000;
+        player_state.stats.width = 1000;
+        player_state.stats.height = 1000;
 
         let mut rogue_game = RogueGame::new(player_state);
 
