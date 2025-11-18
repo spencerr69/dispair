@@ -84,6 +84,21 @@ pub struct RogueGame {
 }
 
 impl RogueGame {
+    /// Creates a new RogueGame initialized from the given player state.
+    ///
+    /// The returned game is configured with map layers, timing cadences, initial
+    /// enemy stats, a player character placed on the map, and a timescaler offset
+    /// from the player's game stats. If the player owns upgrade "53", an orb
+    /// pickup is spawned on the map.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Assume `player_state` is a valid PlayerState configured for a game.
+    /// let game = RogueGame::new(player_state);
+    /// // The game map width matches the player's configured width.
+    /// assert_eq!(game.width as usize, game.player_state.stats.game_stats.width as usize);
+    /// ```
     pub fn new(player_state: PlayerState) -> Self {
         let width = player_state.stats.game_stats.width;
         let height = player_state.stats.game_stats.height;
@@ -181,6 +196,20 @@ impl RogueGame {
         self.pickups.push(Box::new(PowerupOrb::new(position)));
     }
 
+    /// Advance the game state by one tick, progressing timers, resolving deaths, enemy and player actions, and updating rendering layers.
+    ///
+    /// This updates internal game timing and may set `game_over`. Dead enemies are removed and processed (rewards and death effects), enemies may spawn or move according to cadence, player attacks are resolved and damage effects are queued, pickups animate, entity/effect/pickup layers are refreshed, the camera area is recomputed, and `map_text` is regenerated for the current view.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// // Constructing a full `RogueGame` is out of scope for this example.
+    /// // The important behavior is that calling `on_tick()` advances internal tick state.
+    /// let mut game = /* create or obtain a RogueGame instance */;
+    /// let before = game.tickcount;
+    /// game.on_tick();
+    /// assert_eq!(game.tickcount, before + 1);
+    /// ```
     pub fn on_tick(&mut self) {
         if self.game_over {
             return;
@@ -293,6 +322,18 @@ impl RogueGame {
         self.map_text = Self::spans_to_text(spans);
     }
 
+    /// Advance per-frame visual effects and remove completed damage effects from the game state.
+    ///
+    /// This updates the effects rendering layer from `active_damage_effects` and then
+    /// filters out any damage effects marked complete so they no longer persist.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// // Given a mutable `RogueGame` instance `game`:
+    /// // let mut game = /* initialize RogueGame */;
+    /// game.on_frame();
+    /// ```
     pub fn on_frame(&mut self) {
         update_layer_effects(&mut self.layer_effects, &mut self.active_damage_effects);
 
@@ -306,12 +347,48 @@ impl RogueGame {
         // self.change_low_health_enemies_questionable();
     }
 
+    /// Adjust the attack tick cadence using the player's attack speed multiplier.
+    ///
+    /// This updates `self.attack_ticks` by dividing it by `player_state.stats.game_stats.attack_speed_mult`
+    /// and rounding the result up to the next integer, reducing the number of ticks between attacks
+    /// as the multiplier increases.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Equivalent local calculation shown for clarity:
+    /// let mut attack_ticks = 10u64;
+    /// let attack_speed_mult = 1.5f64;
+    /// attack_ticks = (attack_ticks as f64 / attack_speed_mult).ceil() as u64;
+    /// assert_eq!(attack_ticks, 7);
+    /// ```
     pub fn update_stats(&mut self) {
         self.attack_ticks = (self.attack_ticks as f64
             / self.player_state.stats.game_stats.attack_speed_mult)
             .ceil() as u64;
     }
 
+    /// Update enemy attributes and spawn/movement cadences according to the current
+    /// timescaler and the player's game stats.
+    ///
+    /// This adjusts the following fields on self:
+    /// - `enemy_health`
+    /// - `enemy_damage`
+    /// - `enemy_spawn_ticks`
+    /// - `enemy_move_ticks`
+    /// - `enemy_worth`
+    ///
+    /// The values are scaled from internal base constants using `timescaler.scale_amount`
+    /// and multipliers stored in `player_state.stats.game_stats`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Given a mutable `game: RogueGame` with `timescaler` and `player_state` initialized,
+    /// // call `scale_enemies()` to recompute enemy stats for the current difficulty.
+    /// //
+    /// // game.scale_enemies();
+    /// ```
     fn scale_enemies(&mut self) {
         let init_enemy_health = 3.;
         let init_enemy_damage = 1.;
@@ -381,6 +458,20 @@ impl RogueGame {
         }
     }
 
+    /// Place the player character at a random position within the map bounds.
+    ///
+    /// The character's position is set to an (x, y) coordinate where
+    /// 0 <= x < width and 0 <= y < height.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // assuming `game` is a mutable `RogueGame` instance
+    /// game.init_character();
+    /// let pos = game.get_character_pos();
+    /// assert!(pos.0 >= 0 && pos.0 < game.width as i32);
+    /// assert!(pos.1 >= 0 && pos.1 < game.height as i32);
+    /// ```
     pub fn init_character(&mut self) {
         let mut rng = rand::rng();
 
@@ -392,6 +483,20 @@ impl RogueGame {
         self.character.set_pos(Position(x, y));
     }
 
+    /// Produce a 2D grid of styled spans for rendering the visible cells within a given area.
+    ///
+    /// When `area` is `None`, the entire base layer is used. The returned vector is ordered by
+    /// rows (top to bottom), and each inner vector contains the styled `Span<'static>` values for
+    /// the visible columns in that row. Layer precedence is applied: effects override entities,
+    /// entities override pickups, and pickups override the base layer.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// // `game` is a `RogueGame` instance.
+    /// let rows = game.flatten_to_span(None);
+    /// assert!(rows.len() > 0);
+    /// ```
     pub fn flatten_to_span(&self, area: Option<Area>) -> Vec<Vec<Span<'static>>> {
         let (x1, y1, x2, y2);
         if let Some(inner_area) = area {
@@ -561,6 +666,17 @@ pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacter
     &layer[y][x]
 }
 
+/// Clears every cell in the provided layer by replacing each entry with `EntityCharacters::Empty`.
+///
+/// This mutates the layer in place.
+///
+/// # Examples
+///
+/// ```
+/// let mut layer = vec![vec![EntityCharacters::Background1; 3]; 2];
+/// clear_layer(&mut layer);
+/// assert!(layer.iter().all(|row| row.iter().all(|ent| matches!(ent, EntityCharacters::Empty))));
+/// ```
 pub fn clear_layer(layer: &mut Layer) {
     layer.iter_mut().for_each(|row| {
         row.iter_mut()
@@ -568,6 +684,27 @@ pub fn clear_layer(layer: &mut Layer) {
     });
 }
 
+/// Renders active damage effects into the effects layer and advances each effect's state.
+///
+/// This clears the provided `layer_effects`, writes every effect's current rendering instructions
+/// into the layer (clamping positions to the layer bounds), and then updates each `DamageEffect`
+/// so it progresses to its next frame/state.
+///
+/// # Examples
+///
+/// ```
+/// use crate::common::{EntityCharacters, DamageEffect, update_layer_effects};
+///
+/// let width = 10;
+/// let height = 5;
+/// let mut layer: Vec<Vec<EntityCharacters>> = vec![vec![EntityCharacters::Empty; width]; height];
+/// let mut effects: Vec<DamageEffect> = Vec::new(); // populate with effects in real use
+///
+/// update_layer_effects(&mut layer, &mut effects);
+///
+/// // With no effects the layer remains filled with `Empty`.
+/// assert!(layer.iter().all(|row| row.iter().all(|c| matches!(c, EntityCharacters::Empty))));
+/// ```
 pub fn update_layer_effects(layer_effects: &mut Layer, damage_effects: &mut Vec<DamageEffect>) {
     clear_layer(layer_effects);
 
@@ -581,6 +718,22 @@ pub fn update_layer_effects(layer_effects: &mut Layer, damage_effects: &mut Vec<
     });
 }
 
+/// Draws all enemies and the player onto the entities layer, clearing previous contents first.
+///
+/// The function clears `layer_entities`, writes each enemy's rendered entity character at its
+/// current position, then writes the player's entity character (overwriting any enemy at the same
+/// cell).
+///
+/// # Panics
+///
+/// Panics if any entity position is outside the bounds of `layer_entities`.
+///
+/// # Examples
+///
+/// ```no_run
+/// // Assuming `layer`, `enemies`, and `player` are initialized appropriately:
+/// update_layer_entities(&mut layer, &enemies, &player);
+/// ```
 pub fn update_layer_entities(
     layer_entities: &mut Layer,
     enemies: &Vec<Enemy>,
@@ -704,6 +857,16 @@ pub enum EntityCharacters {
 }
 
 impl EntityCharacters {
+    /// Convert an EntityCharacters variant into a styled `Span` for rendering.
+    ///
+    /// Produces the textual symbol and associated `Style` used to draw this entity on the map.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Ensure the method compiles and returns a Span for a simple variant.
+    /// let _ = crate::common::roguegame::EntityCharacters::Empty.to_styled();
+    /// ```
     pub fn to_styled(&self) -> Span<'static> {
         match self {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
@@ -738,7 +901,20 @@ impl EntityCharacters {
         }
     }
 
-    /// Checks if the entity is a player character.
+    /// Determine whether this entity represents the player character.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use crate::common::roguegame::EntityCharacters;
+    /// use ratatui::style::Style;
+    ///
+    /// let player = EntityCharacters::Character(Style::default());
+    /// let enemy = EntityCharacters::Enemy(Style::default());
+    ///
+    /// assert!(player.is_char());
+    /// assert!(!enemy.is_char());
+    /// ```
     pub fn is_char(&self) -> bool {
         match self {
             EntityCharacters::Character(_) => true,

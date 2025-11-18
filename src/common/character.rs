@@ -105,7 +105,30 @@ pub trait Damageable {
 }
 
 impl Character {
-    /// Creates a new `Character` instance based on the provided `PlayerState`.
+    /// Creates a new Character initialized from the given player state.
+    ///
+    /// The new character starts at position (0,0), facing up, with health and stats
+    /// taken from `player_state.stats.player_stats`. The character's weapon loadout
+    /// is initialized from `player_state.stats.weapon_stats`.
+    ///
+    /// # Parameters
+    ///
+    /// - `player_state`: source of player stats, health, and weapon configuration.
+    ///
+    /// # Returns
+    ///
+    /// A `Character` populated with position, facing, health, stats, entity character,
+    /// and weapons derived from the provided `player_state`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let player_state = PlayerState::default();
+    /// let c = Character::new(player_state);
+    /// assert_eq!(c.position, Position(0, 0));
+    /// assert_eq!(c.facing, Direction::UP);
+    /// assert_eq!(c.health, c.max_health);
+    /// ```
     pub fn new(player_state: PlayerState) -> Self {
         let max_health = player_state.stats.player_stats.health;
         Character {
@@ -131,7 +154,20 @@ impl Character {
         }
     }
 
-    /// Performs an attack, generating damage areas and effects.
+    /// Generates damage areas for each equipped weapon and corresponding damage effects, applies each effect to the provided layer, staggers their start times, and updates them.
+    ///
+    /// The provided `layer_effects` is modified by constraining each damage area's region to the layer before effects are produced.
+    ///
+    /// # Returns
+    ///
+    /// A tuple where the first element is a `Vec<DamageArea>` produced by the weapons, and the second element is a `Vec<DamageEffect>` derived from those areas with staggered delays applied (`0.15` seconds multiplied by each effect's index).
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// // Assuming `character` implements `attack` and `layer` is a mutable Layer:
+    /// // let (areas, effects) = character.attack(&mut layer);
+    /// ```
     pub fn attack(&self, layer_effects: &mut Layer) -> (Vec<DamageArea>, Vec<DamageEffect>) {
         let damage_areas: Vec<DamageArea> = self
             .weapons
@@ -168,6 +204,14 @@ impl Movable for Character {
         self.position = new_pos;
     }
 
+    /// Attempts to move the character to `new_pos` and update its facing; movement is throttled by the character's movement speed multiplier and `last_moved` is updated when the move occurs.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // let mut character = /* obtain Character */
+    /// // character.move_to(Position { x: 1, y: 2 }, Direction::North);
+    /// ```
     fn move_to(&mut self, new_pos: Position, facing: Direction) {
         self.facing = facing;
 
