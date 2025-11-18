@@ -745,3 +745,72 @@ impl EntityCharacters {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Instant;
+
+    use crate::common::{roguegame::RogueGame, upgrade::PlayerState};
+
+    #[test]
+    fn renderspeed() {
+        let mut player_state = PlayerState::default();
+
+        player_state.stats.game_stats.width = 1000;
+        player_state.stats.game_stats.height = 1000;
+
+        let mut rogue_game = RogueGame::new(player_state);
+
+        rogue_game.on_tick();
+        rogue_game.on_frame();
+
+        let start_time = Instant::now();
+
+        let spans = rogue_game.flatten_to_span(None);
+        let _ = RogueGame::spans_to_text(spans);
+
+        let elapsed = start_time.elapsed().as_millis();
+
+        println!("Renderspeed Time taken: {:?}", elapsed);
+
+        #[cfg(not(debug_assertions))]
+        assert!(elapsed < 100);
+    }
+
+    #[test]
+    fn updatedrenderspeed() {
+        let mut player_state = PlayerState::default();
+
+        player_state.stats.game_stats.width = 1000;
+        player_state.stats.game_stats.height = 1000;
+
+        let mut rogue_game = RogueGame::new(player_state);
+
+        let start_time = Instant::now();
+
+        rogue_game.on_tick();
+        rogue_game.on_frame();
+
+        let spans = rogue_game.flatten_to_span(None);
+        let _ = RogueGame::spans_to_text(spans);
+
+        rogue_game.on_tick();
+        rogue_game.on_frame();
+
+        let spans = rogue_game.flatten_to_span(None);
+        let _ = RogueGame::spans_to_text(spans);
+
+        rogue_game.on_tick();
+        rogue_game.on_frame();
+
+        let spans = rogue_game.flatten_to_span(None);
+        let _ = RogueGame::spans_to_text(spans);
+
+        let elapsed = start_time.elapsed().as_millis();
+
+        println!("UpdateRenderspeed Time taken: {:?}", elapsed);
+
+        #[cfg(not(debug_assertions))]
+        assert!(elapsed < 500);
+    }
+}
