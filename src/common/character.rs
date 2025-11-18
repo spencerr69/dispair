@@ -151,8 +151,8 @@ impl Character {
             .iter_mut()
             .enumerate()
             .for_each(|(i, effect)| {
-                effect.delay(Duration::from_secs_f64(0.1 * i as f64));
-                effect.take_effect(layer_effects)
+                effect.delay(Duration::from_secs_f64(0.15 * i as f64));
+                effect.update();
             });
         (damage_areas, damage_effects)
     }

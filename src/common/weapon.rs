@@ -154,7 +154,7 @@ impl Weapon for Pillar {
     fn attack(&self, wielder: &Character) -> DamageArea {
         let (x, _) = wielder.get_pos().clone().get();
 
-        let size = self.stats.size;
+        let size = self.stats.size / 2;
 
         let area = Area {
             corner1: Position(x - size, i32::MAX),
@@ -164,7 +164,7 @@ impl Weapon for Pillar {
         DamageArea {
             damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
             area,
-            entity: EntityCharacters::AttackBlackout(Style::new().light_blue()),
+            entity: EntityCharacters::AttackWeak(Style::new().gray()),
             duration: Duration::from_secs_f64(0.05),
             blink: false,
             weapon_stats: Some(self.stats.clone()),

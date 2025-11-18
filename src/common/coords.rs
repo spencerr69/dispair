@@ -96,6 +96,13 @@ impl Area {
         Area { corner1, corner2 }
     }
 
+    pub fn origin() -> Area {
+        Area {
+            corner1: Position(0, 0),
+            corner2: Position(0, 0),
+        }
+    }
+
     /// Returns the bounding box of the area as (min_x, min_y, max_x, max_y).
     pub fn get_bounds(&self) -> (i32, i32, i32, i32) {
         let (x1, y1) = self.corner1.get();

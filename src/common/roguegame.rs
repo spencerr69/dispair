@@ -1,7 +1,6 @@
 //! This module implements the core game logic for the roguelike.
 //! It manages game state, character movement, enemy behavior, and rendering.
 
-use std::thread::sleep;
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
 
@@ -295,15 +294,13 @@ impl RogueGame {
     }
 
     pub fn on_frame(&mut self) {
+        update_layer_effects(&mut self.layer_effects, &mut self.active_damage_effects);
+
         self.active_damage_effects = self
             .active_damage_effects
             .clone()
             .into_iter()
-            .map(|mut damage_effect| {
-                damage_effect.update(&mut self.layer_effects);
-                damage_effect
-            })
-            .filter(|damage_effect| !damage_effect.complete)
+            .filter(|effect| !effect.complete)
             .collect();
 
         // self.change_low_health_enemies_questionable();
@@ -570,6 +567,19 @@ pub fn clear_layer(layer: &mut Layer) {
     });
 }
 
+pub fn update_layer_effects(layer_effects: &mut Layer, damage_effects: &mut Vec<DamageEffect>) {
+    clear_layer(layer_effects);
+
+    damage_effects.into_iter().for_each(|effect| {
+        effect.get_instructions().for_each(|(mut pos, entity)| {
+            pos.constrain(layer_effects);
+            let (x, y) = pos.get_as_usize();
+            layer_effects[y][x] = entity;
+        });
+        effect.update();
+    });
+}
+
 pub fn update_layer_entities(
     layer_entities: &mut Layer,
     enemies: &Vec<Enemy>,
@@ -687,6 +697,8 @@ pub enum EntityCharacters {
     Enemy(Style),
     Empty,
     AttackBlackout(Style),
+    AttackMist(Style),
+    AttackWeak(Style),
     Orb(Style),
 }
 
@@ -702,6 +714,12 @@ impl EntityCharacters {
             EntityCharacters::Empty => Span::from(" "),
             EntityCharacters::AttackBlackout(style) => {
                 Span::from(ratatui::symbols::block::FULL).style(style.clone())
+            }
+            EntityCharacters::AttackMist(style) => {
+                Span::from(ratatui::symbols::shade::MEDIUM).style(style.clone())
+            }
+            EntityCharacters::AttackWeak(style) => {
+                Span::from(ratatui::symbols::shade::LIGHT).style(style.clone())
             }
             EntityCharacters::Orb(style) => Span::from("o").style(style.clone()),
         }

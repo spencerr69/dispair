@@ -58,9 +58,9 @@ impl OnDeathEffect for Debuff {
                     Some(DamageArea {
                         damage_amount: self.stats.damage.unwrap_or(0),
                         area,
-                        entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
-                        duration: Duration::from_secs_f64(0.1),
-                        blink: true,
+                        entity: EntityCharacters::AttackMist(Style::new().dark_gray()),
+                        duration: Duration::from_secs_f64(0.15),
+                        blink: false,
                         weapon_stats: None,
                     })
                 } else {

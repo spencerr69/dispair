@@ -9,7 +9,7 @@ use web_time::{Duration, Instant};
 
 use crate::common::{
     coords::{Area, Position},
-    roguegame::{EntityCharacters, Layer, get_pos, set_entity},
+    roguegame::{EntityCharacters, Layer, set_entity},
     weapon::DamageArea,
 };
 
@@ -65,48 +65,38 @@ impl DamageEffect {
         self.start_time += delay;
     }
 
-    /// Applies the effect to the specified layer.
-    pub fn take_effect(&self, layer: &mut Layer) {
-        let area = &self.damage_area.area;
-        if !(self.start_time > Instant::now()) {
-            change_area(layer, area.clone(), &self.damage_area.entity);
-        }
-    }
-
     /// Updates the effect's state, handling its duration and visual representation.
-    pub fn update(&mut self, layer: &mut Layer) {
-        if self.start_time <= Instant::now() {
-            change_area(
-                layer,
-                self.damage_area.area.clone(),
-                &self.damage_area.entity,
-            );
+    pub fn update(&mut self) {
+        //handle beginning
+        if self.start_time > Instant::now() {
+            self.active_area = Area::origin();
+            self.active_entity = EntityCharacters::Empty;
+        } else if self.start_time <= Instant::now() {
+            self.active_area = self.damage_area.area.clone();
+            self.active_entity = self.damage_area.entity.clone();
         }
+
         if Instant::now().duration_since(self.start_time) >= self.damage_area.duration {
-            change_area(
-                layer,
-                self.damage_area.area.clone(),
-                &EntityCharacters::Empty,
-            );
             self.complete = true
         } else if self.damage_area.blink {
-            if get_pos(layer, &self.damage_area.area.corner1) == &EntityCharacters::Empty {
-                change_area(
-                    layer,
-                    self.damage_area.area.clone(),
-                    &self.damage_area.entity,
-                );
+            if self.active_entity == self.damage_area.entity {
+                self.active_entity = EntityCharacters::Empty;
             } else {
-                change_area(
-                    layer,
-                    self.damage_area.area.clone(),
-                    &EntityCharacters::Empty,
-                );
+                self.active_entity = self.damage_area.entity.clone();
             }
         }
     }
 
-    fn get_instructions(&self) -> Vec<(Position, EntityCharacters)> {}
+    pub fn get_instructions(&self) -> Box<dyn Iterator<Item = (Position, EntityCharacters)>> {
+        let active_entity = self.active_entity.clone();
+
+        Box::new(
+            self.active_area
+                .clone()
+                .into_iter()
+                .map(move |pos| (pos, active_entity.clone())),
+        )
+    }
 }
 
 /// Changes the entity character within a specified area of a layer.
