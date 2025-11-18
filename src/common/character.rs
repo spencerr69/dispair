@@ -6,7 +6,7 @@ use crate::common::{
     coords::{Direction, Position},
     effects::DamageEffect,
     roguegame::Layer,
-    upgrade::PlayerState,
+    upgrade::{PlayerState, PlayerStats},
     weapon::{DamageArea, Sword, Weapon},
 };
 
@@ -25,9 +25,7 @@ pub struct Character {
     last_moved: Instant,
     pub facing: Direction,
 
-    pub movement_speed: f64,
-    pub strength: f64,
-    pub attack_speed: f64,
+    pub stats: PlayerStats,
 
     health: i32,
     max_health: i32,
@@ -109,15 +107,15 @@ pub trait Damageable {
 impl Character {
     /// Creates a new `Character` instance based on the provided `PlayerState`.
     pub fn new(player_state: PlayerState) -> Self {
-        let max_health = player_state.stats.health;
+        let max_health = player_state.stats.player_stats.health;
         Character {
             position: Position(0, 0),
             prev_position: Position(0, 0),
             last_moved: Instant::now(),
             facing: Direction::UP,
-            movement_speed: player_state.stats.movement_speed_mult,
-            strength: player_state.stats.damage_mult,
-            attack_speed: player_state.stats.attack_speed_mult,
+
+            stats: player_state.stats.player_stats,
+
             // player_stats: player_state.stats.clone(),
             health: max_health,
             max_health: max_health,
@@ -125,7 +123,7 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![Box::new(Sword::new(player_state.stats))],
+            weapons: vec![Box::new(Sword::new(player_state.stats.weapon_stats))],
             // weapons: vec![],
         }
     }
@@ -169,7 +167,7 @@ impl Movable for Character {
         let attempt_time = Instant::now();
         let difference = attempt_time.duration_since(self.last_moved).as_millis() as u64;
         // this is what movement speed controls vv
-        let timeout = 100 / self.movement_speed as u64;
+        let timeout = 100 / self.stats.movement_speed_mult as u64;
 
         if difference > timeout {
             self.set_pos(new_pos);

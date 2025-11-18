@@ -13,9 +13,9 @@ use ratatui::style::{Style, Stylize};
 use crate::common::{
     character::{Character, Damageable, Movable},
     coords::{Area, Direction, Position},
-    enemy::{Debuff, Debuffable, Enemy},
+    enemy::{Debuffable, Enemy},
     roguegame::EntityCharacters,
-    upgrade::{Stats, WeaponStats},
+    upgrade::WeaponStats,
 };
 
 /// Represents an area where damage is applied, created by a weapon attack.
@@ -66,20 +66,20 @@ pub struct Sword {
     base_damage: i32,
     damage_scalar: f32,
     size: i32,
-    stats: Stats,
+    stats: WeaponStats,
 }
 
 impl Sword {
+    const BASE_SIZE: i32 = 1;
+    const BASE_DAMAGE: i32 = 2;
+
     /// Creates a new `Sword` with stats based on the player's current `Stats`.
-    pub fn new(player_stats: Stats) -> Self {
-        let size_base = 1;
-        let base_damage = 2;
-        let damage_scalar = 1.;
+    pub fn new(weapon_stats: WeaponStats) -> Self {
         Sword {
-            base_damage: base_damage + player_stats.damage_flat_boost,
-            damage_scalar,
-            size: size_base + player_stats.size,
-            stats: player_stats,
+            base_damage: Self::BASE_DAMAGE + weapon_stats.damage_flat_boost,
+            damage_scalar: 1.,
+            size: Self::BASE_SIZE + weapon_stats.size,
+            stats: weapon_stats,
         }
     }
 }
@@ -111,7 +111,7 @@ impl Weapon for Sword {
 
         DamageArea {
             area: new_area,
-            damage_amount: (self.get_damage() as f64 * wielder.strength).ceil() as i32,
+            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
             entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
             duration: Duration::from_secs_f32(0.01),
             blink: false,

@@ -245,19 +245,19 @@ impl RogueGame {
                 );
                 // update_entity_positions(&mut self.layer_entities, enemy);
 
-                if self.player_state.stats.shove_amount > 0
+                if self.character.stats.shove_amount > 0
                     && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
                 {
-                    if self.player_state.stats.shove_damage > 0 {
+                    if self.character.stats.shove_damage > 0 {
                         enemy.take_damage(
-                            (self.player_state.stats.shove_damage as f64
-                                * self.player_state.stats.damage_mult)
+                            (self.character.stats.shove_damage as f64
+                                * self.character.stats.damage_mult)
                                 .ceil() as i32,
                         );
                     }
 
                     enemy.move_back(
-                        self.player_state.stats.shove_amount as i32,
+                        self.character.stats.shove_amount as i32,
                         &self.layer_entities,
                     );
                 }
@@ -309,14 +309,16 @@ impl RogueGame {
     }
 
     pub fn update_stats(&mut self) {
-        self.attack_ticks = (self.attack_ticks as f64 / self.character.attack_speed).ceil() as u64;
+        self.attack_ticks = (self.attack_ticks as f64
+            / self.player_state.stats.game_stats.attack_speed_mult)
+            .ceil() as u64;
     }
 
     fn scale_enemies(&mut self) {
         let init_enemy_health = 3.;
         let init_enemy_damage = 1.;
-        let init_enemy_spawn_secs = 0.4 * self.player_state.stats.enemy_spawn_mult;
-        let init_enemy_move_secs = 2. * self.player_state.stats.enemy_move_mult;
+        let init_enemy_spawn_secs = 0.4 * self.player_state.stats.game_stats.enemy_spawn_mult;
+        let init_enemy_move_secs = 2. * self.player_state.stats.game_stats.enemy_move_mult;
         let init_enemy_worth: u32 = 1;
 
         self.enemy_health =

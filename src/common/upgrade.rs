@@ -390,7 +390,7 @@ impl Default for WeaponStats {
     fn default() -> Self {
         Self {
             damage_flat_boost: 0,
-            size: 1,
+            size: 0,
             procs: HashMap::new(),
         }
     }
