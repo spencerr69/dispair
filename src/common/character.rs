@@ -172,13 +172,13 @@ impl Character {
     /// // Assuming `character` implements `attack` and `layer` is a mutable Layer:
     /// // let (areas, effects) = character.attack(&mut layer);
     /// ```
-    pub fn attack(&self, layer_effects: &mut Layer) -> (Vec<DamageArea>, Vec<DamageEffect>) {
+    pub fn attack(&self, layer: &Layer) -> (Vec<DamageArea>, Vec<DamageEffect>) {
         let damage_areas: Vec<DamageArea> = self
             .weapons
             .iter()
             .map(|weapon| weapon.attack(&self))
             .map(|mut damage_area| {
-                damage_area.area.constrain(layer_effects);
+                damage_area.area.constrain(layer);
                 damage_area
             })
             .collect();

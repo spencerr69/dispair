@@ -41,4 +41,4 @@ pub fn center(area: Rect, width: u16, height: u16) -> Rect {
 /// The number of game ticks per second.
 pub const TICK_RATE: f64 = 30.0;
 /// The target number of frames per second.
-pub const FRAME_RATE: f64 = 260.0;
+pub const FRAME_RATE: f64 = 60.0;
