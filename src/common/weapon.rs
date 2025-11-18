@@ -62,50 +62,53 @@ pub trait Weapon {
 }
 
 /// A struct representing a sword weapon.
-pub struct Sword {
+pub struct Flash {
     base_damage: i32,
     damage_scalar: f32,
-    size: i32,
     stats: WeaponStats,
 }
 
-impl Sword {
+impl Flash {
     const BASE_SIZE: i32 = 1;
     const BASE_DAMAGE: i32 = 2;
 
     /// Creates a new `Sword` with stats based on the player's current `Stats`.
-    pub fn new(weapon_stats: WeaponStats) -> Self {
-        Sword {
-            base_damage: Self::BASE_DAMAGE + weapon_stats.damage_flat_boost,
+    pub fn new(base_weapon_stats: WeaponStats) -> Self {
+        Flash {
+            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
             damage_scalar: 1.,
-            size: Self::BASE_SIZE + weapon_stats.size,
-            stats: weapon_stats,
+            stats: WeaponStats {
+                size: Self::BASE_SIZE + base_weapon_stats.size,
+                ..base_weapon_stats
+            },
         }
     }
 }
 
-impl Weapon for Sword {
+impl Weapon for Flash {
     /// Performs an attack with the sword, creating a `DamageArea` in front of the wielder.
     fn attack(&self, wielder: &Character) -> DamageArea {
         let (x, y) = wielder.get_pos().clone().get();
         let direction = wielder.facing.clone();
 
+        let size = self.stats.size;
+
         let new_area: Area = match direction {
             Direction::DOWN => Area {
-                corner1: Position(x + self.size, y + 1),
-                corner2: Position(x - self.size, y + self.size),
+                corner1: Position(x + size, y + 1),
+                corner2: Position(x - size, y + size),
             },
             Direction::UP => Area {
-                corner1: Position(x - self.size, y - 1),
-                corner2: Position(x + self.size, y - self.size),
+                corner1: Position(x - size, y - 1),
+                corner2: Position(x + size, y - size),
             },
             Direction::LEFT => Area {
-                corner1: Position(x - 1, y + self.size),
-                corner2: Position(x - self.size, y - self.size),
+                corner1: Position(x - 1, y + size),
+                corner2: Position(x - size, y - size),
             },
             Direction::RIGHT => Area {
-                corner1: Position(x + 1, y + self.size),
-                corner2: Position(x + self.size, y - self.size),
+                corner1: Position(x + 1, y + size),
+                corner2: Position(x + size, y - size),
             },
         };
 

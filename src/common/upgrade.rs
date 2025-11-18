@@ -353,6 +353,7 @@ pub struct DebuffStats {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Proc {
+    /// Chance is a int between 0-100.
     pub chance: u32,
     pub debuff: Debuff,
 }

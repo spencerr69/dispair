@@ -7,7 +7,7 @@ use crate::common::{
     effects::DamageEffect,
     roguegame::Layer,
     upgrade::{PlayerState, PlayerStats},
-    weapon::{DamageArea, Sword, Weapon},
+    weapon::{DamageArea, Flash, Weapon},
 };
 
 #[cfg(not(target_family = "wasm"))]
@@ -123,7 +123,7 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![Box::new(Sword::new(player_state.stats.weapon_stats))],
+            weapons: vec![Box::new(Flash::new(player_state.stats.weapon_stats))],
             // weapons: vec![],
         }
     }
