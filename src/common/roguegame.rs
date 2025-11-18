@@ -1,6 +1,7 @@
 //! This module implements the core game logic for the roguelike.
 //! It manages game state, character movement, enemy behavior, and rendering.
 
+use std::thread::sleep;
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
 

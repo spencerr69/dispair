@@ -64,7 +64,7 @@ pub trait Weapon {
 /// A struct representing a sword weapon.
 pub struct Flash {
     base_damage: i32,
-    damage_scalar: f32,
+    damage_scalar: f64,
     stats: WeaponStats,
 }
 
@@ -116,7 +116,7 @@ impl Weapon for Flash {
             area: new_area,
             damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
             entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
-            duration: Duration::from_secs_f32(0.01),
+            duration: Duration::from_secs_f32(0.05),
             blink: false,
             weapon_stats: Some(self.stats.clone()),
         }
@@ -124,6 +124,54 @@ impl Weapon for Flash {
 
     /// Returns the damage of the sword, calculated from its base damage and scalar.
     fn get_damage(&self) -> i32 {
-        return (self.base_damage as f32 * self.damage_scalar).ceil() as i32;
+        return (self.base_damage as f64 * self.damage_scalar).ceil() as i32;
+    }
+}
+
+pub struct Pillar {
+    base_damage: i32,
+    damage_scalar: f64,
+    stats: WeaponStats,
+}
+
+impl Pillar {
+    const BASE_SIZE: i32 = 0;
+    const BASE_DAMAGE: i32 = 1;
+
+    pub fn new(base_weapon_stats: WeaponStats) -> Self {
+        Pillar {
+            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
+            damage_scalar: 1.,
+            stats: WeaponStats {
+                size: Self::BASE_SIZE + base_weapon_stats.size,
+                ..base_weapon_stats
+            },
+        }
+    }
+}
+
+impl Weapon for Pillar {
+    fn attack(&self, wielder: &Character) -> DamageArea {
+        let (x, _) = wielder.get_pos().clone().get();
+
+        let size = self.stats.size;
+
+        let area = Area {
+            corner1: Position(x - size, i32::MAX),
+            corner2: Position(x + size, 0),
+        };
+
+        DamageArea {
+            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
+            area,
+            entity: EntityCharacters::AttackBlackout(Style::new().light_blue()),
+            duration: Duration::from_secs_f64(0.05),
+            blink: false,
+            weapon_stats: Some(self.stats.clone()),
+        }
+    }
+
+    fn get_damage(&self) -> i32 {
+        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
     }
 }

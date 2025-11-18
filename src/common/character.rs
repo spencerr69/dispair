@@ -7,14 +7,14 @@ use crate::common::{
     effects::DamageEffect,
     roguegame::Layer,
     upgrade::{PlayerState, PlayerStats},
-    weapon::{DamageArea, Flash, Weapon},
+    weapon::{DamageArea, Flash, Pillar, Weapon},
 };
 
 #[cfg(not(target_family = "wasm"))]
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 #[cfg(target_family = "wasm")]
-use web_time::Instant;
+use web_time::{Duration, Instant};
 
 use crate::common::roguegame::EntityCharacters;
 
@@ -123,7 +123,10 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![Box::new(Flash::new(player_state.stats.weapon_stats))],
+            weapons: vec![
+                Box::new(Flash::new(player_state.stats.weapon_stats.clone())),
+                Box::new(Pillar::new(player_state.stats.weapon_stats)),
+            ],
             // weapons: vec![],
         }
     }
@@ -139,14 +142,18 @@ impl Character {
                 damage_area
             })
             .collect();
-        let damage_effects: Vec<DamageEffect> = damage_areas
+        let mut damage_effects: Vec<DamageEffect> = damage_areas
             .clone()
             .into_iter()
             .map(|damage_area| DamageEffect::from(damage_area))
             .collect();
         damage_effects
-            .iter()
-            .for_each(|effect| effect.take_effect(layer_effects));
+            .iter_mut()
+            .enumerate()
+            .for_each(|(i, effect)| {
+                effect.delay(Duration::from_secs_f64(0.1 * i as f64));
+                effect.take_effect(layer_effects)
+            });
         (damage_areas, damage_effects)
     }
 }
