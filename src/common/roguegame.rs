@@ -618,7 +618,7 @@ impl RogueGame {
 }
 
 pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> Area {
-    let view_height = content_area.height.max(20).min(40) as i32;
+    let view_height = content_area.height.max(20).min(50) as i32;
     let view_width = content_area.width.max(30).min(100) as i32;
 
     let layer_height = layer.len() as i32;
