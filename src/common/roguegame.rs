@@ -12,7 +12,7 @@ use crate::common::{
     carnagereport::CarnageReport,
     center,
     character::{Character, Damageable, Movable},
-    coords::{Direction, Position, PositionListable, SquareArea},
+    coords::{Area, Direction, Position},
     effects::DamageEffect,
     enemy::*,
     pickups::{Pickupable, PowerupOrb},
@@ -45,7 +45,9 @@ pub struct RogueGame {
 
     character: Character,
     layer_base: Layer,
-    pub flat_layer: Layer,
+    layer_pickups: Layer,
+    layer_entities: Layer,
+    layer_effects: Layer,
 
     tickcount: u64,
 
@@ -78,44 +80,40 @@ pub struct RogueGame {
     timescaler: TimeScaler,
 
     view_area: Rect,
-    camera_area: SquareArea,
+    camera_area: Area,
 }
 
 impl RogueGame {
-    /// Creates a new RogueGame initialized from the given player state.
-    ///
-    /// The returned game is configured with map layers, timing cadences, initial
-    /// enemy stats, a player character placed on the map, and a timescaler offset
-    /// from the player's game stats. If the player owns upgrade "53", an orb
-    /// pickup is spawned on the map.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// // Assume `player_state` is a valid PlayerState configured for a game.
-    /// let game = RogueGame::new(player_state);
-    /// // The game map width matches the player's configured width.
-    /// assert_eq!(game.width as usize, game.player_state.stats.game_stats.width as usize);
-    /// ```
     pub fn new(player_state: PlayerState) -> Self {
         let width = player_state.stats.game_stats.width;
         let height = player_state.stats.game_stats.height;
 
         let mut base: Layer = Vec::from(Vec::new());
+        let mut entities: Layer = Vec::from(Vec::new());
+        let mut effects: Layer = Vec::from(Vec::new());
+        let mut pickups: Layer = Vec::from(Vec::new());
 
         let mut rng = rand::rng();
 
         for _ in 0..height {
             let mut baseline = Vec::new();
-
+            let mut entityline = Vec::new();
+            let mut effectsline = Vec::new();
+            let mut pickupsline = Vec::new();
             for _ in 0..width {
                 let choice = rng.random_range(0..=1);
                 match choice {
                     0 => baseline.push(EntityCharacters::Background1),
                     _ => baseline.push(EntityCharacters::Background2),
                 }
+                entityline.push(EntityCharacters::Empty);
+                effectsline.push(EntityCharacters::Empty);
+                pickupsline.push(EntityCharacters::Empty);
             }
             base.push(baseline);
+            entities.push(entityline);
+            effects.push(effectsline);
+            pickups.push(pickupsline);
         }
 
         let attack_ticks = Self::per_sec_to_tick_count(1.5);
@@ -129,8 +127,10 @@ impl RogueGame {
         let mut game = RogueGame {
             player_state: player_state.clone(),
             character: Character::new(player_state.clone()),
-            layer_base: base.clone(),
-            flat_layer: base,
+            layer_base: base,
+            layer_entities: entities,
+            layer_effects: effects,
+            layer_pickups: pickups,
             height,
             width,
             attack_ticks,
@@ -157,7 +157,7 @@ impl RogueGame {
                 .offset_start_time(player_state.stats.game_stats.time_offset),
 
             view_area: Rect::new(0, 0, width as u16, height as u16),
-            camera_area: SquareArea::new(Position(0, 0), Position(width as i32, height as i32)),
+            camera_area: Area::new(Position(0, 0), Position(width as i32, height as i32)),
         };
 
         game.init_character();
@@ -181,20 +181,6 @@ impl RogueGame {
         self.pickups.push(Box::new(PowerupOrb::new(position)));
     }
 
-    /// Advance the game state by one tick, progressing timers, resolving deaths, enemy and player actions, and updating rendering layers.
-    ///
-    /// This updates internal game timing and may set `game_over`. Dead enemies are removed and processed (rewards and death effects), enemies may spawn or move according to cadence, player attacks are resolved and damage effects are queued, pickups animate, entity/effect/pickup layers are refreshed, the camera area is recomputed, and `map_text` is regenerated for the current view.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// // Constructing a full `RogueGame` is out of scope for this example.
-    /// // The important behavior is that calling `on_tick()` advances internal tick state.
-    /// let mut game = /* create or obtain a RogueGame instance */;
-    /// let before = game.tickcount;
-    /// game.on_tick();
-    /// assert_eq!(game.tickcount, before + 1);
-    /// ```
     pub fn on_tick(&mut self) {
         if self.game_over {
             return;
@@ -212,25 +198,31 @@ impl RogueGame {
 
         let mut debuffed_enemies: Vec<Enemy> = Vec::new();
 
-        self.enemies.retain(|e| {
-            if !e.is_alive() {
-                if !e.debuffs.is_empty() {
-                    debuffed_enemies.push(e.clone());
-                }
-                self.player_state.inventory.add_gold(e.get_worth());
+        self.enemies = self
+            .enemies
+            .clone()
+            .into_iter()
+            .filter(|e| {
+                if !e.is_alive() {
+                    if e.debuffs.len() > 0 {
+                        debuffed_enemies.push(e.clone());
+                    }
+                    self.player_state.inventory.add_gold(e.get_worth());
 
-                return false;
-            } else {
-                return true;
-            };
-        });
+                    return false;
+                } else {
+                    return true;
+                };
+            })
+            .collect();
 
         debuffed_enemies.into_iter().for_each(|e| {
             e.debuffs
                 .iter()
-                .map(|d| d.on_death(e.clone(), &self.layer_base))
+                .map(|d| d.on_death(e.clone()))
                 .for_each(|maybe_damage_area| {
-                    if let Some(damage_area) = maybe_damage_area {
+                    if let Some(mut damage_area) = maybe_damage_area {
+                        damage_area.area.constrain(&self.layer_entities.clone());
                         damage_area.deal_damage(&mut self.enemies);
 
                         let damage_effect = DamageEffect::from(damage_area);
@@ -248,7 +240,7 @@ impl RogueGame {
             self.enemies.iter_mut().for_each(|enemy| {
                 enemy.update(
                     &mut self.character,
-                    &self.layer_base,
+                    &self.layer_entities,
                     &mut self.active_damage_effects,
                 );
                 // update_entity_positions(&mut self.layer_entities, enemy);
@@ -264,7 +256,10 @@ impl RogueGame {
                         );
                     }
 
-                    enemy.move_back(self.character.stats.shove_amount as i32, &self.layer_base);
+                    enemy.move_back(
+                        self.character.stats.shove_amount as i32,
+                        &self.layer_entities,
+                    );
                 }
             });
             // self.change_low_health_enemies_questionable();
@@ -276,67 +271,47 @@ impl RogueGame {
         }
 
         if self.tickcount % self.attack_ticks == 0 {
-            let (damage_areas, mut damage_effects) =
-                self.character.attack(&mut self.layer_base, &self.enemies);
+            let (damage_areas, mut damage_effects) = self.character.attack(&mut self.layer_effects);
             damage_areas.iter().for_each(|area| {
                 area.deal_damage(&mut self.enemies);
             });
             self.active_damage_effects.append(&mut damage_effects)
         }
 
+        update_layer_entities(&mut self.layer_entities, &self.enemies, &self.character);
+
         self.pickups
             .iter_mut()
             .for_each(|pickup| pickup.animate(self.tickcount % 1000));
-    }
+        update_layer_pickups(&mut self.layer_pickups, &self.pickups);
 
-    /// Advance per-frame visual effects and remove completed damage effects from the game state.
-    ///
-    /// This updates the effects rendering layer from `active_damage_effects` and then
-    /// filters out any damage effects marked complete so they no longer persist.
-    pub fn on_frame(&mut self) {
         self.camera_area =
             get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
-
-        update_effects(&mut self.active_damage_effects);
-        self.active_damage_effects.retain(|effect| !effect.complete);
 
         let spans = self.flatten_to_span(Some(self.camera_area.clone()));
 
         self.map_text = Self::spans_to_text(spans);
+    }
+
+    pub fn on_frame(&mut self) {
+        update_layer_effects(&mut self.layer_effects, &mut self.active_damage_effects);
+
+        self.active_damage_effects = self
+            .active_damage_effects
+            .clone()
+            .into_iter()
+            .filter(|effect| !effect.complete)
+            .collect();
 
         // self.change_low_health_enemies_questionable();
     }
 
-    /// Adjust the attack tick cadence using the player's attack speed multiplier.
-    ///
-    /// This updates `self.attack_ticks` by dividing it by `player_state.stats.game_stats.attack_speed_mult`
-    /// and rounding the result up to the next integer, reducing the number of ticks between attacks
-    /// as the multiplier increases.
     pub fn update_stats(&mut self) {
         self.attack_ticks = (self.attack_ticks as f64
             / self.player_state.stats.game_stats.attack_speed_mult)
             .ceil() as u64;
     }
 
-    pub fn get_enemy_positions(&self) -> Vec<Position> {
-        self.enemies
-            .iter()
-            .map(|enemy| enemy.get_pos().clone())
-            .collect()
-    }
-
-    /// Update enemy attributes and spawn/movement cadences according to the current
-    /// timescaler and the player's game stats.
-    ///
-    /// This adjusts the following fields on self:
-    /// - `enemy_health`
-    /// - `enemy_damage`
-    /// - `enemy_spawn_ticks`
-    /// - `enemy_move_ticks`
-    /// - `enemy_worth`
-    ///
-    /// The values are scaled from internal base constants using `timescaler.scale_amount`
-    /// and multipliers stored in `player_state.stats.game_stats`.
     fn scale_enemies(&mut self) {
         let init_enemy_health = 3.;
         let init_enemy_damage = 1.;
@@ -361,22 +336,19 @@ impl RogueGame {
             (init_enemy_worth as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u32;
     }
 
-    /// Spawns a new enemy at a random position on the edge of the map.
     pub fn spawn_enemy(&mut self) {
         self.enemies.push(Enemy::new(
-            get_rand_position_on_edge(&self.layer_base),
+            get_rand_position_on_edge(&self.layer_entities),
             self.enemy_damage,
             self.enemy_health,
             self.enemy_worth,
         ))
     }
 
-    /// Updates the time scaler and returns the current scale amount.
     fn scale(&mut self) -> f64 {
         self.timescaler.scale()
     }
 
-    /// Handles key events for the game, such as movement and pausing.
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         if let Some(_) = self.carnage_report {
             match key_event.code {
@@ -385,28 +357,30 @@ impl RogueGame {
             }
         } else {
             match key_event.code {
-                KeyCode::Char('s') | KeyCode::Down => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::DOWN)
-                }
+                KeyCode::Char('s') | KeyCode::Down => move_entity(
+                    &mut self.layer_entities,
+                    &mut self.character,
+                    Direction::DOWN,
+                ),
                 KeyCode::Char('w') | KeyCode::Up => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::UP)
+                    move_entity(&mut self.layer_entities, &mut self.character, Direction::UP)
                 }
-                KeyCode::Char('d') | KeyCode::Right => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::RIGHT)
-                }
-                KeyCode::Char('a') | KeyCode::Left => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::LEFT)
-                }
+                KeyCode::Char('d') | KeyCode::Right => move_entity(
+                    &mut self.layer_entities,
+                    &mut self.character,
+                    Direction::RIGHT,
+                ),
+                KeyCode::Char('a') | KeyCode::Left => move_entity(
+                    &mut self.layer_entities,
+                    &mut self.character,
+                    Direction::LEFT,
+                ),
                 KeyCode::Esc => self.game_over = true,
                 _ => {}
             }
         }
     }
 
-    /// Place the player character at a random position within the map bounds.
-    ///
-    /// The character's position is set to an (x, y) coordinate where
-    /// 0 <= x < width and 0 <= y < height.
     pub fn init_character(&mut self) {
         let mut rng = rand::rng();
 
@@ -418,26 +392,14 @@ impl RogueGame {
         self.character.set_pos(Position(x, y));
     }
 
-    /// Produce a 2D grid of styled spans for rendering the visible cells within a given area.
-    ///
-    /// When `area` is `None`, the entire base layer is used. The returned vector is ordered by
-    /// rows (top to bottom), and each inner vector contains the styled `Span<'static>` values for
-    /// the visible columns in that row. Layer precedence is applied: effects override entities,
-    /// entities override pickups, and pickups override the base layer.
-    pub fn flatten_to_span(&self, area: Option<SquareArea>) -> Vec<Vec<Span<'static>>> {
-        let (x1, y1, x2, y2);
+    pub fn flatten_to_span(&self, area: Option<Area>) -> Vec<Vec<Span<'static>>> {
+        let (mut x1, mut y1, mut x2, mut y2) = Area::from(self.layer_base.clone()).get_bounds();
+
         if let Some(inner_area) = area {
             (x1, y1, x2, y2) = inner_area.get_bounds();
-        } else {
-            (x1, y1, x2, y2) = (
-                0,
-                0,
-                self.layer_base[0].len() as i32 - 1,
-                self.layer_base.len() as i32 - 1,
-            );
         }
 
-        let mut enum_2d: Vec<(usize, Vec<(usize, Span<'static>)>)> = self
+        let out: Vec<(usize, Vec<(usize, Span<'static>)>)> = self
             .layer_base
             .iter()
             .enumerate()
@@ -462,61 +424,25 @@ impl RogueGame {
             })
             .collect();
 
-        self.pickups.iter().for_each(|pickup| {
-            if let Some(pickup_pos) =
-                Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, pickup.get_pos())
-            {
-                *pickup_pos = pickup.get_entity_char().to_styled();
-            }
-        });
-
-        self.enemies.iter().for_each(|enemy| {
-            if let Some(enemy_place) =
-                Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, enemy.get_pos())
-            {
-                *enemy_place = enemy.get_entity_char().to_styled();
-            }
-        });
-
-        self.active_damage_effects.iter().for_each(|effect| {
-            effect.get_instructions().for_each(|(mut pos, entity)| {
-                pos.constrain(&self.layer_base);
-                if let Some(effect_pos) = Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, &pos) {
-                    *effect_pos = entity.to_styled();
-                }
-            });
-        });
-
-        if let Some(character_place) =
-            Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, self.character.get_pos())
-        {
-            *character_place = self.character.get_entity_char().to_styled();
-        }
-
-        let out = enum_2d
+        let out: Vec<Vec<Span<'_>>> = out
             .into_iter()
-            .map(|(_, vec)| vec.into_iter().map(|(_, item)| item).collect())
+            .map(|(y, row)| {
+                row.into_iter()
+                    .map(|(x, mut pos)| {
+                        if self.layer_effects[y][x] != EntityCharacters::Empty {
+                            pos.clone_from(&self.layer_effects[y][x].to_styled());
+                        } else if self.layer_entities[y][x] != EntityCharacters::Empty {
+                            pos.clone_from(&self.layer_entities[y][x].to_styled());
+                        } else if self.layer_pickups[y][x] != EntityCharacters::Empty {
+                            pos.clone_from(&self.layer_pickups[y][x].to_styled());
+                        }
+                        pos
+                    })
+                    .collect()
+            })
             .collect();
 
         out
-    }
-
-    pub fn get_mut_item_in_2d_enum_vec<'a, T>(
-        vec: &'a mut Vec<(usize, Vec<(usize, T)>)>,
-        position: &'a Position,
-    ) -> Option<&'a mut T> {
-        let (x, y) = position.get_as_usize();
-        let maybe_row = vec.iter_mut().find(|(in_y, _)| in_y == &y);
-        if let Some(row) = maybe_row {
-            let maybe_item = row.1.iter_mut().find(|(in_x, _)| in_x == &x);
-            if let Some(item) = maybe_item {
-                Some(&mut item.1)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
     }
 
     pub fn spans_to_text(spans: Vec<Vec<Span<'_>>>) -> Text<'_> {
@@ -537,17 +463,10 @@ impl RogueGame {
 
     pub fn can_stand(&self, position: &Position) -> bool {
         let (x, y) = position.get();
-
-        if x < 0
-            || x >= self.width as i32
-            || y < 0
-            || y >= self.height as i32
-            || position == self.get_character_pos()
-            || self.get_enemy_positions().contains(position)
-        {
+        if x < 0 || x >= self.width as i32 || y < 0 || y >= self.height as i32 {
             return false;
         }
-        true
+        get_pos(&self.layer_entities, position) == &EntityCharacters::Empty
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
@@ -591,8 +510,7 @@ impl RogueGame {
     }
 }
 
-/// Calculates the camera's visible area based on the player's position and the layer dimensions.
-pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> SquareArea {
+pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> Area {
     let view_height = content_area.height as i32;
     let view_width = content_area.width as i32;
 
@@ -631,29 +549,17 @@ pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer)
         camera_y1 = (layer_height - view_height).max(0);
     }
 
-    SquareArea {
+    Area {
         corner1: Position(camera_x1, camera_y1),
         corner2: Position(camera_x2, camera_y2),
     }
 }
 
-/// Gets the entity character at a specific position on the layer.
 pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacters {
     let (x, y) = position.get_as_usize();
     &layer[y][x]
 }
 
-/// Clears every cell in the provided layer by replacing each entry with `EntityCharacters::Empty`.
-///
-/// This mutates the layer in place.
-///
-/// # Examples
-///
-/// ```ignore
-/// let mut layer = vec![vec![EntityCharacters::Background1; 3]; 2];
-/// clear_layer(&mut layer);
-/// assert!(layer.iter().all(|row| row.iter().all(|ent| matches!(ent, EntityCharacters::Empty))));
-/// ```
 pub fn clear_layer(layer: &mut Layer) {
     layer.iter_mut().for_each(|row| {
         row.iter_mut()
@@ -661,49 +567,19 @@ pub fn clear_layer(layer: &mut Layer) {
     });
 }
 
-/// Renders active damage effects into the effects layer and advances each effect's state.
-///
-/// This clears the provided `layer_effects`, writes every effect's current rendering instructions
-/// into the layer (clamping positions to the layer bounds), and then updates each `DamageEffect`
-/// so it progresses to its next frame/state.
-///
-/// # Examples
-///
-/// ```ignore
-/// use crate::common::{EntityCharacters, DamageEffect, update_layer_effects};
-///
-/// let width = 10;
-/// let height = 5;
-/// let mut layer: Vec<Vec<EntityCharacters>> = vec![vec![EntityCharacters::Empty; width]; height];
-/// let mut effects: Vec<DamageEffect> = Vec::new(); // populate with effects in real use
-///
-/// update_layer_effects(&mut layer, &mut effects);
-///
-/// // With no effects the layer remains filled with `Empty`.
-/// assert!(layer.iter().all(|row| row.iter().all(|c| matches!(c, EntityCharacters::Empty))));
-/// ```
-pub fn update_effects(damage_effects: &mut Vec<DamageEffect>) {
+pub fn update_layer_effects(layer_effects: &mut Layer, damage_effects: &mut Vec<DamageEffect>) {
+    clear_layer(layer_effects);
+
     damage_effects.into_iter().for_each(|effect| {
+        effect.get_instructions().for_each(|(mut pos, entity)| {
+            pos.constrain(layer_effects);
+            let (x, y) = pos.get_as_usize();
+            layer_effects[y][x] = entity;
+        });
         effect.update();
     });
 }
 
-/// Draws all enemies and the player onto the entities layer, clearing previous contents first.
-///
-/// The function clears `layer_entities`, writes each enemy's rendered entity character at its
-/// current position, then writes the player's entity character (overwriting any enemy at the same
-/// cell).
-///
-/// # Panics
-///
-/// Panics if any entity position is outside the bounds of `layer_entities`.
-///
-/// # Examples
-///
-/// ```no_run
-/// // Assuming `layer`, `enemies`, and `player` are initialized appropriately:
-/// update_layer_entities(&mut layer, &enemies, &player);
-/// ```
 pub fn update_layer_entities(
     layer_entities: &mut Layer,
     enemies: &Vec<Enemy>,
@@ -721,7 +597,6 @@ pub fn update_layer_entities(
     layer_entities[char_y][char_x] = character.get_entity_char();
 }
 
-/// Updates the pickups layer by clearing it and placing all active pickups.
 pub fn update_layer_pickups(layer_pickups: &mut Layer, pickups: &Vec<Box<dyn Pickupable>>) {
     clear_layer(layer_pickups);
 
@@ -732,7 +607,6 @@ pub fn update_layer_pickups(layer_pickups: &mut Layer, pickups: &Vec<Box<dyn Pic
     });
 }
 
-/// Sets a specific entity at a given position on the layer, checking for bounds.
 pub fn set_entity(
     layer: &mut Vec<Vec<EntityCharacters>>,
     position: &Position,
@@ -748,8 +622,7 @@ pub fn set_entity(
     Ok(())
 }
 
-/// Moves an entity in a specified direction if the target position is valid (standable).
-pub fn move_entity(layer: &Layer, entity: &mut impl Movable, direction: Direction) {
+pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Direction) {
     let (x, y) = entity.get_pos().get();
     let mut new_pos = match direction {
         Direction::LEFT => Position::new(x - 1, y),
@@ -768,13 +641,11 @@ pub fn move_entity(layer: &Layer, entity: &mut impl Movable, direction: Directio
     }
 }
 
-/// Checks if a position is within the layer's bounds and is valid to stand on.
 pub fn can_stand(layer: &Layer, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
-    x < layer[0].len() && y < layer.len()
+    x < layer[0].len() && y < layer.len() && layer[y][x] == EntityCharacters::Empty
 }
 
-/// Returns a random position on one of the four edges of the layer.
 pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     let mut rng = rand::rng();
 
@@ -795,7 +666,6 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     position
 }
 
-/// Returns a random position anywhere within the layer's bounds.
 pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
     let mut rng = rand::rng();
 
@@ -804,7 +674,6 @@ pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
     Position::new(x, y)
 }
 
-/// Checks if a position is adjacent (up, down, left, or right) to the character's position.
 pub fn is_next_to_character(char_position: &Position, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
     let (char_x, char_y) = char_position.get_as_usize();
@@ -813,7 +682,6 @@ pub fn is_next_to_character(char_position: &Position, position: &Position) -> bo
         || x == char_x.saturating_sub(1) && y == char_y
         || y == char_y.saturating_add(1) && x == char_x
         || y == char_y.saturating_sub(1) && x == char_x
-        || x == char_x && y == char_y
     {
         true
     } else {
@@ -835,16 +703,6 @@ pub enum EntityCharacters {
 }
 
 impl EntityCharacters {
-    /// Convert an EntityCharacters variant into a styled `Span` for rendering.
-    ///
-    /// Produces the textual symbol and associated `Style` used to draw this entity on the map.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// // Ensure the method compiles and returns a Span for a simple variant.
-    /// let _ = crate::common::roguegame::EntityCharacters::Empty.to_styled();
-    /// ```
     pub fn to_styled(&self) -> Span<'static> {
         match self {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
@@ -879,20 +737,7 @@ impl EntityCharacters {
         }
     }
 
-    /// Determine whether this entity represents the player character.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// use crate::common::roguegame::EntityCharacters;
-    /// use ratatui::style::Style;
-    ///
-    /// let player = EntityCharacters::Character(Style::default());
-    /// let enemy = EntityCharacters::Enemy(Style::default());
-    ///
-    /// assert!(player.is_char());
-    /// assert!(!enemy.is_char());
-    /// ```
+    /// Checks if the entity is a player character.
     pub fn is_char(&self) -> bool {
         match self {
             EntityCharacters::Character(_) => true,
