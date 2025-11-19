@@ -66,7 +66,7 @@ impl DamageArea {
 /// A trait for any weapon that can be used to attack.
 pub trait Weapon {
     /// Creates a `DamageArea` representing the attack.
-    fn attack(&self, wielder: &Character) -> DamageArea;
+    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>) -> DamageArea;
 
     /// Calculates and returns the base damage of the weapon.
     ///Damage should be rounded up to nearest int.
@@ -111,7 +111,7 @@ impl Weapon for Flash {
     /// // damage_amount reflects weapon damage scaled by wielder.stats.damage_mult
     /// assert!(area.damage_amount >= 0);
     /// ```
-    fn attack(&self, wielder: &Character) -> DamageArea {
+    fn attack(&self, wielder: &Character, _: &Vec<Enemy>) -> DamageArea {
         let (x, y) = wielder.get_pos().clone().get();
         let direction = wielder.facing.clone();
 
@@ -176,7 +176,7 @@ impl Pillar {
 }
 
 impl Weapon for Pillar {
-    fn attack(&self, wielder: &Character) -> DamageArea {
+    fn attack(&self, wielder: &Character, _: &Vec<Enemy>) -> DamageArea {
         let (x, _) = wielder.get_pos().clone().get();
 
         //size should be half the size for balancing
@@ -195,6 +195,40 @@ impl Weapon for Pillar {
             blink: false,
             weapon_stats: Some(self.stats.clone()),
         }
+    }
+
+    fn get_damage(&self) -> i32 {
+        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+    }
+}
+
+pub struct Lightning {
+    base_damage: i32,
+    damage_scalar: f64,
+    stats: WeaponStats,
+}
+
+impl Lightning {
+    const BASE_DAMAGE: i32 = 4;
+    const BASE_SIZE: i32 = 1;
+
+    pub fn new(base_weapon_stats: WeaponStats) -> Self {
+        Lightning {
+            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
+            damage_scalar: 1.,
+            stats: WeaponStats {
+                size: Self::BASE_SIZE + base_weapon_stats.size,
+                ..base_weapon_stats
+            },
+        }
+    }
+}
+
+impl Weapon for Lightning {
+    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>) -> DamageArea {
+        let (x, y) = wielder.get_pos().get();
+        
+        
     }
 
     fn get_damage(&self) -> i32 {
