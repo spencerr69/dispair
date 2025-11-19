@@ -842,6 +842,7 @@ pub fn is_next_to_character(char_position: &Position, position: &Position) -> bo
         || x == char_x.saturating_sub(1) && y == char_y
         || y == char_y.saturating_add(1) && x == char_x
         || y == char_y.saturating_sub(1) && x == char_x
+        || x == char_x && y == char_y
     {
         true
     } else {

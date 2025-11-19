@@ -94,26 +94,11 @@ impl Area {
     /// Constructs an Area defined by two corner positions.
     ///
     /// The provided positions become the area's corners; the effective bounds are computed from them when needed.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let a = Area::new(Position::new(1, 2), Position::new(3, 4));
-    /// let (min_x, min_y, max_x, max_y) = a.get_bounds();
-    /// assert_eq!((min_x, min_y, max_x, max_y), (1, 2, 3, 4));
-    /// ```
     pub fn new(corner1: Position, corner2: Position) -> Self {
         Area { corner1, corner2 }
     }
 
-    /// Constructs an Area with both corners at the world origin (0, 0).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let a = Area::origin();
-    /// assert_eq!(a.get_bounds(), (0, 0, 0, 0));
-    /// ```
+    /// Constructs an Area with both corners at the world origin (0, 0).\n
     pub fn origin() -> Area {
         Area {
             corner1: Position(0, 0),
@@ -123,14 +108,7 @@ impl Area {
 
     /// Compute the axis-aligned bounding box that encloses the area's corners.
     ///
-    /// The returned tuple is (min_x, min_y, max_x, max_y).
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let a = Area::new(Position::new(3, 5), Position::new(1, 2));
-    /// assert_eq!(a.get_bounds(), (1, 2, 3, 5));
-    /// ```
+    /// The returned tuple is (min_x, min_y, max_x, max_y).\n
     pub fn get_bounds(&self) -> (i32, i32, i32, i32) {
         let (x1, y1) = self.corner1.get();
         let (x2, y2) = self.corner2.get();

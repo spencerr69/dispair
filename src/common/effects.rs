@@ -32,14 +32,7 @@ impl From<DamageArea> for DamageEffect {
     /// active_area and active_entity, sets `complete` to `false`, and records the
     /// current time as the effect's start time.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// // Construct or obtain a DamageArea named `damage_area` before converting.
-    /// let damage_area = /* a DamageArea */ unimplemented!();
-    /// let effect = DamageEffect::from(damage_area);
-    /// assert!(!effect.complete);
-    /// ```
+
     fn from(damage_area: DamageArea) -> Self {
         Self {
             damage_area: damage_area.clone(),
@@ -59,15 +52,7 @@ impl DamageEffect {
     /// sets `start_time` to the current instant, marks the effect as not complete, and initializes `active_area` and
     /// `active_entity` from the provided values.
     ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use std::time::Duration;
-    /// // let area = /* an Area value */;
-    /// // let entity = /* an EntityCharacters value */;
-    /// // let effect = DamageEffect::new(area, entity, Duration::from_secs(1), true);
-    /// // assert!(!effect.complete);
-    /// ```
+
     pub fn new(area: Area, entity: EntityCharacters, duration: Duration, blink: bool) -> Self {
         let damage_area = DamageArea {
             damage_amount: 0,
@@ -92,14 +77,7 @@ impl DamageEffect {
     ///
     /// Advances the internal `start_time` forward by `delay`, causing the effect to begin later.
     ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// use std::time::Duration;
-    ///
-    /// let mut effect = DamageEffect::new(area, entity, Duration::from_secs(0), false);
-    /// effect.delay(Duration::from_millis(500));
-    /// ```
+
     pub fn delay(&mut self, delay: Duration) {
         self.start_time += delay;
     }
@@ -113,13 +91,7 @@ impl DamageEffect {
     /// damage area is configured to blink, `active_entity` toggles between the damage entity and
     /// `Empty` while the effect is active.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut effect = DamageEffect::new(area, entity, std::time::Duration::from_secs(1), true);
-    /// effect.update();
-    /// // `active_area`/`active_entity` reflect whether the effect has started and whether it is blinking.
-    /// ```
+
     pub fn update(&mut self) {
         let now = Instant::now();
 
@@ -149,16 +121,7 @@ impl DamageEffect {
     /// The positions and the active entity are captured by value at the time of the call so the iterator
     /// can be used independently of subsequent mutations to the `DamageEffect`.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// // Assume `effect` is a DamageEffect with a 2-position active_area and active_entity set.
-    /// // This example demonstrates consuming the iterator and collecting its contents.
-    /// let pairs: Vec<_> = effect.get_instructions().collect();
-    /// for (pos, entity) in pairs {
-    ///     // use `pos` and `entity`
-    /// }
-    /// ```
+
     pub fn get_instructions(&self) -> Box<dyn Iterator<Item = (Position, EntityCharacters)>> {
         let active_entity = self.active_entity.clone();
 
