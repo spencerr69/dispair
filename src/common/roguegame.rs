@@ -287,9 +287,6 @@ impl RogueGame {
         self.pickups
             .iter_mut()
             .for_each(|pickup| pickup.animate(self.tickcount % 1000));
-
-        self.camera_area =
-            get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
     }
 
     /// Advance per-frame visual effects and remove completed damage effects from the game state.
@@ -297,6 +294,9 @@ impl RogueGame {
     /// This updates the effects rendering layer from `active_damage_effects` and then
     /// filters out any damage effects marked complete so they no longer persist.
     pub fn on_frame(&mut self) {
+        self.camera_area =
+            get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
+
         update_effects(&mut self.active_damage_effects);
         self.active_damage_effects.retain(|effect| !effect.complete);
 

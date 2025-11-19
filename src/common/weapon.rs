@@ -154,7 +154,7 @@ pub struct Pillar {
 
 impl Pillar {
     const BASE_SIZE: i32 = 0;
-    const BASE_DAMAGE: i32 = 1;
+    const BASE_DAMAGE: i32 = 3;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Pillar {
@@ -204,7 +204,7 @@ pub struct Lightning {
 }
 
 impl Lightning {
-    const BASE_DAMAGE: i32 = 2;
+    const BASE_DAMAGE: i32 = 1;
     const BASE_SIZE: i32 = 1;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
