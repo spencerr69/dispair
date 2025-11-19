@@ -510,6 +510,7 @@ impl RogueGame {
     }
 }
 
+/// Calculates the camera's visible area based on the player's position and the layer dimensions.
 pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> Area {
     let view_height = content_area.height as i32;
     let view_width = content_area.width as i32;
