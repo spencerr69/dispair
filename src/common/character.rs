@@ -8,7 +8,7 @@ use crate::common::{
     enemy::Enemy,
     roguegame::Layer,
     upgrade::{PlayerState, PlayerStats},
-    weapon::{DamageArea, Flash, Pillar, Weapon},
+    weapon::{DamageArea, Flash, Lightning, Pillar, Weapon},
 };
 
 #[cfg(not(target_family = "wasm"))]
@@ -144,7 +144,8 @@ impl Character {
 
             weapons: vec![
                 Box::new(Flash::new(weapon_stats.clone())),
-                Box::new(Pillar::new(weapon_stats)),
+                Box::new(Pillar::new(weapon_stats.clone())),
+                Box::new(Lightning::new(weapon_stats)),
             ],
             // weapons: vec![],
         }
@@ -167,9 +168,9 @@ impl Character {
         let damage_areas: Vec<DamageArea> = self
             .weapons
             .iter()
-            .map(|weapon| weapon.attack(&self, enemies))
-            .map(|mut damage_area| {
-                damage_area.area.constrain(layer);
+            .map(|weapon| weapon.attack(&self, enemies, layer))
+            .map(|damage_area| {
+                damage_area.area.borrow_mut().constrain(layer);
                 damage_area
             })
             .collect();

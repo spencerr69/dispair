@@ -12,7 +12,7 @@ use crate::common::{
     carnagereport::CarnageReport,
     center,
     character::{Character, Damageable, Movable},
-    coords::{Area, Direction, Position},
+    coords::{Direction, Position, PositionListable, SquareArea},
     effects::DamageEffect,
     enemy::*,
     pickups::{Pickupable, PowerupOrb},
@@ -78,7 +78,7 @@ pub struct RogueGame {
     timescaler: TimeScaler,
 
     view_area: Rect,
-    camera_area: Area,
+    camera_area: SquareArea,
 }
 
 impl RogueGame {
@@ -157,7 +157,7 @@ impl RogueGame {
                 .offset_start_time(player_state.stats.game_stats.time_offset),
 
             view_area: Rect::new(0, 0, width as u16, height as u16),
-            camera_area: Area::new(Position(0, 0), Position(width as i32, height as i32)),
+            camera_area: SquareArea::new(Position(0, 0), Position(width as i32, height as i32)),
         };
 
         game.init_character();
@@ -228,10 +228,9 @@ impl RogueGame {
         debuffed_enemies.into_iter().for_each(|e| {
             e.debuffs
                 .iter()
-                .map(|d| d.on_death(e.clone()))
+                .map(|d| d.on_death(e.clone(), &self.layer_base))
                 .for_each(|maybe_damage_area| {
-                    if let Some(mut damage_area) = maybe_damage_area {
-                        damage_area.area.constrain(&self.layer_base);
+                    if let Some(damage_area) = maybe_damage_area {
                         damage_area.deal_damage(&mut self.enemies);
 
                         let damage_effect = DamageEffect::from(damage_area);
@@ -425,7 +424,7 @@ impl RogueGame {
     /// rows (top to bottom), and each inner vector contains the styled `Span<'static>` values for
     /// the visible columns in that row. Layer precedence is applied: effects override entities,
     /// entities override pickups, and pickups override the base layer.
-    pub fn flatten_to_span(&self, area: Option<Area>) -> Vec<Vec<Span<'static>>> {
+    pub fn flatten_to_span(&self, area: Option<SquareArea>) -> Vec<Vec<Span<'static>>> {
         let (x1, y1, x2, y2);
         if let Some(inner_area) = area {
             (x1, y1, x2, y2) = inner_area.get_bounds();
@@ -593,7 +592,7 @@ impl RogueGame {
 }
 
 /// Calculates the camera's visible area based on the player's position and the layer dimensions.
-pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> Area {
+pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> SquareArea {
     let view_height = content_area.height as i32;
     let view_width = content_area.width as i32;
 
@@ -632,7 +631,7 @@ pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer)
         camera_y1 = (layer_height - view_height).max(0);
     }
 
-    Area {
+    SquareArea {
         corner1: Position(camera_x1, camera_y1),
         corner2: Position(camera_x2, camera_y2),
     }

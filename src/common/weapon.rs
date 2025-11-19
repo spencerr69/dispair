@@ -4,6 +4,7 @@
 
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
+use std::{cell::RefCell, rc::Rc};
 
 #[cfg(target_family = "wasm")]
 use web_time::Duration;
@@ -12,9 +13,9 @@ use ratatui::style::{Style, Stylize};
 
 use crate::common::{
     character::{Character, Damageable, Movable},
-    coords::{Area, Direction, Position},
-    enemy::{Debuffable, Enemy},
-    roguegame::EntityCharacters,
+    coords::{ChaosArea, Direction, Position, PositionListable, SquareArea},
+    enemy::{Debuffable, Enemy, move_to_point_granular},
+    roguegame::{EntityCharacters, Layer},
     upgrade::WeaponStats,
 };
 
@@ -22,7 +23,7 @@ use crate::common::{
 #[derive(Clone)]
 pub struct DamageArea {
     pub damage_amount: i32,
-    pub area: Area,
+    pub area: Rc<RefCell<dyn PositionListable>>,
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,
@@ -45,7 +46,7 @@ impl DamageArea {
     /// ```
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
-            if enemy.get_pos().is_in_area(&self.area) {
+            if enemy.get_pos().is_in_area(self.area.clone()) {
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon do the following
@@ -66,7 +67,7 @@ impl DamageArea {
 /// A trait for any weapon that can be used to attack.
 pub trait Weapon {
     /// Creates a `DamageArea` representing the attack.
-    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>) -> DamageArea;
+    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>, layer: &Layer) -> DamageArea;
 
     /// Calculates and returns the base damage of the weapon.
     ///Damage should be rounded up to nearest int.
@@ -101,43 +102,35 @@ impl Weapon for Flash {
     /// Creates a DamageArea representing this weapon's attack originating from the wielder's position and facing direction.
     ///
     /// The produced DamageArea is positioned immediately in front of the wielder according to their facing, carries this weapon's damage scaled by `wielder.stats.damage_mult` (rounded up to an integer), and includes this weapon's `WeaponStats`.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// let flash = Flash::new(WeaponStats::default());
-    /// let wielder = // construct or obtain a Character //
-    /// let area = flash.attack(&wielder);
-    /// // damage_amount reflects weapon damage scaled by wielder.stats.damage_mult
-    /// assert!(area.damage_amount >= 0);
-    /// ```
-    fn attack(&self, wielder: &Character, _: &Vec<Enemy>) -> DamageArea {
+    fn attack(&self, wielder: &Character, _: &Vec<Enemy>, layer: &Layer) -> DamageArea {
         let (x, y) = wielder.get_pos().clone().get();
         let direction = wielder.facing.clone();
 
         let size = self.stats.size;
 
-        let new_area: Area = match direction {
-            Direction::DOWN => Area {
+        let mut new_area: SquareArea = match direction {
+            Direction::DOWN => SquareArea {
                 corner1: Position(x + size, y + 1),
                 corner2: Position(x - size, y + size),
             },
-            Direction::UP => Area {
+            Direction::UP => SquareArea {
                 corner1: Position(x - size, y - 1),
                 corner2: Position(x + size, y - size),
             },
-            Direction::LEFT => Area {
+            Direction::LEFT => SquareArea {
                 corner1: Position(x - 1, y + size),
                 corner2: Position(x - size, y - size),
             },
-            Direction::RIGHT => Area {
+            Direction::RIGHT => SquareArea {
                 corner1: Position(x + 1, y + size),
                 corner2: Position(x + size, y - size),
             },
         };
 
+        new_area.constrain(layer);
+
         DamageArea {
-            area: new_area,
+            area: Rc::new(RefCell::new(new_area)),
             damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
             entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
             duration: Duration::from_secs_f32(0.05),
@@ -176,20 +169,22 @@ impl Pillar {
 }
 
 impl Weapon for Pillar {
-    fn attack(&self, wielder: &Character, _: &Vec<Enemy>) -> DamageArea {
+    fn attack(&self, wielder: &Character, _: &Vec<Enemy>, layer: &Layer) -> DamageArea {
         let (x, _) = wielder.get_pos().clone().get();
 
         //size should be half the size for balancing
         let size = self.stats.size / 2;
 
-        let area = Area {
+        let mut area = SquareArea {
             corner1: Position(x - size, i32::MAX),
             corner2: Position(x + size, 0),
         };
 
+        area.constrain(layer);
+
         DamageArea {
             damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
-            area,
+            area: Rc::new(RefCell::new(area)),
             entity: EntityCharacters::AttackWeak(Style::new().gray()),
             duration: Duration::from_secs_f64(0.05),
             blink: false,
@@ -209,7 +204,7 @@ pub struct Lightning {
 }
 
 impl Lightning {
-    const BASE_DAMAGE: i32 = 4;
+    const BASE_DAMAGE: i32 = 10;
     const BASE_SIZE: i32 = 1;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
@@ -225,10 +220,46 @@ impl Lightning {
 }
 
 impl Weapon for Lightning {
-    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>) -> DamageArea {
-        let (x, y) = wielder.get_pos().get();
-        
-        
+    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>, layer: &Layer) -> DamageArea {
+        let closest = enemies.iter().reduce(|acc, enemy| {
+            let (dist_x, dist_y) = enemy.get_pos().get_distance(wielder.get_pos());
+
+            let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(wielder.get_pos());
+
+            if dist_x.abs() + dist_y.abs() < acc_dist_x.abs() + acc_dist_y.abs() {
+                enemy
+            } else {
+                acc
+            }
+        });
+
+        let mut current_pos = wielder.get_pos().clone();
+
+        let mut positions = Vec::new();
+
+        if let Some(closest) = closest {
+            let desired_pos = closest.get_pos().clone();
+
+            while current_pos != desired_pos {
+                positions.push(current_pos.clone());
+                (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos);
+            }
+
+            (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos);
+            positions.push(current_pos.clone());
+        }
+
+        let mut area = ChaosArea::new(positions);
+        area.constrain(layer);
+
+        DamageArea {
+            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
+            area: Rc::new(RefCell::new(area)),
+            entity: EntityCharacters::AttackMist(Style::new().white()),
+            duration: Duration::from_secs_f64(0.1),
+            blink: false,
+            weapon_stats: Some(self.stats.clone()),
+        }
     }
 
     fn get_damage(&self) -> i32 {

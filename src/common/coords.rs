@@ -1,5 +1,7 @@
 //! This module defines coordinate-related structs and enums, such as `Position`, `Area`, and `Direction`.
 //! It provides functionality for working with positions and areas within the game world.
+use std::{cell::RefCell, rc::Rc};
+
 use crate::common::roguegame::Layer;
 
 /// Represents a 2D position with x and y coordinates.
@@ -49,9 +51,9 @@ impl Position {
     }
 
     /// Checks if the position is within the given area.
-    pub fn is_in_area(&self, area: &Area) -> bool {
+    pub fn is_in_area(&self, area: Rc<RefCell<dyn PositionListable>>) -> bool {
         let (x, y) = self.get();
-        let (min_x, min_y, max_x, max_y) = area.get_bounds();
+        let (min_x, min_y, max_x, max_y) = area.borrow().get_bounds();
         x >= min_x && x <= max_x && y >= min_y && y <= max_y
     }
 }
@@ -67,12 +69,24 @@ pub enum Direction {
 
 /// Represents a rectangular area defined by two corner positions.
 #[derive(Clone)]
-pub struct Area {
+pub struct SquareArea {
     pub corner1: Position,
     pub corner2: Position,
 }
 
-impl From<Layer> for Area {
+pub trait ClonePosList: Clone + PositionListable {}
+
+pub trait PositionListable {
+    fn get_positions(&self) -> Vec<Position>;
+
+    fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>>;
+
+    fn get_bounds(&self) -> (i32, i32, i32, i32);
+
+    fn constrain(&mut self, layer: &Layer);
+}
+
+impl From<Layer> for SquareArea {
     fn from(value: Layer) -> Self {
         Self {
             corner1: Position(0, 0),
@@ -81,7 +95,7 @@ impl From<Layer> for Area {
     }
 }
 
-impl From<Position> for Area {
+impl From<Position> for SquareArea {
     fn from(value: Position) -> Self {
         Self {
             corner1: value.clone(),
@@ -90,46 +104,83 @@ impl From<Position> for Area {
     }
 }
 
-impl Area {
+impl SquareArea {
     /// Constructs an Area defined by two corner positions.
     ///
     /// The provided positions become the area's corners; the effective bounds are computed from them when needed.
     pub fn new(corner1: Position, corner2: Position) -> Self {
-        Area { corner1, corner2 }
+        SquareArea { corner1, corner2 }
     }
 
     /// Constructs an Area with both corners at the world origin (0, 0).\n
-    pub fn origin() -> Area {
-        Area {
+    pub fn origin() -> SquareArea {
+        SquareArea {
             corner1: Position(0, 0),
             corner2: Position(0, 0),
         }
+    }
+}
+
+impl PositionListable for SquareArea {
+    fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
+        let (x1, y1, x2, y2) = self.get_bounds();
+        Box::new((x1..=x2).flat_map(move |x| (y1..=y2).map(move |y| Position(x, y))))
+    }
+
+    fn get_positions(&self) -> Vec<Position> {
+        self.pos_iter().collect()
+    }
+
+    fn constrain(&mut self, layer: &Layer) {
+        self.corner1.constrain(layer);
+        self.corner2.constrain(layer);
     }
 
     /// Compute the axis-aligned bounding box that encloses the area's corners.
     ///
     /// The returned tuple is (min_x, min_y, max_x, max_y).\n
-    pub fn get_bounds(&self) -> (i32, i32, i32, i32) {
+    fn get_bounds(&self) -> (i32, i32, i32, i32) {
         let (x1, y1) = self.corner1.get();
         let (x2, y2) = self.corner2.get();
 
         (x1.min(x2), y1.min(y2), x1.max(x2), y1.max(y2))
     }
+}
 
-    /// Constrains the area to be within the boundaries of the given layer.
-    pub fn constrain(&mut self, layer: &Layer) {
-        self.corner1.constrain(layer);
-        self.corner2.constrain(layer);
+#[derive(Clone)]
+pub struct ChaosArea {
+    pub position_list: Vec<Position>,
+}
+
+impl ChaosArea {
+    pub fn new(position_list: Vec<Position>) -> Self {
+        ChaosArea { position_list }
     }
 }
 
-impl IntoIterator for Area {
-    type Item = Position;
-    type IntoIter = Box<dyn Iterator<Item = Self::Item>>;
+impl<T: Clone + PositionListable> ClonePosList for T {}
 
-    fn into_iter(self) -> Self::IntoIter {
-        let (x1, y1, x2, y2) = self.get_bounds();
-        Box::new((x1..=x2).flat_map(move |x| (y1..=y2).map(move |y| Position(x, y))))
+impl PositionListable for ChaosArea {
+    fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
+        Box::new(self.position_list.clone().into_iter())
+    }
+
+    fn get_positions(&self) -> Vec<Position> {
+        self.position_list.clone()
+    }
+
+    fn get_bounds(&self) -> (i32, i32, i32, i32) {
+        self.pos_iter()
+            .fold((i32::MAX, i32::MAX, i32::MIN, i32::MIN), |acc, item| {
+                let (x, y) = item.get();
+                (acc.0.min(x), acc.1.min(y), acc.2.max(x), acc.3.max(y))
+            })
+    }
+
+    fn constrain(&mut self, layer: &Layer) {
+        self.position_list
+            .iter_mut()
+            .for_each(|pos| pos.constrain(layer));
     }
 }
 
@@ -172,9 +223,9 @@ mod tests {
 
     #[test]
     fn area_iter() {
-        let area = Area::new(Position(3, 2), Position(6, 5));
+        let area = SquareArea::new(Position(3, 2), Position(6, 5));
 
-        assert_eq!(area.clone().into_iter().fold(0, |acc, _| acc + 1), 16);
-        assert_eq!(area.clone().into_iter().max(), Some(Position(6, 5)));
+        assert_eq!(area.clone().pos_iter().fold(0, |acc, _| acc + 1), 16);
+        assert_eq!(area.clone().pos_iter().max(), Some(Position(6, 5)));
     }
 }

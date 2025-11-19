@@ -1,5 +1,7 @@
 //! This module defines the `Enemy` struct and its related traits and behaviors.
 //! It includes logic for enemy movement, health, attacks, and debuffs.
+use std::cell::RefCell;
+use std::rc::Rc;
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
 
@@ -12,10 +14,11 @@ use rand::Rng;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 
+use crate::common::coords::PositionListable;
 use crate::common::upgrade::DebuffStats;
 use crate::common::upgrade::Proc;
 use crate::common::{
-    character::*, coords::Area, coords::Direction, coords::Position, effects::DamageEffect,
+    character::*, coords::Direction, coords::Position, coords::SquareArea, effects::DamageEffect,
     roguegame::*, weapon::DamageArea,
 };
 
@@ -36,18 +39,18 @@ impl Debuff {}
 /// A trait for effects that trigger when an enemy dies.
 pub trait OnDeathEffect {
     /// Called when an enemy dies, potentially creating a `DamageArea`.
-    fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
+    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea>;
 }
 
 impl OnDeathEffect for Debuff {
     /// Produces an optional area-of-effect damage specification to emit when this debuff triggers on an enemy's death.
     ///
     /// If the debuff is `MarkedForExplosion` and `stats.size` is `Some(size)`, returns a `DamageArea` describing a square area centered on the enemy with radius `size`, using `stats.damage` (or `0` if absent) as the damage amount, an `AttackMist` visual styled dark gray, a duration of 0.15 seconds, `blink = false`, and no `weapon_stats`. If `stats.size` is `None`, returns `None`.
-    fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
+    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea> {
         match self.debuff_type {
             DebuffTypes::MarkedForExplosion => {
                 if let Some(size) = self.stats.size {
-                    let area = Area {
+                    let mut area = SquareArea {
                         corner1: Position(
                             enemy.position.0.saturating_sub(size),
                             enemy.position.1.saturating_sub(size),
@@ -58,9 +61,11 @@ impl OnDeathEffect for Debuff {
                         ),
                     };
 
+                    area.constrain(layer);
+
                     Some(DamageArea {
                         damage_amount: self.stats.damage.unwrap_or(0),
-                        area,
+                        area: Rc::new(RefCell::new(area)),
                         entity: EntityCharacters::AttackMist(Style::new().dark_gray()),
                         duration: Duration::from_secs_f64(0.15),
                         blink: false,
@@ -208,8 +213,6 @@ impl EnemyBehaviour for Enemy {
         layer: &Layer,
         damage_effects: &mut Vec<DamageEffect>,
     ) {
-        let mut rng = rand::rng();
-
         self.prev_position = self.position.clone();
 
         self.change_style_with_debuff();
@@ -217,44 +220,56 @@ impl EnemyBehaviour for Enemy {
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);
             damage_effects.push(DamageEffect::new(
-                Area::from(character.get_pos().clone()),
+                SquareArea::from(character.get_pos().clone()),
                 EntityCharacters::AttackBlackout(Style::new().bold().dark_gray()),
                 Duration::from_secs_f64(0.2),
                 true,
             ));
         }
 
-        let (dist_x, dist_y) = self.position.get_distance(character.get_pos());
-        let (x, y) = self.position.get();
-        let desired_pos: Position;
-        let desired_facing: Direction;
-
-        let total_dist = dist_x.abs() + dist_y.abs();
-
-        let choice = rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32);
-
-        if choice {
-            if dist_x > 0 {
-                desired_pos = Position::new(x + 1, y);
-                desired_facing = Direction::RIGHT;
-            } else {
-                desired_pos = Position::new(x - 1, y);
-                desired_facing = Direction::LEFT;
-            }
-        } else {
-            if dist_y > 0 {
-                desired_pos = Position::new(x, y + 1);
-                desired_facing = Direction::DOWN;
-            } else {
-                desired_pos = Position::new(x, y - 1);
-                desired_facing = Direction::UP;
-            }
-        }
+        let (desired_pos, desired_facing) =
+            move_to_point_granular(&self.position, character.get_pos());
 
         if can_stand(layer, &desired_pos) && &desired_pos != character.get_pos() {
             self.move_to(desired_pos, desired_facing);
         }
     }
+}
+
+pub fn move_to_point_granular(
+    self_pos: &Position,
+    desired_location: &Position,
+) -> (Position, Direction) {
+    let mut rng = rand::rng();
+
+    let (dist_x, dist_y) = self_pos.get_distance(desired_location);
+    let (x, y) = self_pos.get();
+    let desired_pos: Position;
+    let desired_facing: Direction;
+
+    let total_dist = dist_x.abs() + dist_y.abs();
+
+    let choice = rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32);
+
+    if choice {
+        if dist_x > 0 {
+            desired_pos = Position::new(x + 1, y);
+            desired_facing = Direction::RIGHT;
+        } else {
+            desired_pos = Position::new(x - 1, y);
+            desired_facing = Direction::LEFT;
+        }
+    } else {
+        if dist_y > 0 {
+            desired_pos = Position::new(x, y + 1);
+            desired_facing = Direction::DOWN;
+        } else {
+            desired_pos = Position::new(x, y - 1);
+            desired_facing = Direction::UP;
+        }
+    }
+
+    (desired_pos, desired_facing)
 }
 
 impl Movable for Enemy {

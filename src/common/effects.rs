@@ -3,12 +3,13 @@
 
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
+use std::{cell::RefCell, rc::Rc};
 
 #[cfg(target_family = "wasm")]
 use web_time::{Duration, Instant};
 
 use crate::common::{
-    coords::{Area, Position},
+    coords::{Position, PositionListable, SquareArea},
     roguegame::{EntityCharacters, Layer, set_entity},
     weapon::DamageArea,
 };
@@ -21,7 +22,7 @@ pub struct DamageEffect {
     start_time: Instant,
     pub complete: bool,
 
-    pub active_area: Area,
+    pub active_area: Rc<RefCell<dyn PositionListable>>,
     pub active_entity: EntityCharacters,
 }
 
@@ -53,10 +54,17 @@ impl DamageEffect {
     /// `active_entity` from the provided values.
     ///
 
-    pub fn new(area: Area, entity: EntityCharacters, duration: Duration, blink: bool) -> Self {
+    pub fn new(
+        area: impl PositionListable + 'static,
+        entity: EntityCharacters,
+        duration: Duration,
+        blink: bool,
+    ) -> Self {
+        let area_rc = Rc::new(RefCell::new(area));
+
         let damage_area = DamageArea {
             damage_amount: 0,
-            area: area.clone(),
+            area: area_rc.clone(),
             entity: entity.clone(),
             duration,
             blink,
@@ -68,7 +76,7 @@ impl DamageEffect {
             complete: false,
             start_time: Instant::now(),
 
-            active_area: area,
+            active_area: area_rc.clone(),
             active_entity: entity,
         }
     }
@@ -97,7 +105,7 @@ impl DamageEffect {
 
         if now < self.start_time {
             //hasn't started yet
-            self.active_area = Area::origin();
+            self.active_area = Rc::new(RefCell::new(SquareArea::origin()));
             self.active_entity = EntityCharacters::Empty;
         } else {
             self.active_area = self.damage_area.area.clone();
@@ -128,15 +136,16 @@ impl DamageEffect {
         Box::new(
             self.active_area
                 .clone()
-                .into_iter()
+                .borrow()
+                .pos_iter()
                 .map(move |pos| (pos, active_entity.clone())),
         )
     }
 }
 
 /// Changes the entity character within a specified area of a layer.
-pub fn change_area(layer: &mut Layer, area: Area, entity: &EntityCharacters) {
-    area.clone().into_iter().for_each(|mut position| {
+pub fn change_area(layer: &mut Layer, area: SquareArea, entity: &EntityCharacters) {
+    area.clone().pos_iter().for_each(|mut position| {
         position.constrain(layer);
         set_entity(layer, &position, entity.clone()).unwrap_or(())
     });
