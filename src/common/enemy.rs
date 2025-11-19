@@ -228,7 +228,7 @@ impl EnemyBehaviour for Enemy {
         }
 
         let (desired_pos, desired_facing) =
-            move_to_point_granular(&self.position, character.get_pos());
+            move_to_point_granular(&self.position, character.get_pos(), true);
 
         if can_stand(layer, &desired_pos) && &desired_pos != character.get_pos() {
             self.move_to(desired_pos, desired_facing);
@@ -239,9 +239,8 @@ impl EnemyBehaviour for Enemy {
 pub fn move_to_point_granular(
     self_pos: &Position,
     desired_location: &Position,
+    random: bool,
 ) -> (Position, Direction) {
-    let mut rng = rand::rng();
-
     let (dist_x, dist_y) = self_pos.get_distance(desired_location);
     let (x, y) = self_pos.get();
     let desired_pos: Position;
@@ -249,7 +248,14 @@ pub fn move_to_point_granular(
 
     let total_dist = dist_x.abs() + dist_y.abs();
 
-    let choice = rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32);
+    let choice: bool;
+
+    if random {
+        let mut rng = rand::rng();
+        choice = rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32);
+    } else {
+        choice = dist_x.abs() > dist_y.abs();
+    }
 
     if choice {
         if dist_x > 0 {

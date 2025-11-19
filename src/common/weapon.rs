@@ -204,7 +204,7 @@ pub struct Lightning {
 }
 
 impl Lightning {
-    const BASE_DAMAGE: i32 = 10;
+    const BASE_DAMAGE: i32 = 2;
     const BASE_SIZE: i32 = 1;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
@@ -221,32 +221,41 @@ impl Lightning {
 
 impl Weapon for Lightning {
     fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>, layer: &Layer) -> DamageArea {
-        let closest = enemies.iter().reduce(|acc, enemy| {
-            let (dist_x, dist_y) = enemy.get_pos().get_distance(wielder.get_pos());
-
-            let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(wielder.get_pos());
-
-            if dist_x.abs() + dist_y.abs() < acc_dist_x.abs() + acc_dist_y.abs() {
-                enemy
-            } else {
-                acc
-            }
-        });
-
-        let mut current_pos = wielder.get_pos().clone();
+        let mut begin_pos = wielder.get_pos().clone();
 
         let mut positions = Vec::new();
 
-        if let Some(closest) = closest {
-            let desired_pos = closest.get_pos().clone();
+        for _ in 0..self.stats.size {
+            let closest = enemies.iter().reduce(|acc, enemy| {
+                let (dist_x, dist_y) = enemy.get_pos().get_distance(&begin_pos);
+                let enemy_total_dist = dist_x.abs() + dist_y.abs();
 
-            while current_pos != desired_pos {
+                let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(&begin_pos);
+                let acc_total_dist = acc_dist_x.abs() + acc_dist_y.abs();
+
+                if enemy_total_dist < acc_total_dist && enemy_total_dist > 2 || acc_total_dist <= 2
+                {
+                    enemy
+                } else {
+                    acc
+                }
+            });
+
+            let mut current_pos = begin_pos.clone();
+
+            if let Some(closest) = closest {
+                let desired_pos = closest.get_pos().clone();
+
+                while current_pos != desired_pos {
+                    positions.push(current_pos.clone());
+                    (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos, false);
+                }
+
+                (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos, false);
                 positions.push(current_pos.clone());
-                (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos);
-            }
 
-            (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos);
-            positions.push(current_pos.clone());
+                begin_pos = desired_pos;
+            }
         }
 
         let mut area = ChaosArea::new(positions);
