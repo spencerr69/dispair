@@ -5,6 +5,7 @@ use ratatui::style::{Style, Stylize};
 use crate::common::{
     coords::{Direction, Position},
     effects::DamageEffect,
+    enemy::Enemy,
     roguegame::Layer,
     upgrade::{PlayerState, PlayerStats},
     weapon::{DamageArea, Flash, Pillar, Weapon},
@@ -158,11 +159,15 @@ impl Character {
     /// A tuple where the first element is a `Vec<DamageArea>` produced by the weapons, and the second element is a `Vec<DamageEffect>` derived from those areas with staggered delays applied (`0.15` seconds multiplied by each effect's index).
     ///
 
-    pub fn attack(&self, layer: &Layer) -> (Vec<DamageArea>, Vec<DamageEffect>) {
+    pub fn attack(
+        &self,
+        layer: &Layer,
+        enemies: &Vec<Enemy>,
+    ) -> (Vec<DamageArea>, Vec<DamageEffect>) {
         let damage_areas: Vec<DamageArea> = self
             .weapons
             .iter()
-            .map(|weapon| weapon.attack(&self))
+            .map(|weapon| weapon.attack(&self, enemies))
             .map(|mut damage_area| {
                 damage_area.area.constrain(layer);
                 damage_area

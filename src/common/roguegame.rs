@@ -277,7 +277,8 @@ impl RogueGame {
         }
 
         if self.tickcount % self.attack_ticks == 0 {
-            let (damage_areas, mut damage_effects) = self.character.attack(&mut self.layer_base);
+            let (damage_areas, mut damage_effects) =
+                self.character.attack(&mut self.layer_base, &self.enemies);
             damage_areas.iter().for_each(|area| {
                 area.deal_damage(&mut self.enemies);
             });
@@ -407,16 +408,6 @@ impl RogueGame {
     ///
     /// The character's position is set to an (x, y) coordinate where
     /// 0 <= x < width and 0 <= y < height.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// // assuming `game` is a mutable `RogueGame` instance
-    /// game.init_character();
-    /// let pos = game.get_character_pos();
-    /// assert!(pos.0 >= 0 && pos.0 < game.width as i32);
-    /// assert!(pos.1 >= 0 && pos.1 < game.height as i32);
-    /// ```
     pub fn init_character(&mut self) {
         let mut rng = rand::rng();
 
@@ -434,14 +425,6 @@ impl RogueGame {
     /// rows (top to bottom), and each inner vector contains the styled `Span<'static>` values for
     /// the visible columns in that row. Layer precedence is applied: effects override entities,
     /// entities override pickups, and pickups override the base layer.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// // `game` is a `RogueGame` instance.
-    /// let rows = game.flatten_to_span(None);
-    /// assert!(!rows.is_empty());
-    /// ```
     pub fn flatten_to_span(&self, area: Option<Area>) -> Vec<Vec<Span<'static>>> {
         let (x1, y1, x2, y2);
         if let Some(inner_area) = area {
