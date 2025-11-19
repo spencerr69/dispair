@@ -199,8 +199,9 @@ impl PlayerState {
         //debug
         #[cfg(debug_assertions)]
         if self.upgrade_owned("9999") {
-            game_stats.width = 200;
-            game_stats.height = 100;
+            game_stats.width = 400;
+            game_stats.height = 400;
+            weapon_stats.size *= 6;
             game_stats.enemy_spawn_mult = 12.;
             game_stats.enemy_move_mult = 3.;
             player_stats.base_health = 10000;
@@ -359,7 +360,7 @@ pub struct WeaponStats {
     pub size: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct DebuffStats {
     pub size: Option<i32>,
     pub damage: Option<i32>,

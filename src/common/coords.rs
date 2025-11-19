@@ -59,7 +59,7 @@ impl Position {
 }
 
 /// Represents the four cardinal directions.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Direction {
     LEFT,
     RIGHT,

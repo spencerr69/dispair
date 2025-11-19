@@ -28,7 +28,7 @@ pub enum DebuffTypes {
     MarkedForExplosion,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Debuff {
     pub debuff_type: DebuffTypes,
     pub stats: DebuffStats,
@@ -97,7 +97,7 @@ pub trait EnemyBehaviour {
 }
 
 /// Represents an enemy in the game.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Enemy {
     position: Position,
     prev_position: Position,

@@ -225,6 +225,8 @@ impl Weapon for Lightning {
 
         let mut positions = Vec::new();
 
+        let mut enemies = enemies.clone();
+
         for _ in 0..self.stats.size {
             let closest = enemies.iter().reduce(|acc, enemy| {
                 let (dist_x, dist_y) = enemy.get_pos().get_distance(&begin_pos);
@@ -255,6 +257,17 @@ impl Weapon for Lightning {
                 positions.push(current_pos.clone());
 
                 begin_pos = desired_pos;
+
+                enemies = enemies
+                    .iter()
+                    .filter_map(|e| {
+                        if e != closest {
+                            return Some(e.clone());
+                        } else {
+                            return None;
+                        }
+                    })
+                    .collect();
             }
         }
 
