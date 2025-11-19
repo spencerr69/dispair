@@ -379,6 +379,7 @@ impl RogueGame {
             (init_enemy_worth as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u32;
     }
 
+    /// Spawns a new enemy at a random position on the edge of the map.
     pub fn spawn_enemy(&mut self) {
         self.enemies.push(Enemy::new(
             get_rand_position_on_edge(&self.layer_base),
@@ -388,10 +389,12 @@ impl RogueGame {
         ))
     }
 
+    /// Updates the time scaler and returns the current scale amount.
     fn scale(&mut self) -> f64 {
         self.timescaler.scale()
     }
 
+    /// Handles key events for the game, such as movement and pausing.
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         if let Some(_) = self.carnage_report {
             match key_event.code {
@@ -617,6 +620,7 @@ impl RogueGame {
     }
 }
 
+/// Calculates the camera's visible area based on the player's position and the layer dimensions.
 pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> Area {
     let view_height = content_area.height as i32;
     let view_width = content_area.width as i32;
@@ -662,6 +666,7 @@ pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer)
     }
 }
 
+/// Gets the entity character at a specific position on the layer.
 pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacters {
     let (x, y) = position.get_as_usize();
     &layer[y][x]
@@ -745,6 +750,7 @@ pub fn update_layer_entities(
     layer_entities[char_y][char_x] = character.get_entity_char();
 }
 
+/// Updates the pickups layer by clearing it and placing all active pickups.
 pub fn update_layer_pickups(layer_pickups: &mut Layer, pickups: &Vec<Box<dyn Pickupable>>) {
     clear_layer(layer_pickups);
 
@@ -755,6 +761,7 @@ pub fn update_layer_pickups(layer_pickups: &mut Layer, pickups: &Vec<Box<dyn Pic
     });
 }
 
+/// Sets a specific entity at a given position on the layer, checking for bounds.
 pub fn set_entity(
     layer: &mut Vec<Vec<EntityCharacters>>,
     position: &Position,
@@ -770,6 +777,7 @@ pub fn set_entity(
     Ok(())
 }
 
+/// Moves an entity in a specified direction if the target position is valid (standable).
 pub fn move_entity(layer: &Layer, entity: &mut impl Movable, direction: Direction) {
     let (x, y) = entity.get_pos().get();
     let mut new_pos = match direction {
@@ -789,11 +797,13 @@ pub fn move_entity(layer: &Layer, entity: &mut impl Movable, direction: Directio
     }
 }
 
+/// Checks if a position is within the layer's bounds and is valid to stand on.
 pub fn can_stand(layer: &Layer, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
     x < layer[0].len() && y < layer.len()
 }
 
+/// Returns a random position on one of the four edges of the layer.
 pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     let mut rng = rand::rng();
 
@@ -814,6 +824,7 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     position
 }
 
+/// Returns a random position anywhere within the layer's bounds.
 pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
     let mut rng = rand::rng();
 
@@ -822,6 +833,7 @@ pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
     Position::new(x, y)
 }
 
+/// Checks if a position is adjacent (up, down, left, or right) to the character's position.
 pub fn is_next_to_character(char_position: &Position, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
     let (char_x, char_y) = char_position.get_as_usize();

@@ -152,6 +152,7 @@ impl Weapon for Flash {
     }
 }
 
+/// A struct representing a Pillar weapon, which attacks in a vertical column.
 pub struct Pillar {
     base_damage: i32,
     damage_scalar: f64,
