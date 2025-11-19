@@ -39,7 +39,7 @@ impl DamageArea {
     ///
     /// ```ignore
     /// // pseudocode example showing usage
-    /// let mut enemies = vec![Enemy::new_at(0, 0)];
+    /// let mut enemies = vec![/* create enemies */];
     /// let area = DamageArea { /* area covering (0,0), damage_amount: 5, weapon_stats: None, ... */ };
     /// area.deal_damage(&mut enemies);
     /// ```
@@ -179,6 +179,7 @@ impl Weapon for Pillar {
     fn attack(&self, wielder: &Character) -> DamageArea {
         let (x, _) = wielder.get_pos().clone().get();
 
+        //size should be half the size for balancing
         let size = self.stats.size / 2;
 
         let area = Area {

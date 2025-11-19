@@ -212,7 +212,7 @@ impl RogueGame {
 
         self.enemies.retain(|e| {
             if !e.is_alive() {
-                if e.debuffs.len() > 0 {
+                if !e.debuffs.is_empty() {
                     debuffed_enemies.push(e.clone());
                 }
                 self.player_state.inventory.add_gold(e.get_worth());
@@ -458,7 +458,7 @@ impl RogueGame {
     /// ```no_run
     /// // `game` is a `RogueGame` instance.
     /// let rows = game.flatten_to_span(None);
-    /// assert!(rows.len() > 0);
+    /// assert!(!rows.is_empty());
     /// ```
     pub fn flatten_to_span(&self, area: Option<Area>) -> Vec<Vec<Span<'static>>> {
         let (x1, y1, x2, y2);
