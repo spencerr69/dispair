@@ -45,6 +45,7 @@ pub struct RogueGame {
 
     character: Character,
     layer_base: Layer,
+    pub flat_layer: Layer,
 
     tickcount: u64,
 
@@ -128,7 +129,8 @@ impl RogueGame {
         let mut game = RogueGame {
             player_state: player_state.clone(),
             character: Character::new(player_state.clone()),
-            layer_base: base,
+            layer_base: base.clone(),
+            flat_layer: base,
             height,
             width,
             attack_ticks,
@@ -294,14 +296,6 @@ impl RogueGame {
     ///
     /// This updates the effects rendering layer from `active_damage_effects` and then
     /// filters out any damage effects marked complete so they no longer persist.
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// // Given a mutable `RogueGame` instance `game`:
-    /// // let mut game = /* initialize RogueGame */;
-    /// game.on_frame();
-    /// ```
     pub fn on_frame(&mut self) {
         update_effects(&mut self.active_damage_effects);
         self.active_damage_effects.retain(|effect| !effect.complete);
@@ -318,20 +312,17 @@ impl RogueGame {
     /// This updates `self.attack_ticks` by dividing it by `player_state.stats.game_stats.attack_speed_mult`
     /// and rounding the result up to the next integer, reducing the number of ticks between attacks
     /// as the multiplier increases.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// // Equivalent local calculation shown for clarity:
-    /// let mut attack_ticks = 10u64;
-    /// let attack_speed_mult = 1.5f64;
-    /// attack_ticks = (attack_ticks as f64 / attack_speed_mult).ceil() as u64;
-    /// assert_eq!(attack_ticks, 7);
-    /// ```
     pub fn update_stats(&mut self) {
         self.attack_ticks = (self.attack_ticks as f64
             / self.player_state.stats.game_stats.attack_speed_mult)
             .ceil() as u64;
+    }
+
+    pub fn get_enemy_positions(&self) -> Vec<Position> {
+        self.enemies
+            .iter()
+            .map(|enemy| enemy.get_pos().clone())
+            .collect()
     }
 
     /// Update enemy attributes and spawn/movement cadences according to the current
@@ -346,15 +337,6 @@ impl RogueGame {
     ///
     /// The values are scaled from internal base constants using `timescaler.scale_amount`
     /// and multipliers stored in `player_state.stats.game_stats`.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// // Given a mutable `game: RogueGame` with `timescaler` and `player_state` initialized,
-    /// // call `scale_enemies()` to recompute enemy stats for the current difficulty.
-    /// //
-    /// // game.scale_enemies();
-    /// ```
     fn scale_enemies(&mut self) {
         let init_enemy_health = 3.;
         let init_enemy_damage = 1.;
@@ -573,7 +555,14 @@ impl RogueGame {
 
     pub fn can_stand(&self, position: &Position) -> bool {
         let (x, y) = position.get();
-        if x < 0 || x >= self.width as i32 || y < 0 || y >= self.height as i32 {
+
+        if x < 0
+            || x >= self.width as i32
+            || y < 0
+            || y >= self.height as i32
+            || position == self.get_character_pos()
+            || self.get_enemy_positions().contains(position)
+        {
             return false;
         }
         true

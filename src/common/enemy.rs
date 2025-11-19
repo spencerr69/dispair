@@ -208,6 +208,8 @@ impl EnemyBehaviour for Enemy {
         layer: &Layer,
         damage_effects: &mut Vec<DamageEffect>,
     ) {
+        let mut rng = rand::rng();
+
         self.prev_position = self.position.clone();
 
         self.change_style_with_debuff();
@@ -227,7 +229,11 @@ impl EnemyBehaviour for Enemy {
         let desired_pos: Position;
         let desired_facing: Direction;
 
-        if dist_x.abs() > dist_y.abs() {
+        let total_dist = dist_x.abs() + dist_y.abs();
+
+        let choice = rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32);
+
+        if choice {
             if dist_x > 0 {
                 desired_pos = Position::new(x + 1, y);
                 desired_facing = Direction::RIGHT;
