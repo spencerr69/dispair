@@ -90,7 +90,7 @@ impl RogueGame {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // Assume `player_state` is a valid PlayerState configured for a game.
     /// let game = RogueGame::new(player_state);
     /// // The game map width matches the player's configured width.
@@ -321,7 +321,7 @@ impl RogueGame {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // Equivalent local calculation shown for clarity:
     /// let mut attack_ticks = 10u64;
     /// let attack_speed_mult = 1.5f64;
@@ -349,7 +349,7 @@ impl RogueGame {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // Given a mutable `game: RogueGame` with `timescaler` and `player_state` initialized,
     /// // call `scale_enemies()` to recompute enemy stats for the current difficulty.
     /// //
@@ -428,7 +428,7 @@ impl RogueGame {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // assuming `game` is a mutable `RogueGame` instance
     /// game.init_character();
     /// let pos = game.get_character_pos();
@@ -678,7 +678,7 @@ pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacter
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// let mut layer = vec![vec![EntityCharacters::Background1; 3]; 2];
 /// clear_layer(&mut layer);
 /// assert!(layer.iter().all(|row| row.iter().all(|ent| matches!(ent, EntityCharacters::Empty))));
@@ -698,7 +698,7 @@ pub fn clear_layer(layer: &mut Layer) {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use crate::common::{EntityCharacters, DamageEffect, update_layer_effects};
 ///
 /// let width = 10;
@@ -869,7 +869,7 @@ impl EntityCharacters {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // Ensure the method compiles and returns a Span for a simple variant.
     /// let _ = crate::common::roguegame::EntityCharacters::Empty.to_styled();
     /// ```
@@ -911,7 +911,7 @@ impl EntityCharacters {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// use crate::common::roguegame::EntityCharacters;
     /// use ratatui::style::Style;
     ///

@@ -37,7 +37,7 @@ impl DamageArea {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// // pseudocode example showing usage
     /// let mut enemies = vec![Enemy::new_at(0, 0)];
     /// let area = DamageArea { /* area covering (0,0), damage_amount: 5, weapon_stats: None, ... */ };
