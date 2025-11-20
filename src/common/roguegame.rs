@@ -15,7 +15,7 @@ use crate::common::{
     coords::{Area, Direction, Position, SquareArea},
     effects::DamageEffect,
     enemy::*,
-    pickups::{Pickupable, PowerupOrb},
+    pickups::{PickupEffect, Pickupable, PowerupOrb},
     timescaler::TimeScaler,
     upgrade::PlayerState,
 };
@@ -67,6 +67,8 @@ pub struct RogueGame {
 
     /// A flag indicating whether the game is over.
     pub game_over: bool,
+
+    pub game_paused: bool,
     /// A flag indicating whether the game should exit.
     pub exit: bool,
 
@@ -141,6 +143,7 @@ impl RogueGame {
 
             carnage_report: None,
             exit: false,
+            game_paused: false,
 
             enemy_damage: 1,
             enemy_health: 3,
@@ -182,7 +185,7 @@ impl RogueGame {
     }
 
     pub fn on_tick(&mut self) {
-        if self.game_over {
+        if self.game_over || self.game_paused {
             return;
         }
 
@@ -195,6 +198,34 @@ impl RogueGame {
         if !self.character.is_alive() {
             self.game_over = true;
         }
+
+        let char_pos = self.get_character_pos().clone();
+
+        self.pickups.iter_mut().for_each(|pickup| {
+            if pickup.get_pos() == &char_pos {
+                let effect = pickup.on_pickup();
+
+                match effect {
+                    PickupEffect::PowerupOrb => {
+                        let area = SquareArea::new(
+                            Position(0, 0),
+                            Position(self.width as i32, self.height as i32),
+                        );
+
+                        self.active_damage_effects.push(DamageEffect::new(
+                            area,
+                            EntityCharacters::AttackWeak(Style::new().red()),
+                            Duration::from_secs_f64(0.5),
+                            false,
+                        ));
+
+                        self.game_paused = true;
+                    }
+                }
+            }
+        });
+
+        self.pickups.retain(|pickup| !pickup.is_picked_up());
 
         let mut debuffed_enemies: Vec<Enemy> = Vec::new();
 
@@ -295,6 +326,10 @@ impl RogueGame {
     }
 
     pub fn on_frame(&mut self) {
+        if self.game_paused {
+            return;
+        }
+
         update_layer_effects(&mut self.layer_effects, &mut self.active_damage_effects);
 
         self.active_damage_effects = self
