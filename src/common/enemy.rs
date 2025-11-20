@@ -67,7 +67,7 @@ impl OnDeathEffect for Debuff {
                         damage_amount: self.stats.damage.unwrap_or(0),
                         area: Rc::new(RefCell::new(area)),
                         entity: EntityCharacters::AttackMist(Style::new().dark_gray()),
-                        duration: Duration::from_secs_f64(0.15),
+                        duration: Duration::from_secs_f64(0.05),
                         blink: false,
                         weapon_stats: None,
                     })
