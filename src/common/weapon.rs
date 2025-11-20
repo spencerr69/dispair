@@ -91,12 +91,12 @@ impl Flash {
     }
 }
 
-impl Poweruppable for Flash {
+impl<'a> Poweruppable<'a> for Flash {
     fn get_level(&self) -> i32 {
         self.stats.level
     }
 
-    fn get_next_upgrade(&'static self) -> Option<super::powerup::DynPowerup> {
+    fn get_next_upgrade(&'a self) -> Option<super::powerup::DynPowerup> {
         if self.get_level() >= Self::MAX_LEVEL {
             None
         } else {
@@ -191,6 +191,7 @@ pub struct Pillar {
 impl Pillar {
     const BASE_SIZE: i32 = 0;
     const BASE_DAMAGE: i32 = 3;
+    const MAX_LEVEL: i32 = 5;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Pillar {
@@ -233,6 +234,48 @@ impl Weapon for Pillar {
     }
 }
 
+impl<'a> Poweruppable<'a> for Pillar {
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn get_next_upgrade(&'a self) -> Option<super::powerup::DynPowerup> {
+        if self.get_level() >= Self::MAX_LEVEL {
+            None
+        } else {
+            Some(Box::new(WeaponPowerup::new(
+                "FLASH".into(),
+                "Upgrade flash.".into(),
+                self.get_level() + 1,
+                Some(Box::new(self.clone())),
+            )))
+        }
+    }
+
+    fn upgrade_self(&mut self, powerup: &dyn super::powerup::Powerup) {
+        self.stats.level = powerup.get_new_level();
+
+        for i in 1..=self.stats.level {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
+    }
+}
 pub struct Lightning {
     base_damage: i32,
     damage_scalar: f64,
@@ -242,6 +285,7 @@ pub struct Lightning {
 impl Lightning {
     const BASE_DAMAGE: i32 = 1;
     const BASE_SIZE: i32 = 1;
+    const MAX_LEVEL: i32 = 5;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Lightning {
@@ -322,5 +366,48 @@ impl Weapon for Lightning {
 
     fn get_damage(&self) -> i32 {
         (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+    }
+}
+
+impl<'a> Poweruppable<'a> for Lightning {
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn get_next_upgrade(&'a self) -> Option<super::powerup::DynPowerup> {
+        if self.get_level() >= Self::MAX_LEVEL {
+            None
+        } else {
+            Some(Box::new(WeaponPowerup::new(
+                "FLASH".into(),
+                "Upgrade flash.".into(),
+                self.get_level() + 1,
+                Some(Box::new(self)),
+            )))
+        }
+    }
+
+    fn upgrade_self(&mut self, powerup: &dyn super::powerup::Powerup) {
+        self.stats.level = powerup.get_new_level();
+
+        for i in 1..=self.stats.level {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
     }
 }

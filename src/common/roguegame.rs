@@ -3,6 +3,7 @@
 
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
+use std::{cell::RefCell, rc::Rc};
 
 #[cfg(target_family = "wasm")]
 use web_time::{Duration, Instant};
@@ -81,6 +82,8 @@ pub struct RogueGame {
     timer: Duration,
     start_time: Instant,
 
+    start_popup: bool,
+
     timescaler: TimeScaler,
 
     view_area: Rect,
@@ -142,6 +145,7 @@ impl RogueGame {
             enemy_spawn_ticks,
 
             map_text: Text::from(""),
+            start_popup: false,
 
             carnage_report: None,
             powerup_popup: None,
@@ -225,12 +229,17 @@ impl RogueGame {
                         ));
 
                         self.game_paused = true;
+                        self.start_popup = true;
                     }
                 }
             }
         });
 
         self.pickups.retain(|pickup| !pickup.is_picked_up());
+
+        if self.start_popup {
+            self.generate_popup();
+        }
 
         let mut debuffed_enemies: Vec<Enemy> = Vec::new();
 
@@ -349,6 +358,12 @@ impl RogueGame {
         self.attack_ticks = (self.attack_ticks as f64
             / self.player_state.stats.game_stats.attack_speed_mult)
             .ceil() as u64;
+    }
+
+    pub fn generate_popup(&mut self) {
+        self.powerup_popup = Some(PowerupPopup::new(RefCell::new(Rc::new(
+            self.character.weapons,
+        ))));
     }
 
     fn scale_enemies(&mut self) {

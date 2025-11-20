@@ -6,9 +6,10 @@ use crate::common::{
     coords::{Direction, Position},
     effects::DamageEffect,
     enemy::Enemy,
+    powerup::PoweruppableWeapon,
     roguegame::Layer,
     upgrade::{PlayerState, PlayerStats},
-    weapon::{DamageArea, Flash, Lightning, Pillar, Weapon},
+    weapon::{DamageArea, Flash, Lightning, Pillar},
 };
 
 #[cfg(not(target_family = "wasm"))]
@@ -32,7 +33,7 @@ pub struct Character {
     max_health: i32,
     is_alive: bool,
 
-    weapons: Vec<Box<dyn Weapon>>,
+    pub weapons: Vec<Box<dyn PoweruppableWeapon>>,
 
     // pub player_stats: Stats,
     entitychar: EntityCharacters,

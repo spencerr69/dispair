@@ -18,7 +18,7 @@ use serde::de::Error as serdeError;
 use super::tui::{Event, Tui};
 
 use crate::common::{
-    carnagereport::CarnageReport,
+    popups::carnagereport::CarnageReport,
     roguegame::RogueGame,
     upgrade::PlayerState,
     upgrademenu::{Goto, UpgradesMenu},
