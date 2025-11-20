@@ -358,6 +358,8 @@ pub struct WeaponStats {
     pub procs: HashMap<String, Proc>,
 
     pub size: i32,
+
+    pub level: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -462,6 +464,7 @@ impl Default for WeaponStats {
             damage_flat_boost: 0,
             size: 0,
             procs: HashMap::new(),
+            level: 1,
         }
     }
 }

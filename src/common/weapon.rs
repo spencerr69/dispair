@@ -15,6 +15,7 @@ use crate::common::{
     character::{Character, Damageable, Movable},
     coords::{Area, ChaosArea, Direction, Position, SquareArea},
     enemy::{Debuffable, Enemy, move_to_point_granular},
+    powerup::{Poweruppable, WeaponPowerup},
     roguegame::{EntityCharacters, Layer},
     upgrade::WeaponStats,
 };
@@ -75,6 +76,7 @@ pub struct Flash {
 impl Flash {
     const BASE_SIZE: i32 = 1;
     const BASE_DAMAGE: i32 = 2;
+    const MAX_LEVEL: i32 = 5;
 
     /// Creates a new `Flash' with stats based on the player's current `Stats`.
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
@@ -85,6 +87,49 @@ impl Flash {
                 size: Self::BASE_SIZE + base_weapon_stats.size,
                 ..base_weapon_stats
             },
+        }
+    }
+}
+
+impl Poweruppable for Flash {
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn get_next_upgrade(&'static self) -> Option<super::powerup::DynPowerup> {
+        if self.get_level() >= Self::MAX_LEVEL {
+            None
+        } else {
+            Some(Box::new(WeaponPowerup::new(
+                "FLASH".into(),
+                "Upgrade flash.".into(),
+                self.get_level() + 1,
+                Some(Box::new(self)),
+            )))
+        }
+    }
+
+    fn upgrade_self(&mut self, powerup: &dyn super::powerup::Powerup) {
+        self.stats.level = powerup.get_new_level();
+
+        for i in 1..=self.stats.level {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
         }
     }
 }
