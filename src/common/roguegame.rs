@@ -592,7 +592,7 @@ impl RogueGame {
 }
 
 /// Calculates the camera's visible area based on the player's position and the layer dimensions.
-pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> Area {
+pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> SquareArea {
     let view_height = content_area.height as i32;
     let view_width = content_area.width as i32;
 
@@ -911,8 +911,8 @@ mod tests {
     fn renderspeed() {
         let mut player_state = PlayerState::default();
 
-        player_state.stats.width = 1000;
-        player_state.stats.height = 1000;
+        player_state.stats.game_stats.width = 1000;
+        player_state.stats.game_stats.height = 1000;
 
         let mut rogue_game = RogueGame::new(player_state);
 
@@ -936,8 +936,8 @@ mod tests {
     fn updatedrenderspeed() {
         let mut player_state = PlayerState::default();
 
-        player_state.stats.width = 1000;
-        player_state.stats.height = 1000;
+        player_state.stats.game_stats.width = 1000;
+        player_state.stats.game_stats.height = 1000;
 
         let mut rogue_game = RogueGame::new(player_state);
 
