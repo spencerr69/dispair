@@ -8,14 +8,14 @@ use std::time::{Duration, Instant};
 use web_time::{Duration, Instant};
 
 use crate::common::{
-    TICK_RATE,
-    carnagereport::CarnageReport,
-    center,
+    TICK_RATE, center,
     character::{Character, Damageable, Movable},
     coords::{Area, Direction, Position, SquareArea},
     effects::DamageEffect,
     enemy::*,
     pickups::{PickupEffect, Pickupable, PowerupOrb},
+    popups::carnagereport::CarnageReport,
+    popups::poweruppopup::PowerupPopup,
     timescaler::TimeScaler,
     upgrade::PlayerState,
 };
@@ -39,6 +39,8 @@ pub struct RogueGame {
 
     /// The carnage report, which is displayed at the end of a level.
     pub carnage_report: Option<CarnageReport>,
+
+    pub powerup_popup: Option<PowerupPopup>,
 
     /// The rendered map text.
     pub map_text: Text<'static>,
@@ -142,6 +144,7 @@ impl RogueGame {
             map_text: Text::from(""),
 
             carnage_report: None,
+            powerup_popup: None,
             exit: false,
             game_paused: false,
 
@@ -193,10 +196,12 @@ impl RogueGame {
 
         if self.start_time.elapsed() >= self.timer {
             self.game_over = true;
+            return;
         }
 
         if !self.character.is_alive() {
             self.game_over = true;
+            return;
         }
 
         let char_pos = self.get_character_pos().clone();

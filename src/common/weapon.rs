@@ -35,15 +35,6 @@ impl DamageArea {
     ///
     /// For each affected enemy, reduces its health by `damage_amount`. If `weapon_stats` is present,
     /// iterates its `procs` and invokes each proc with `chance > 0` on the enemy.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// // pseudocode example showing usage
-    /// let mut enemies = vec![/* create enemies */];
-    /// let area = DamageArea { /* area covering (0,0), damage_amount: 5, weapon_stats: None, ... */ };
-    /// area.deal_damage(&mut enemies);
-    /// ```
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
             if enemy.get_pos().is_in_area(self.area.clone()) {
