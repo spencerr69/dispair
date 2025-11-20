@@ -14,7 +14,7 @@ use rand::Rng;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 
-use crate::common::coords::PositionListable;
+use crate::common::coords::Area;
 use crate::common::upgrade::DebuffStats;
 use crate::common::upgrade::Proc;
 use crate::common::{
@@ -150,7 +150,6 @@ impl Debuffable for Enemy {
     /// # Returns
     ///
     /// `u32` number of debuffs in `self.debuffs` whose `debuff_type` equals `debuff.debuff_type`.
-    ///
     fn count_debuff(&self, debuff: &Debuff) -> u32 {
         self.debuffs.iter().fold(0, |acc, e| {
             if e.debuff_type == debuff.debuff_type {
@@ -167,7 +166,6 @@ impl Enemy {
     ///
     /// Currently applies styling for `DebuffTypes::MarkedForExplosion` by making the
     /// enemy's character style bold and gray.
-    ///
     fn change_style_with_debuff(&mut self) {
         let style = self.entitychar.style_mut();
 

@@ -12,7 +12,7 @@ use crate::common::{
     carnagereport::CarnageReport,
     center,
     character::{Character, Damageable, Movable},
-    coords::{Direction, Position, PositionListable, SquareArea},
+    coords::{Area, Direction, Position, SquareArea},
     effects::DamageEffect,
     enemy::*,
     pickups::{Pickupable, PowerupOrb},
@@ -303,8 +303,6 @@ impl RogueGame {
             .into_iter()
             .filter(|effect| !effect.complete)
             .collect();
-
-        // self.change_low_health_enemies_questionable();
     }
 
     pub fn update_stats(&mut self) {
