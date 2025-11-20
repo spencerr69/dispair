@@ -13,7 +13,7 @@ use ratatui::style::{Style, Stylize};
 
 use crate::common::{
     character::{Character, Damageable, Movable},
-    coords::{ChaosArea, Direction, Position, PositionListable, SquareArea},
+    coords::{Area, ChaosArea, Direction, Position, SquareArea},
     enemy::{Debuffable, Enemy, move_to_point_granular},
     roguegame::{EntityCharacters, Layer},
     upgrade::WeaponStats,
@@ -23,7 +23,7 @@ use crate::common::{
 #[derive(Clone)]
 pub struct DamageArea {
     pub damage_amount: i32,
-    pub area: Rc<RefCell<dyn PositionListable>>,
+    pub area: Rc<RefCell<dyn Area>>,
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,

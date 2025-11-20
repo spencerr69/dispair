@@ -51,7 +51,7 @@ impl Position {
     }
 
     /// Checks if the position is within the given area.
-    pub fn is_in_area(&self, area: Rc<RefCell<dyn PositionListable>>) -> bool {
+    pub fn is_in_area(&self, area: Rc<RefCell<dyn Area>>) -> bool {
         let (x, y) = self.get();
         let (min_x, min_y, max_x, max_y) = area.borrow().get_bounds();
         x >= min_x && x <= max_x && y >= min_y && y <= max_y
@@ -74,9 +74,7 @@ pub struct SquareArea {
     pub corner2: Position,
 }
 
-pub trait ClonePosList: Clone + PositionListable {}
-
-pub trait PositionListable {
+pub trait Area {
     fn get_positions(&self) -> Vec<Position>;
 
     fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>>;
@@ -121,7 +119,7 @@ impl SquareArea {
     }
 }
 
-impl PositionListable for SquareArea {
+impl Area for SquareArea {
     fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
         let (x1, y1, x2, y2) = self.get_bounds();
         Box::new((x1..=x2).flat_map(move |x| (y1..=y2).map(move |y| Position(x, y))))
@@ -158,9 +156,7 @@ impl ChaosArea {
     }
 }
 
-impl<T: Clone + PositionListable> ClonePosList for T {}
-
-impl PositionListable for ChaosArea {
+impl Area for ChaosArea {
     fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
         Box::new(self.position_list.clone().into_iter())
     }
