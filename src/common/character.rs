@@ -5,16 +5,17 @@ use ratatui::style::{Style, Stylize};
 use crate::common::{
     coords::{Direction, Position},
     effects::DamageEffect,
+    enemy::Enemy,
     roguegame::Layer,
-    upgrade::PlayerState,
-    weapon::{DamageArea, Sword, Weapon},
+    upgrade::{PlayerState, PlayerStats},
+    weapon::{DamageArea, Flash, Lightning, Pillar, WeaponWrapper},
 };
 
 #[cfg(not(target_family = "wasm"))]
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 #[cfg(target_family = "wasm")]
-use web_time::Instant;
+use web_time::{Duration, Instant};
 
 use crate::common::roguegame::EntityCharacters;
 
@@ -25,15 +26,13 @@ pub struct Character {
     last_moved: Instant,
     pub facing: Direction,
 
-    pub movement_speed: f64,
-    pub strength: f64,
-    pub attack_speed: f64,
+    pub stats: PlayerStats,
 
     health: i32,
     max_health: i32,
     is_alive: bool,
 
-    weapons: Vec<Box<dyn Weapon>>,
+    pub weapons: Vec<WeaponWrapper>,
 
     // pub player_stats: Stats,
     entitychar: EntityCharacters,
@@ -107,17 +106,35 @@ pub trait Damageable {
 }
 
 impl Character {
-    /// Creates a new `Character` instance based on the provided `PlayerState`.
+    /// Creates a new Character initialized from the given player state.
+    ///
+    /// The new character starts at position (0,0), facing up, with health and stats
+    /// taken from `player_state.stats.player_stats`. The character's weapon loadout
+    /// is initialized from `player_state.stats.weapon_stats`.
+    ///
+    /// # Parameters
+    ///
+    /// - `player_state`: source of player stats, health, and weapon configuration.
+    ///
+    /// # Returns
+    ///
+    /// A `Character` populated with position, facing, health, stats, entity character,
+    /// and weapons derived from the provided `player_state`.
+
     pub fn new(player_state: PlayerState) -> Self {
-        let max_health = player_state.stats.health;
+        let stats = player_state.stats;
+        let weapon_stats = stats.weapon_stats.clone();
+        let max_health = stats.player_stats.health;
+        let player_stats = stats.player_stats;
+
         Character {
             position: Position(0, 0),
             prev_position: Position(0, 0),
             last_moved: Instant::now(),
             facing: Direction::UP,
-            movement_speed: player_state.stats.movement_speed_mult,
-            strength: player_state.stats.damage_mult,
-            attack_speed: player_state.stats.attack_speed_mult,
+
+            stats: player_stats,
+
             // player_stats: player_state.stats.clone(),
             health: max_health,
             max_health: max_health,
@@ -125,30 +142,48 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![Box::new(Sword::new(player_state.stats))],
+            weapons: vec![
+                WeaponWrapper::Flash(Flash::new(weapon_stats.clone())),
+                WeaponWrapper::Pillar(Pillar::new(weapon_stats.clone())),
+                WeaponWrapper::Lightning(Lightning::new(weapon_stats)),
+            ],
             // weapons: vec![],
         }
     }
 
-    /// Performs an attack, generating damage areas and effects.
-    pub fn attack(&self, layer_effects: &mut Layer) -> (Vec<DamageArea>, Vec<DamageEffect>) {
+    /// Generates damage areas for each equipped weapon and corresponding damage effects, applies each effect to the provided layer, staggers their start times, and updates them.
+    ///
+    /// The provided `layer_effects` is modified by constraining each damage area's region to the layer before effects are produced.
+    ///
+    /// # Returns
+    ///
+    /// A tuple where the first element is a `Vec<DamageArea>` produced by the weapons, and the second element is a `Vec<DamageEffect>` derived from those areas with staggered delays applied (`0.15` seconds multiplied by each effect's index).
+    pub fn attack(
+        &self,
+        layer: &Layer,
+        enemies: &Vec<Enemy>,
+    ) -> (Vec<DamageArea>, Vec<DamageEffect>) {
         let damage_areas: Vec<DamageArea> = self
             .weapons
             .iter()
-            .map(|weapon| weapon.attack(&self))
-            .map(|mut damage_area| {
-                damage_area.area.constrain(layer_effects);
+            .map(|weapon| weapon.get_inner().attack(&self, enemies, layer))
+            .map(|damage_area| {
+                damage_area.area.borrow_mut().constrain(layer);
                 damage_area
             })
             .collect();
-        let damage_effects: Vec<DamageEffect> = damage_areas
+        let mut damage_effects: Vec<DamageEffect> = damage_areas
             .clone()
             .into_iter()
             .map(|damage_area| DamageEffect::from(damage_area))
             .collect();
         damage_effects
-            .iter()
-            .for_each(|effect| effect.take_effect(layer_effects));
+            .iter_mut()
+            .enumerate()
+            .for_each(|(i, effect)| {
+                effect.delay(Duration::from_secs_f64(0.05 * i as f64));
+                effect.update();
+            });
         (damage_areas, damage_effects)
     }
 }
@@ -163,13 +198,16 @@ impl Movable for Character {
         self.position = new_pos;
     }
 
+    /// Attempts to move the character to `new_pos` and update its facing; movement is throttled by the character's movement speed multiplier and `last_moved` is updated when the move occurs.
+    ///
+
     fn move_to(&mut self, new_pos: Position, facing: Direction) {
         self.facing = facing;
 
         let attempt_time = Instant::now();
         let difference = attempt_time.duration_since(self.last_moved).as_millis() as u64;
         // this is what movement speed controls vv
-        let timeout = 100 / self.movement_speed as u64;
+        let timeout = (100.0 / self.stats.movement_speed_mult.max(0.01)).round() as u64;
 
         if difference > timeout {
             self.set_pos(new_pos);

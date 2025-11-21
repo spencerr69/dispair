@@ -181,7 +181,9 @@
                         "id": "312",
                         "cost": 50,
                         "limit": 5,
-                        "requires": [],
+                        "requires": [
+                            "311"
+                        ],
                         "children": null,
                         "costscale_override": 1.5
                     }

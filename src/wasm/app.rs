@@ -25,7 +25,7 @@ use ratzilla::ratatui::{
 };
 
 use crate::common::{
-    carnagereport::CarnageReport,
+    popups::carnagereport::CarnageReport,
     roguegame::RogueGame,
     upgrade::PlayerState,
     upgrademenu::{Goto, UpgradesMenu},
@@ -214,6 +214,12 @@ impl App {
             if game.exit {
                 self.player_state = Some(game.player_state.clone());
                 self.player_state.as_mut().unwrap().refresh();
+                save_progress(&self.player_state.clone().unwrap())
+                    .map_err(|_| {
+                        web_sys::console::log_1(&JsValue::from_str("couldn't save"));
+                        JsValue::from_str("couldn't save")
+                    })
+                    .unwrap_or(());
                 self.game_view = None;
                 self.start_upgrades();
             }
@@ -224,6 +230,12 @@ impl App {
                 self.player_state = Some(upgrades_menu.player_state.clone());
                 self.player_state.as_mut().unwrap().refresh();
                 self.upgrades_view = None;
+                save_progress(&self.player_state.clone().unwrap())
+                    .map_err(|_| {
+                        web_sys::console::log_1(&JsValue::from_str("couldn't save"));
+                        JsValue::from_str("couldn't save")
+                    })
+                    .unwrap_or(());
                 match close {
                     Goto::Game => self.start_game(),
                     Goto::Menu => {

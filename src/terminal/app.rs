@@ -18,7 +18,7 @@ use serde::de::Error as serdeError;
 use super::tui::{Event, Tui};
 
 use crate::common::{
-    carnagereport::CarnageReport,
+    popups::carnagereport::CarnageReport,
     roguegame::RogueGame,
     upgrade::PlayerState,
     upgrademenu::{Goto, UpgradesMenu},
@@ -193,6 +193,7 @@ impl App {
                 self.player_state = Some(game.player_state.clone());
                 self.player_state.as_mut().unwrap().refresh();
                 self.game_view = None;
+                save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
                 self.start_upgrades();
             }
         }
@@ -202,6 +203,7 @@ impl App {
                 self.player_state = Some(upgrades_menu.player_state.clone());
                 self.player_state.as_mut().unwrap().refresh();
                 self.upgrades_view = None;
+                save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
                 match close {
                     Goto::Game => self.start_game(),
                     Goto::Menu => save_progress(&self.player_state.clone().unwrap()).unwrap_or(()),

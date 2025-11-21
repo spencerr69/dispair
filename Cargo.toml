@@ -30,3 +30,10 @@ getrandom = {version = "0.3",features = ["wasm_js"]}
 ratzilla = "0.2.0"
 web-sys = {version = "0.3.65", features = ["Storage"]}
 web-time = "1.1.0"
+
+
+[profile.dev]
+opt-level = 1
+
+[dependencies]
+textwrap = "0.16.2"

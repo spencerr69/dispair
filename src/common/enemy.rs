@@ -1,8 +1,12 @@
 //! This module defines the `Enemy` struct and its related traits and behaviors.
 //! It includes logic for enemy movement, health, attacks, and debuffs.
+use std::cell::RefCell;
+use std::rc::Rc;
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
 
+use serde::Deserialize;
+use serde::Serialize;
 #[cfg(target_family = "wasm")]
 use web_time::Duration;
 
@@ -10,15 +14,24 @@ use rand::Rng;
 use ratatui::style::Style;
 use ratatui::style::Stylize;
 
+use crate::common::coords::Area;
+use crate::common::upgrade::DebuffStats;
+use crate::common::upgrade::Proc;
 use crate::common::{
-    character::*, coords::Area, coords::Direction, coords::Position, effects::DamageEffect,
+    character::*, coords::Direction, coords::Position, coords::SquareArea, effects::DamageEffect,
     roguegame::*, weapon::DamageArea,
 };
 
 /// Represents debuffs that can be applied to enemies.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Debuff {
-    MarkedForExplosion(u32, i32),
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DebuffTypes {
+    MarkedForExplosion,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Debuff {
+    pub debuff_type: DebuffTypes,
+    pub stats: DebuffStats,
 }
 
 impl Debuff {}
@@ -26,32 +39,41 @@ impl Debuff {}
 /// A trait for effects that trigger when an enemy dies.
 pub trait OnDeathEffect {
     /// Called when an enemy dies, potentially creating a `DamageArea`.
-    fn on_death(&self, enemy: Enemy) -> Option<DamageArea>;
+    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea>;
 }
 
 impl OnDeathEffect for Debuff {
-    fn on_death(&self, enemy: Enemy) -> Option<DamageArea> {
-        match self {
-            Debuff::MarkedForExplosion(explosion_size, explosion_damage) => {
-                let area = Area {
-                    corner1: Position(
-                        enemy.position.0.saturating_sub(*explosion_size as i32),
-                        enemy.position.1.saturating_sub(*explosion_size as i32),
-                    ),
-                    corner2: Position(
-                        enemy.position.0.saturating_add(*explosion_size as i32),
-                        enemy.position.1.saturating_add(*explosion_size as i32),
-                    ),
-                };
+    /// Produces an optional area-of-effect damage specification to emit when this debuff triggers on an enemy's death.
+    ///
+    /// If the debuff is `MarkedForExplosion` and `stats.size` is `Some(size)`, returns a `DamageArea` describing a square area centered on the enemy with radius `size`, using `stats.damage` (or `0` if absent) as the damage amount, an `AttackMist` visual styled dark gray, a duration of 0.15 seconds, `blink = false`, and no `weapon_stats`. If `stats.size` is `None`, returns `None`.
+    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea> {
+        match self.debuff_type {
+            DebuffTypes::MarkedForExplosion => {
+                if let Some(size) = self.stats.size {
+                    let mut area = SquareArea {
+                        corner1: Position(
+                            enemy.position.0.saturating_sub(size),
+                            enemy.position.1.saturating_sub(size),
+                        ),
+                        corner2: Position(
+                            enemy.position.0.saturating_add(size),
+                            enemy.position.1.saturating_add(size),
+                        ),
+                    };
 
-                Some(DamageArea {
-                    damage_amount: *explosion_damage,
-                    area,
-                    entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
-                    duration: Duration::from_secs_f64(0.1),
-                    blink: true,
-                    weapon_stats: None,
-                })
+                    area.constrain(layer);
+
+                    Some(DamageArea {
+                        damage_amount: self.stats.damage.unwrap_or(0),
+                        area: Rc::new(RefCell::new(area)),
+                        entity: EntityCharacters::AttackMist(Style::new().dark_gray()),
+                        duration: Duration::from_secs_f64(0.05),
+                        blink: false,
+                        weapon_stats: None,
+                    })
+                } else {
+                    None
+                }
             }
         }
     }
@@ -75,7 +97,7 @@ pub trait EnemyBehaviour {
 }
 
 /// Represents an enemy in the game.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Enemy {
     position: Position,
     prev_position: Position,
@@ -98,43 +120,62 @@ pub struct Enemy {
 /// A trait for entities that can have debuffs applied to them.
 pub trait Debuffable {
     /// Attempts to apply a debuff with a certain chance of success.
-    fn try_proc(&mut self, debuff: Debuff, chance_to_proc: u32);
+    fn try_proc(&mut self, proc: &Proc);
     /// Counts the number of a specific debuff on the entity.
-    fn count_debuff(&self, debuff: Debuff) -> u32;
+    fn count_debuff(&self, debuff: &Debuff) -> u32;
 }
 
 impl Debuffable for Enemy {
-    fn try_proc(&mut self, debuff: Debuff, chance_to_mark: u32) {
+    /// Attempts to apply the given `Proc`'s debuff to the enemy based on the proc's chance; if the proc succeeds and the enemy does not already have that debuff, the debuff is appended to the enemy's debuff list.
+    fn try_proc(&mut self, proc: &Proc) {
         let mut rng = rand::rng();
 
         let roll = rng.random_range(1..=100);
 
-        match debuff {
-            Debuff::MarkedForExplosion(_, _) => {
-                if roll <= chance_to_mark && self.count_debuff(debuff) < 1 {
-                    self.debuffs.push(debuff);
+        match proc.debuff.debuff_type {
+            DebuffTypes::MarkedForExplosion => {
+                if roll <= proc.chance && self.count_debuff(&proc.debuff) < 1 {
+                    self.debuffs.push(proc.debuff.clone());
                 }
             }
         }
     }
 
-    fn count_debuff(&self, debuff: Debuff) -> u32 {
-        self.debuffs
-            .iter()
-            .fold(0, |acc, e| if e == &debuff { acc + 1 } else { acc })
+    /// Counts how many active debuffs share the same debuff type as the provided `debuff`.
+    ///
+    /// # Parameters
+    ///
+    /// - `debuff`: The debuff whose `debuff_type` is used for matching against the enemy's active debuffs.
+    ///
+    /// # Returns
+    ///
+    /// `u32` number of debuffs in `self.debuffs` whose `debuff_type` equals `debuff.debuff_type`.
+    fn count_debuff(&self, debuff: &Debuff) -> u32 {
+        self.debuffs.iter().fold(0, |acc, e| {
+            if e.debuff_type == debuff.debuff_type {
+                acc + 1
+            } else {
+                acc
+            }
+        })
     }
 }
 
 impl Enemy {
-    /// Changes the enemy's style based on its active debuffs.
+    /// Update the enemy's visual style to reflect any active debuffs.
+    ///
+    /// Currently applies styling for `DebuffTypes::MarkedForExplosion` by making the
+    /// enemy's character style bold and gray.
     fn change_style_with_debuff(&mut self) {
         let style = self.entitychar.style_mut();
 
-        self.debuffs.iter().for_each(|debuff| match debuff {
-            Debuff::MarkedForExplosion(_, _) => {
-                *style = style.bold().gray();
-            }
-        })
+        self.debuffs
+            .iter()
+            .for_each(|debuff| match debuff.debuff_type {
+                DebuffTypes::MarkedForExplosion => {
+                    *style = style.bold().gray();
+                }
+            })
     }
 }
 
@@ -177,40 +218,62 @@ impl EnemyBehaviour for Enemy {
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);
             damage_effects.push(DamageEffect::new(
-                Area::from(character.get_pos().clone()),
+                SquareArea::from(character.get_pos().clone()),
                 EntityCharacters::AttackBlackout(Style::new().bold().dark_gray()),
                 Duration::from_secs_f64(0.2),
                 true,
             ));
         }
 
-        let (dist_x, dist_y) = self.position.get_distance(character.get_pos());
-        let (x, y) = self.position.get();
-        let desired_pos: Position;
-        let desired_facing: Direction;
+        let (desired_pos, desired_facing) =
+            move_to_point_granular(&self.position, character.get_pos(), true);
 
-        if dist_x.abs() > dist_y.abs() {
-            if dist_x > 0 {
-                desired_pos = Position::new(x + 1, y);
-                desired_facing = Direction::RIGHT;
-            } else {
-                desired_pos = Position::new(x - 1, y);
-                desired_facing = Direction::LEFT;
-            }
-        } else {
-            if dist_y > 0 {
-                desired_pos = Position::new(x, y + 1);
-                desired_facing = Direction::DOWN;
-            } else {
-                desired_pos = Position::new(x, y - 1);
-                desired_facing = Direction::UP;
-            }
-        }
-
-        if can_stand(layer, &desired_pos) {
+        if can_stand(layer, &desired_pos) && &desired_pos != character.get_pos() {
             self.move_to(desired_pos, desired_facing);
         }
     }
+}
+
+pub fn move_to_point_granular(
+    self_pos: &Position,
+    desired_location: &Position,
+    random: bool,
+) -> (Position, Direction) {
+    let (dist_x, dist_y) = self_pos.get_distance(desired_location);
+    let (x, y) = self_pos.get();
+    let desired_pos: Position;
+    let desired_facing: Direction;
+
+    let total_dist = dist_x.abs() + dist_y.abs();
+
+    let choice: bool;
+
+    if random {
+        let mut rng = rand::rng();
+        choice = rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32);
+    } else {
+        choice = dist_x.abs() > dist_y.abs();
+    }
+
+    if choice {
+        if dist_x > 0 {
+            desired_pos = Position::new(x + 1, y);
+            desired_facing = Direction::RIGHT;
+        } else {
+            desired_pos = Position::new(x - 1, y);
+            desired_facing = Direction::LEFT;
+        }
+    } else {
+        if dist_y > 0 {
+            desired_pos = Position::new(x, y + 1);
+            desired_facing = Direction::DOWN;
+        } else {
+            desired_pos = Position::new(x, y - 1);
+            desired_facing = Direction::UP;
+        }
+    }
+
+    (desired_pos, desired_facing)
 }
 
 impl Movable for Enemy {

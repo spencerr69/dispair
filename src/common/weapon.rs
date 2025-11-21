@@ -4,6 +4,7 @@
 
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
+use std::{cell::RefCell, rc::Rc};
 
 #[cfg(target_family = "wasm")]
 use web_time::Duration;
@@ -12,40 +13,67 @@ use ratatui::style::{Style, Stylize};
 
 use crate::common::{
     character::{Character, Damageable, Movable},
-    coords::{Area, Direction, Position},
-    enemy::{Debuff, Debuffable, Enemy},
-    roguegame::EntityCharacters,
-    upgrade::Stats,
+    coords::{Area, ChaosArea, Direction, Position, SquareArea},
+    enemy::{Debuffable, Enemy, move_to_point_granular},
+    powerup::{DynPowerup, Poweruppable, PoweruppableWeapon},
+    roguegame::{EntityCharacters, Layer},
+    upgrade::WeaponStats,
 };
+
+#[derive(Clone)]
+pub enum WeaponWrapper {
+    Flash(Flash),
+    Pillar(Pillar),
+    Lightning(Lightning),
+}
+
+impl WeaponWrapper {
+    pub fn get_inner(&self) -> &dyn PoweruppableWeapon {
+        match self {
+            WeaponWrapper::Flash(flash) => flash,
+            WeaponWrapper::Pillar(pillar) => pillar,
+            WeaponWrapper::Lightning(lightning) => lightning,
+        }
+    }
+
+    pub fn get_inner_mut(&mut self) -> &mut dyn PoweruppableWeapon {
+        match self {
+            WeaponWrapper::Flash(flash) => flash,
+            WeaponWrapper::Pillar(pillar) => pillar,
+            WeaponWrapper::Lightning(lightning) => lightning,
+        }
+    }
+}
 
 /// Represents an area where damage is applied, created by a weapon attack.
 #[derive(Clone)]
 pub struct DamageArea {
     pub damage_amount: i32,
-    pub area: Area,
+    pub area: Rc<RefCell<dyn Area>>,
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,
-    pub weapon_stats: Option<Stats>,
+    pub weapon_stats: Option<WeaponStats>,
 }
 
 impl DamageArea {
-    /// Deals damage to any enemies within the `DamageArea`.
+    /// Applies this damage area to every enemy whose position lies inside the area.
+    ///
+    /// For each affected enemy, reduces its health by `damage_amount`. If `weapon_stats` is present,
+    /// iterates its `procs` and invokes each proc with `chance > 0` on the enemy.
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
-            if enemy.get_pos().is_in_area(&self.area) {
+            if enemy.get_pos().is_in_area(self.area.clone()) {
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon do the following
-                if let Some(stats) = self.weapon_stats.clone() {
-                    if stats.mark_chance > 0 {
-                        enemy.try_proc(
-                            Debuff::MarkedForExplosion(
-                                stats.mark_explosion_size,
-                                (6. * stats.damage_mult).ceil() as i32,
-                            ),
-                            stats.mark_chance,
-                        );
+                if let Some(stats) = &self.weapon_stats {
+                    if !stats.procs.is_empty() {
+                        stats.procs.iter().for_each(|(_key, proc)| {
+                            if proc.chance > 0 {
+                                enemy.try_proc(proc);
+                            }
+                        })
                     }
                 }
             }
@@ -56,66 +84,124 @@ impl DamageArea {
 /// A trait for any weapon that can be used to attack.
 pub trait Weapon {
     /// Creates a `DamageArea` representing the attack.
-    fn attack(&self, wielder: &Character) -> DamageArea;
+    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>, layer: &Layer) -> DamageArea;
 
     /// Calculates and returns the base damage of the weapon.
     ///Damage should be rounded up to nearest int.
     fn get_damage(&self) -> i32;
 }
 
-/// A struct representing a sword weapon.
-pub struct Sword {
+/// A struct representing a FLASH weapon.
+#[derive(Clone)]
+pub struct Flash {
     base_damage: i32,
-    damage_scalar: f32,
-    size: i32,
-    stats: Stats,
+    damage_scalar: f64,
+    stats: WeaponStats,
 }
 
-impl Sword {
-    /// Creates a new `Sword` with stats based on the player's current `Stats`.
-    pub fn new(player_stats: Stats) -> Self {
-        let size_base = 1;
-        let base_damage = 2;
-        let damage_scalar = 1.;
-        Sword {
-            base_damage: base_damage + player_stats.damage_flat_boost,
-            damage_scalar,
-            size: size_base + player_stats.size,
-            stats: player_stats,
+impl Flash {
+    const BASE_SIZE: i32 = 1;
+    const BASE_DAMAGE: i32 = 2;
+
+    /// Creates a new `Flash' with stats based on the player's current `Stats`.
+    pub fn new(base_weapon_stats: WeaponStats) -> Self {
+        Flash {
+            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
+            damage_scalar: 1.,
+            stats: WeaponStats {
+                size: Self::BASE_SIZE + base_weapon_stats.size,
+                ..base_weapon_stats
+            },
         }
     }
 }
 
-impl Weapon for Sword {
-    /// Performs an attack with the sword, creating a `DamageArea` in front of the wielder.
-    fn attack(&self, wielder: &Character) -> DamageArea {
+impl Poweruppable for Flash {
+    fn get_name(&self) -> String {
+        "FLASH".into()
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
+
+        for i in (from + 1)..=to {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase size by 1, increase base damage by 1".into(),
+            3 => "Increase base damage by 2".into(),
+            4 => "Increase damage scalar by 25%".into(),
+            5 => "Increase damage scalar by 75%".into(),
+            _ => "".into(),
+        }
+    }
+}
+
+impl Weapon for Flash {
+    /// Creates a DamageArea representing this weapon's attack originating from the wielder's position and facing direction.
+    ///
+    /// The produced DamageArea is positioned immediately in front of the wielder according to their facing, carries this weapon's damage scaled by `wielder.stats.damage_mult` (rounded up to an integer), and includes this weapon's `WeaponStats`.
+    fn attack(&self, wielder: &Character, _: &Vec<Enemy>, layer: &Layer) -> DamageArea {
         let (x, y) = wielder.get_pos().clone().get();
         let direction = wielder.facing.clone();
 
-        let new_area: Area = match direction {
-            Direction::DOWN => Area {
-                corner1: Position(x + self.size, y + 1),
-                corner2: Position(x - self.size, y + self.size),
+        let size = self.stats.size;
+
+        let mut new_area: SquareArea = match direction {
+            Direction::DOWN => SquareArea {
+                corner1: Position(x + size, y + 1),
+                corner2: Position(x - size, y + size),
             },
-            Direction::UP => Area {
-                corner1: Position(x - self.size, y - 1),
-                corner2: Position(x + self.size, y - self.size),
+            Direction::UP => SquareArea {
+                corner1: Position(x - size, y - 1),
+                corner2: Position(x + size, y - size),
             },
-            Direction::LEFT => Area {
-                corner1: Position(x - 1, y + self.size),
-                corner2: Position(x - self.size, y - self.size),
+            Direction::LEFT => SquareArea {
+                corner1: Position(x - 1, y + size),
+                corner2: Position(x - size, y - size),
             },
-            Direction::RIGHT => Area {
-                corner1: Position(x + 1, y + self.size),
-                corner2: Position(x + self.size, y - self.size),
+            Direction::RIGHT => SquareArea {
+                corner1: Position(x + 1, y + size),
+                corner2: Position(x + size, y - size),
             },
         };
 
+        new_area.constrain(layer);
+
         DamageArea {
-            area: new_area,
-            damage_amount: (self.get_damage() as f64 * wielder.strength).ceil() as i32,
+            area: Rc::new(RefCell::new(new_area)),
+            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
             entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
-            duration: Duration::from_secs_f32(0.01),
+            duration: Duration::from_secs_f32(0.05),
             blink: false,
             weapon_stats: Some(self.stats.clone()),
         }
@@ -123,6 +209,255 @@ impl Weapon for Sword {
 
     /// Returns the damage of the sword, calculated from its base damage and scalar.
     fn get_damage(&self) -> i32 {
-        return (self.base_damage as f32 * self.damage_scalar).ceil() as i32;
+        return (self.base_damage as f64 * self.damage_scalar).ceil() as i32;
+    }
+}
+
+/// A struct representing a Pillar weapon, which attacks in a vertical column.
+#[derive(Clone)]
+pub struct Pillar {
+    base_damage: i32,
+    damage_scalar: f64,
+    stats: WeaponStats,
+}
+
+impl Pillar {
+    const BASE_SIZE: i32 = 0;
+    const BASE_DAMAGE: i32 = 3;
+
+    pub fn new(base_weapon_stats: WeaponStats) -> Self {
+        Pillar {
+            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
+            damage_scalar: 1.,
+            stats: WeaponStats {
+                size: Self::BASE_SIZE + base_weapon_stats.size,
+                ..base_weapon_stats
+            },
+        }
+    }
+}
+
+impl Weapon for Pillar {
+    fn attack(&self, wielder: &Character, _: &Vec<Enemy>, layer: &Layer) -> DamageArea {
+        let (x, _) = wielder.get_pos().clone().get();
+
+        //size should be half the size for balancing
+        let size = self.stats.size / 2;
+
+        let mut area = SquareArea {
+            corner1: Position(x - size, i32::MAX),
+            corner2: Position(x + size, 0),
+        };
+
+        area.constrain(layer);
+
+        DamageArea {
+            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
+            area: Rc::new(RefCell::new(area)),
+            entity: EntityCharacters::AttackWeak(Style::new().gray()),
+            duration: Duration::from_secs_f64(0.05),
+            blink: false,
+            weapon_stats: Some(self.stats.clone()),
+        }
+    }
+
+    fn get_damage(&self) -> i32 {
+        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+    }
+}
+
+impl Poweruppable for Pillar {
+    fn get_name(&self) -> String {
+        "PILLAR".into()
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase size by 1, increase base damage by 1".into(),
+            3 => "Increase base damage by 2".into(),
+            4 => "Increase damage scalar by 25%".into(),
+            5 => "Increase damage scalar by 75%".into(),
+            _ => "".into(),
+        }
+    }
+
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
+
+        for i in (from + 1)..=to {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct Lightning {
+    base_damage: i32,
+    damage_scalar: f64,
+    stats: WeaponStats,
+}
+
+impl Lightning {
+    const BASE_DAMAGE: i32 = 1;
+    const BASE_SIZE: i32 = 1;
+
+    pub fn new(base_weapon_stats: WeaponStats) -> Self {
+        Lightning {
+            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
+            damage_scalar: 1.,
+            stats: WeaponStats {
+                size: Self::BASE_SIZE + base_weapon_stats.size,
+                ..base_weapon_stats
+            },
+        }
+    }
+}
+
+impl Weapon for Lightning {
+    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>, layer: &Layer) -> DamageArea {
+        let mut begin_pos = wielder.get_pos().clone();
+
+        let mut positions = Vec::new();
+
+        let mut enemies = enemies.clone();
+
+        for _ in 0..self.stats.size {
+            let closest = enemies.iter().reduce(|acc, enemy| {
+                let (dist_x, dist_y) = enemy.get_pos().get_distance(&begin_pos);
+                let enemy_total_dist = dist_x.abs() + dist_y.abs();
+
+                let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(&begin_pos);
+                let acc_total_dist = acc_dist_x.abs() + acc_dist_y.abs();
+
+                if enemy_total_dist < acc_total_dist && enemy_total_dist > 2 || acc_total_dist <= 2
+                {
+                    enemy
+                } else {
+                    acc
+                }
+            });
+
+            let mut current_pos = begin_pos.clone();
+
+            if let Some(closest) = closest {
+                let desired_pos = closest.get_pos().clone();
+
+                while current_pos != desired_pos {
+                    positions.push(current_pos.clone());
+                    (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos, false);
+                }
+
+                (current_pos, _) = move_to_point_granular(&current_pos, &desired_pos, false);
+                positions.push(current_pos.clone());
+
+                begin_pos = desired_pos;
+
+                enemies = enemies
+                    .iter()
+                    .filter_map(|e| {
+                        if e != closest {
+                            return Some(e.clone());
+                        } else {
+                            return None;
+                        }
+                    })
+                    .collect();
+            }
+        }
+
+        let mut area = ChaosArea::new(positions);
+        area.constrain(layer);
+
+        DamageArea {
+            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
+            area: Rc::new(RefCell::new(area)),
+            entity: EntityCharacters::AttackMist(Style::new().white()),
+            duration: Duration::from_secs_f64(0.1),
+            blink: false,
+            weapon_stats: Some(self.stats.clone()),
+        }
+    }
+
+    fn get_damage(&self) -> i32 {
+        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+    }
+}
+
+impl Poweruppable for Lightning {
+    fn get_name(&self) -> String {
+        "LIGHTNING".into()
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase bounces by 1, increase base damage by 1".into(),
+            3 => "Increase bounces by 1, increase base damage by 2".into(),
+            4 => "Increase bounces by 1, increase damage scalar by 25%".into(),
+            5 => "Double bounces, increase damage scalar by 75%".into(),
+            _ => "".into(),
+        }
+    }
+
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
+
+        for i in (from + 1)..=to {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.stats.size += 1;
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.stats.size *= 2;
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
     }
 }
