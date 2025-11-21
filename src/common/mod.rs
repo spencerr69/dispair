@@ -4,12 +4,13 @@
 
 use ratatui::layout::{Constraint, Layout, Rect};
 
-pub mod carnagereport;
 pub mod character;
 pub mod coords;
 pub mod effects;
 pub mod enemy;
 pub mod pickups;
+pub mod popups;
+pub mod powerup;
 pub mod roguegame;
 pub mod timescaler;
 pub mod upgrade;

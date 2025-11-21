@@ -8,14 +8,13 @@ use std::time::{Duration, Instant};
 use web_time::{Duration, Instant};
 
 use crate::common::{
-    TICK_RATE,
-    carnagereport::CarnageReport,
-    center,
+    TICK_RATE, center,
     character::{Character, Damageable, Movable},
     coords::{Area, Direction, Position, SquareArea},
     effects::DamageEffect,
     enemy::*,
-    pickups::{Pickupable, PowerupOrb},
+    pickups::{PickupEffect, Pickupable, PowerupOrb},
+    popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
     timescaler::TimeScaler,
     upgrade::PlayerState,
 };
@@ -39,6 +38,8 @@ pub struct RogueGame {
 
     /// The carnage report, which is displayed at the end of a level.
     pub carnage_report: Option<CarnageReport>,
+
+    pub powerup_popup: Option<PowerupPopup>,
 
     /// The rendered map text.
     pub map_text: Text<'static>,
@@ -67,6 +68,8 @@ pub struct RogueGame {
 
     /// A flag indicating whether the game is over.
     pub game_over: bool,
+
+    pub game_paused: bool,
     /// A flag indicating whether the game should exit.
     pub exit: bool,
 
@@ -76,6 +79,8 @@ pub struct RogueGame {
 
     timer: Duration,
     start_time: Instant,
+
+    start_popup: bool,
 
     timescaler: TimeScaler,
 
@@ -138,9 +143,12 @@ impl RogueGame {
             enemy_spawn_ticks,
 
             map_text: Text::from(""),
+            start_popup: false,
 
             carnage_report: None,
+            powerup_popup: None,
             exit: false,
+            game_paused: false,
 
             enemy_damage: 1,
             enemy_health: 3,
@@ -182,7 +190,16 @@ impl RogueGame {
     }
 
     pub fn on_tick(&mut self) {
-        if self.game_over {
+        if let Some(powerup_popup) = self.powerup_popup.take() {
+            if powerup_popup.finished {
+                self.game_paused = false;
+                self.character.weapons = powerup_popup.weapons;
+            } else {
+                self.powerup_popup = Some(powerup_popup);
+            }
+        }
+
+        if self.game_over || self.game_paused {
             return;
         }
 
@@ -190,10 +207,45 @@ impl RogueGame {
 
         if self.start_time.elapsed() >= self.timer {
             self.game_over = true;
+            return;
         }
 
         if !self.character.is_alive() {
             self.game_over = true;
+            return;
+        }
+
+        let char_pos = self.get_character_pos().clone();
+
+        self.pickups.iter_mut().for_each(|pickup| {
+            if pickup.get_pos() == &char_pos {
+                let effect = pickup.on_pickup();
+
+                match effect {
+                    PickupEffect::PowerupOrb => {
+                        let area = SquareArea::new(
+                            Position(0, 0),
+                            Position(self.width as i32, self.height as i32),
+                        );
+
+                        self.active_damage_effects.push(DamageEffect::new(
+                            area,
+                            EntityCharacters::AttackWeak(Style::new().red()),
+                            Duration::from_secs_f64(0.5),
+                            false,
+                        ));
+
+                        self.game_paused = true;
+                        self.start_popup = true;
+                    }
+                }
+            }
+        });
+
+        self.pickups.retain(|pickup| !pickup.is_picked_up());
+
+        if self.start_popup {
+            self.generate_popup();
         }
 
         let mut debuffed_enemies: Vec<Enemy> = Vec::new();
@@ -295,6 +347,10 @@ impl RogueGame {
     }
 
     pub fn on_frame(&mut self) {
+        if self.game_paused {
+            return;
+        }
+
         update_layer_effects(&mut self.layer_effects, &mut self.active_damage_effects);
 
         self.active_damage_effects = self
@@ -309,6 +365,11 @@ impl RogueGame {
         self.attack_ticks = (self.attack_ticks as f64
             / self.player_state.stats.game_stats.attack_speed_mult)
             .ceil() as u64;
+    }
+
+    pub fn generate_popup(&mut self) {
+        self.powerup_popup = Some(PowerupPopup::new(&self.character.weapons));
+        self.start_popup = false;
     }
 
     fn scale_enemies(&mut self) {
@@ -354,6 +415,8 @@ impl RogueGame {
                 KeyCode::Esc => self.exit = true,
                 _ => {}
             }
+        } else if let Some(powerup_popup) = &mut self.powerup_popup {
+            powerup_popup.handle_key_event(key_event);
         } else {
             match key_event.code {
                 KeyCode::Char('s') | KeyCode::Down => move_entity(
@@ -504,8 +567,12 @@ impl RogueGame {
         frame.render_widget(block, frame.area());
         frame.render_widget(content, centered_area);
 
-        if let Some(ref mut carnage) = self.carnage_report.clone() {
+        if let Some(ref mut carnage) = self.carnage_report {
             carnage.render(frame);
+        }
+
+        if let Some(ref mut powerup_popup) = self.powerup_popup {
+            powerup_popup.render(frame);
         }
     }
 }

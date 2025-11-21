@@ -8,7 +8,7 @@ use crate::common::{
     enemy::Enemy,
     roguegame::Layer,
     upgrade::{PlayerState, PlayerStats},
-    weapon::{DamageArea, Flash, Lightning, Pillar, Weapon},
+    weapon::{DamageArea, Flash, Lightning, Pillar, WeaponWrapper},
 };
 
 #[cfg(not(target_family = "wasm"))]
@@ -32,7 +32,7 @@ pub struct Character {
     max_health: i32,
     is_alive: bool,
 
-    weapons: Vec<Box<dyn Weapon>>,
+    pub weapons: Vec<WeaponWrapper>,
 
     // pub player_stats: Stats,
     entitychar: EntityCharacters,
@@ -143,9 +143,9 @@ impl Character {
             entitychar: EntityCharacters::Character(Style::default()),
 
             weapons: vec![
-                Box::new(Flash::new(weapon_stats.clone())),
-                Box::new(Pillar::new(weapon_stats.clone())),
-                Box::new(Lightning::new(weapon_stats)),
+                WeaponWrapper::Flash(Flash::new(weapon_stats.clone())),
+                WeaponWrapper::Pillar(Pillar::new(weapon_stats.clone())),
+                WeaponWrapper::Lightning(Lightning::new(weapon_stats)),
             ],
             // weapons: vec![],
         }
@@ -158,8 +158,6 @@ impl Character {
     /// # Returns
     ///
     /// A tuple where the first element is a `Vec<DamageArea>` produced by the weapons, and the second element is a `Vec<DamageEffect>` derived from those areas with staggered delays applied (`0.15` seconds multiplied by each effect's index).
-    ///
-
     pub fn attack(
         &self,
         layer: &Layer,
@@ -168,7 +166,7 @@ impl Character {
         let damage_areas: Vec<DamageArea> = self
             .weapons
             .iter()
-            .map(|weapon| weapon.attack(&self, enemies, layer))
+            .map(|weapon| weapon.get_inner().attack(&self, enemies, layer))
             .map(|damage_area| {
                 damage_area.area.borrow_mut().constrain(layer);
                 damage_area

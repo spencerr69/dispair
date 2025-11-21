@@ -15,9 +15,35 @@ use crate::common::{
     character::{Character, Damageable, Movable},
     coords::{Area, ChaosArea, Direction, Position, SquareArea},
     enemy::{Debuffable, Enemy, move_to_point_granular},
+    powerup::{DynPowerup, Poweruppable, PoweruppableWeapon},
     roguegame::{EntityCharacters, Layer},
     upgrade::WeaponStats,
 };
+
+#[derive(Clone)]
+pub enum WeaponWrapper {
+    Flash(Flash),
+    Pillar(Pillar),
+    Lightning(Lightning),
+}
+
+impl WeaponWrapper {
+    pub fn get_inner(&self) -> &dyn PoweruppableWeapon {
+        match self {
+            WeaponWrapper::Flash(flash) => flash,
+            WeaponWrapper::Pillar(pillar) => pillar,
+            WeaponWrapper::Lightning(lightning) => lightning,
+        }
+    }
+
+    pub fn get_inner_mut(&mut self) -> &mut dyn PoweruppableWeapon {
+        match self {
+            WeaponWrapper::Flash(flash) => flash,
+            WeaponWrapper::Pillar(pillar) => pillar,
+            WeaponWrapper::Lightning(lightning) => lightning,
+        }
+    }
+}
 
 /// Represents an area where damage is applied, created by a weapon attack.
 #[derive(Clone)]
@@ -35,15 +61,6 @@ impl DamageArea {
     ///
     /// For each affected enemy, reduces its health by `damage_amount`. If `weapon_stats` is present,
     /// iterates its `procs` and invokes each proc with `chance > 0` on the enemy.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// // pseudocode example showing usage
-    /// let mut enemies = vec![/* create enemies */];
-    /// let area = DamageArea { /* area covering (0,0), damage_amount: 5, weapon_stats: None, ... */ };
-    /// area.deal_damage(&mut enemies);
-    /// ```
     pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
         enemies.iter_mut().for_each(|enemy| {
             if enemy.get_pos().is_in_area(self.area.clone()) {
@@ -75,6 +92,7 @@ pub trait Weapon {
 }
 
 /// A struct representing a FLASH weapon.
+#[derive(Clone)]
 pub struct Flash {
     base_damage: i32,
     damage_scalar: f64,
@@ -94,6 +112,56 @@ impl Flash {
                 size: Self::BASE_SIZE + base_weapon_stats.size,
                 ..base_weapon_stats
             },
+        }
+    }
+}
+
+impl Poweruppable for Flash {
+    fn get_name(&self) -> String {
+        "FLASH".into()
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
+
+        for i in (from + 1)..=to {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase size by 1, increase base damage by 1".into(),
+            3 => "Increase base damage by 2".into(),
+            4 => "Increase damage scalar by 25%".into(),
+            5 => "Increase damage scalar by 75%".into(),
+            _ => "".into(),
         }
     }
 }
@@ -146,6 +214,7 @@ impl Weapon for Flash {
 }
 
 /// A struct representing a Pillar weapon, which attacks in a vertical column.
+#[derive(Clone)]
 pub struct Pillar {
     base_damage: i32,
     damage_scalar: f64,
@@ -197,6 +266,57 @@ impl Weapon for Pillar {
     }
 }
 
+impl Poweruppable for Pillar {
+    fn get_name(&self) -> String {
+        "PILLAR".into()
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase size by 1, increase base damage by 1".into(),
+            3 => "Increase base damage by 2".into(),
+            4 => "Increase damage scalar by 25%".into(),
+            5 => "Increase damage scalar by 75%".into(),
+            _ => "".into(),
+        }
+    }
+
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
+
+        for i in (from + 1)..=to {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct Lightning {
     base_damage: i32,
     damage_scalar: f64,
@@ -286,5 +406,58 @@ impl Weapon for Lightning {
 
     fn get_damage(&self) -> i32 {
         (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+    }
+}
+
+impl Poweruppable for Lightning {
+    fn get_name(&self) -> String {
+        "LIGHTNING".into()
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase bounces by 1, increase base damage by 1".into(),
+            3 => "Increase bounces by 1, increase base damage by 2".into(),
+            4 => "Increase bounces by 1, increase damage scalar by 25%".into(),
+            5 => "Double bounces, increase damage scalar by 75%".into(),
+            _ => "".into(),
+        }
+    }
+
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
+
+        for i in (from + 1)..=to {
+            match i {
+                1 => {}
+                2 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.stats.size += 1;
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.stats.size *= 2;
+                    self.damage_scalar += 0.75;
+                }
+                _ => {}
+            }
+        }
     }
 }
