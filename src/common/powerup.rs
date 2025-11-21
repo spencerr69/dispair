@@ -11,7 +11,7 @@ pub trait Poweruppable {
         } else {
             let new_level = self.get_level() + levels_up;
 
-            Some(Box::new(WeaponPowerup::new(
+            Some(Box::new(PowerupUpgrade::new(
                 self.get_name(),
                 self.upgrade_desc(new_level),
                 self.get_level(),
@@ -40,7 +40,7 @@ pub trait Powerup {
 }
 
 pub type DynPowerup = Box<dyn Powerup>;
-pub struct WeaponPowerup {
+pub struct PowerupUpgrade {
     pub name: String,
     pub desc: String,
     pub new_level: i32,
@@ -50,7 +50,7 @@ pub struct WeaponPowerup {
 pub trait PoweruppableWeapon: Weapon + Poweruppable {}
 impl<T> PoweruppableWeapon for T where T: Weapon + Poweruppable {}
 
-impl WeaponPowerup {
+impl PowerupUpgrade {
     pub fn new(name: String, desc: String, curr_level: i32, new_level: i32) -> Self {
         Self {
             name,
@@ -61,7 +61,7 @@ impl WeaponPowerup {
     }
 }
 
-impl Powerup for WeaponPowerup {
+impl Powerup for PowerupUpgrade {
     fn get_current_level(&self) -> i32 {
         self.curr_level
     }
