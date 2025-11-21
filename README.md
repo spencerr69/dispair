@@ -63,9 +63,7 @@ trunk serve --release
 
 Once running, open your browser to `http://127.0.0.1:8080`.
 
-## Tech Stack
+## Makes extensive use of:
 
 *   **TUI Framework**: [Ratatui](https://ratatui.rs/)
-*   **Async Runtime**: [Tokio](https://tokio.rs/)
 *   **WASM Backend**: [Ratzilla](https://crates.io/crates/ratzilla)
-*   **Terminal Backend**: [Crossterm](https://crates.io/crates/crossterm)
