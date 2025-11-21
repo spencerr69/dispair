@@ -1,4 +1,7 @@
-use crate::common::weapon::Weapon;
+use crate::common::{
+    charms::CharmWrapper,
+    weapon::{Weapon, WeaponWrapper},
+};
 
 pub trait Poweruppable {
     fn get_max_level(&self) -> i32 {
@@ -71,12 +74,36 @@ impl PowerupUpgrade {
         powerup_type: PowerupTypes,
     ) -> Self {
         Self {
-            name,
+            name: name.to_uppercase(),
             desc,
             curr_level,
             new_level,
             powerup_type,
         }
+    }
+
+    pub fn init_weapon(wrapper: WeaponWrapper) -> Self {
+        let weapon_name: &'static str = wrapper.into();
+        let upper = weapon_name.to_uppercase();
+        Self::new(
+            upper.clone(),
+            format!("New METHOD: {}", upper),
+            0,
+            1,
+            PowerupTypes::Weapon,
+        )
+    }
+
+    pub fn init_charm(wrapper: CharmWrapper) -> Self {
+        let charm_name: &'static str = wrapper.into();
+        let upper = charm_name.to_uppercase();
+        Self::new(
+            upper.clone(),
+            format!("New CHARM: {}", upper),
+            0,
+            1,
+            PowerupTypes::Charm,
+        )
     }
 }
 

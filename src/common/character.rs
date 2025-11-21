@@ -3,13 +3,13 @@
 use ratatui::style::{Style, Stylize};
 
 use crate::common::{
-    charms::{CharmAttackSpeed, CharmDamageMult, CharmOffsetAdd, CharmWrapper},
+    charms::CharmWrapper,
     coords::{Direction, Position},
     effects::DamageEffect,
     enemy::Enemy,
     roguegame::Layer,
     upgrade::{PlayerState, PlayerStats},
-    weapon::{DamageArea, Flash, Lightning, Pillar, WeaponWrapper},
+    weapon::{DamageArea, Flash, WeaponWrapper},
 };
 
 #[cfg(not(target_family = "wasm"))]
@@ -144,16 +144,8 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![
-                WeaponWrapper::Flash(Some(Flash::new(weapon_stats.clone()))),
-                WeaponWrapper::Pillar(Some(Pillar::new(weapon_stats.clone()))),
-                WeaponWrapper::Lightning(Some(Lightning::new(weapon_stats))),
-            ],
-            charms: vec![
-                CharmWrapper::DamageMult(CharmDamageMult::new()),
-                CharmWrapper::OffsetAdd(CharmOffsetAdd::new()),
-                CharmWrapper::AttackSpeed(CharmAttackSpeed::new()),
-            ], // weapons: vec![],
+            weapons: vec![WeaponWrapper::Flash(Some(Flash::new(weapon_stats.clone())))],
+            charms: vec![], // weapons: vec![],
         }
     }
 

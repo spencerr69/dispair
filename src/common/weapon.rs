@@ -4,9 +4,10 @@
 
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
+
 use std::{cell::RefCell, rc::Rc};
 
-use strum::{EnumIter, IntoStaticStr};
+use strum::{EnumIter, EnumString, IntoStaticStr};
 #[cfg(target_family = "wasm")]
 use web_time::Duration;
 
@@ -21,11 +22,24 @@ use crate::common::{
     upgrade::WeaponStats,
 };
 
-#[derive(Clone, EnumIter, IntoStaticStr)]
+#[derive(Clone, EnumIter, IntoStaticStr, EnumString)]
 pub enum WeaponWrapper {
+    #[strum(serialize = "Flash", serialize = "FLASH")]
     Flash(Option<Flash>),
+
+    #[strum(serialize = "Pillar", serialize = "PILLAR")]
     Pillar(Option<Pillar>),
+
+    #[strum(serialize = "Lightning", serialize = "LIGHTNING")]
     Lightning(Option<Lightning>),
+}
+
+impl PartialEq for WeaponWrapper {
+    fn eq(&self, other: &Self) -> bool {
+        let self_name: &'static str = self.into();
+        let other_name: &'static str = other.into();
+        self_name == other_name
+    }
 }
 
 impl WeaponWrapper {
@@ -42,6 +56,14 @@ impl WeaponWrapper {
             WeaponWrapper::Flash(flash) => flash.as_mut().unwrap(),
             WeaponWrapper::Pillar(pillar) => pillar.as_mut().unwrap(),
             WeaponWrapper::Lightning(lightning) => lightning.as_mut().unwrap(),
+        }
+    }
+
+    pub fn populate_inner(&mut self, weapon_stats: WeaponStats) {
+        match self {
+            WeaponWrapper::Flash(flash) => *flash = Some(Flash::new(weapon_stats)),
+            WeaponWrapper::Pillar(pillar) => *pillar = Some(Pillar::new(weapon_stats)),
+            WeaponWrapper::Lightning(lightning) => *lightning = Some(Lightning::new(weapon_stats)),
         }
     }
 }
@@ -161,7 +183,7 @@ impl Poweruppable for Flash {
 
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
-            1 => "".into(),
+            1 => "FLASH will create a brief damaging field directly in front of you.".into(),
             2 => "Increase size by 1, increase base damage by 1".into(),
             3 => "Increase base damage by 2".into(),
             4 => "Increase damage scalar by 25%".into(),
@@ -286,7 +308,8 @@ impl Poweruppable for Pillar {
 
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
-            1 => "".into(),
+            1 => "PILLAR will create a damaging beam which affects an entire column of the map"
+                .into(),
             2 => "Increase size by 1, increase base damage by 1".into(),
             3 => "Increase base damage by 2".into(),
             4 => "Increase damage scalar by 25%".into(),
@@ -433,7 +456,7 @@ impl Poweruppable for Lightning {
 
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
-            1 => "".into(),
+            1 => "LIGHTNING will seek the nearest enemy and damage them.".into(),
             2 => "Increase bounces by 1, increase base damage by 1".into(),
             3 => "Increase bounces by 1, increase base damage by 2".into(),
             4 => "Increase bounces by 1, increase damage scalar by 25%".into(),
