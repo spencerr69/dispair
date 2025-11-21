@@ -1,17 +1,15 @@
-use std::{cell::RefCell, rc::Rc};
-
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
     symbols::border,
-    text::{Line, ToLine},
+    text::ToLine,
     widgets::{Block, Clear, Paragraph},
 };
 
 use crate::common::{
     center_horizontal, center_vertical,
     popups::popup_area,
-    powerup::{DynPowerup, PoweruppableWeapon},
+    powerup::{DynPowerup, PoweruppableWeapon, WeaponPowerup},
 };
 
 pub struct PowerupPopup {
@@ -19,10 +17,10 @@ pub struct PowerupPopup {
 }
 
 impl PowerupPopup {
-    pub fn new(current_weapons: RefCell<Rc<Vec<Box<dyn PoweruppableWeapon>>>>) -> Self {
+    pub fn new(current_weapons: &Vec<Box<dyn PoweruppableWeapon>>) -> Self {
         let mut choices = Vec::new();
 
-        current_weapons.borrow().iter().for_each(|weapon| {
+        current_weapons.iter().for_each(|weapon| {
             let next_upgrade = weapon.get_next_upgrade();
             if let Some(next_upgrade) = next_upgrade {
                 choices.push(next_upgrade);
@@ -87,7 +85,6 @@ impl PowerupPopup {
         let popup = Block::bordered()
             .border_set(border::PLAIN)
             .title(" Powerup Choice ")
-            .title_bottom(Line::from(vec![" <ESC> Upgrades ".into()]))
             .title_alignment(ratatui::layout::Alignment::Center);
 
         let inner_area = center_vertical(center_horizontal(popup.inner(area), 10), 1);

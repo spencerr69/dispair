@@ -1,7 +1,7 @@
 use crate::common::weapon::Weapon;
 
-pub trait Poweruppable<'a> {
-    fn get_next_upgrade(&'a self) -> Option<DynPowerup>;
+pub trait Poweruppable {
+    fn get_next_upgrade(&self) -> Option<DynPowerup>;
 
     fn upgrade_self(&mut self, powerup: &dyn Powerup);
 
@@ -21,22 +21,22 @@ pub trait Powerup {
 }
 
 pub type DynPowerup = Box<dyn Powerup>;
-pub struct WeaponPowerup<'a> {
+pub struct WeaponPowerup {
     pub name: String,
     pub desc: String,
     pub new_level: i32,
-    pub current_weapon: Option<Box<&'a dyn PoweruppableWeapon<'a>>>,
+    pub current_weapon: Option<Box<dyn PoweruppableWeapon>>,
 }
 
-pub trait PoweruppableWeapon<'a>: Weapon + Poweruppable<'a> {}
-impl<'a, T> PoweruppableWeapon<'a> for T where T: Weapon + Poweruppable<'a> {}
+pub trait PoweruppableWeapon: Weapon + Poweruppable {}
+impl<T> PoweruppableWeapon for T where T: Weapon + Poweruppable {}
 
-impl<'a> WeaponPowerup<'a> {
+impl WeaponPowerup {
     pub fn new(
         name: String,
         desc: String,
         new_level: i32,
-        current_weapon: Option<Box<&'a dyn PoweruppableWeapon<'a>>>,
+        current_weapon: Option<Box<dyn PoweruppableWeapon>>,
     ) -> Self {
         Self {
             name,
@@ -47,7 +47,7 @@ impl<'a> WeaponPowerup<'a> {
     }
 }
 
-impl Powerup for WeaponPowerup<'_> {
+impl Powerup for WeaponPowerup {
     fn upgrade_parent(&self, parent: &mut dyn Poweruppable) {
         parent.upgrade_self(self);
     }

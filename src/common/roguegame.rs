@@ -3,7 +3,6 @@
 
 #[cfg(not(target_family = "wasm"))]
 use std::time::{Duration, Instant};
-use std::{cell::RefCell, rc::Rc};
 
 #[cfg(target_family = "wasm")]
 use web_time::{Duration, Instant};
@@ -15,8 +14,7 @@ use crate::common::{
     effects::DamageEffect,
     enemy::*,
     pickups::{PickupEffect, Pickupable, PowerupOrb},
-    popups::carnagereport::CarnageReport,
-    popups::poweruppopup::PowerupPopup,
+    popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
     timescaler::TimeScaler,
     upgrade::PlayerState,
 };
@@ -361,9 +359,7 @@ impl RogueGame {
     }
 
     pub fn generate_popup(&mut self) {
-        self.powerup_popup = Some(PowerupPopup::new(RefCell::new(Rc::new(
-            self.character.weapons,
-        ))));
+        self.powerup_popup = Some(PowerupPopup::new(&self.character.weapons));
     }
 
     fn scale_enemies(&mut self) {
@@ -559,8 +555,12 @@ impl RogueGame {
         frame.render_widget(block, frame.area());
         frame.render_widget(content, centered_area);
 
-        if let Some(ref mut carnage) = self.carnage_report.clone() {
+        if let Some(ref mut carnage) = self.carnage_report {
             carnage.render(frame);
+        }
+
+        if let Some(ref mut powerup_popup) = self.powerup_popup {
+            powerup_popup.render(frame);
         }
     }
 }

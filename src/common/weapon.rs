@@ -67,6 +67,7 @@ pub trait Weapon {
 }
 
 /// A struct representing a FLASH weapon.
+#[derive(Clone)]
 pub struct Flash {
     base_damage: i32,
     damage_scalar: f64,
@@ -91,12 +92,12 @@ impl Flash {
     }
 }
 
-impl<'a> Poweruppable<'a> for Flash {
+impl Poweruppable for Flash {
     fn get_level(&self) -> i32 {
         self.stats.level
     }
 
-    fn get_next_upgrade(&'a self) -> Option<super::powerup::DynPowerup> {
+    fn get_next_upgrade(&self) -> Option<super::powerup::DynPowerup> {
         if self.get_level() >= Self::MAX_LEVEL {
             None
         } else {
@@ -104,7 +105,7 @@ impl<'a> Poweruppable<'a> for Flash {
                 "FLASH".into(),
                 "Upgrade flash.".into(),
                 self.get_level() + 1,
-                Some(Box::new(self)),
+                Some(Box::new(self.clone())),
             )))
         }
     }
@@ -182,6 +183,7 @@ impl Weapon for Flash {
 }
 
 /// A struct representing a Pillar weapon, which attacks in a vertical column.
+#[derive(Clone)]
 pub struct Pillar {
     base_damage: i32,
     damage_scalar: f64,
@@ -234,12 +236,12 @@ impl Weapon for Pillar {
     }
 }
 
-impl<'a> Poweruppable<'a> for Pillar {
+impl Poweruppable for Pillar {
     fn get_level(&self) -> i32 {
         self.stats.level
     }
 
-    fn get_next_upgrade(&'a self) -> Option<super::powerup::DynPowerup> {
+    fn get_next_upgrade(&self) -> Option<super::powerup::DynPowerup> {
         if self.get_level() >= Self::MAX_LEVEL {
             None
         } else {
@@ -276,6 +278,8 @@ impl<'a> Poweruppable<'a> for Pillar {
         }
     }
 }
+
+#[derive(Clone)]
 pub struct Lightning {
     base_damage: i32,
     damage_scalar: f64,
@@ -369,12 +373,12 @@ impl Weapon for Lightning {
     }
 }
 
-impl<'a> Poweruppable<'a> for Lightning {
+impl Poweruppable for Lightning {
     fn get_level(&self) -> i32 {
         self.stats.level
     }
 
-    fn get_next_upgrade(&'a self) -> Option<super::powerup::DynPowerup> {
+    fn get_next_upgrade(&self) -> Option<super::powerup::DynPowerup> {
         if self.get_level() >= Self::MAX_LEVEL {
             None
         } else {
@@ -382,7 +386,7 @@ impl<'a> Poweruppable<'a> for Lightning {
                 "FLASH".into(),
                 "Upgrade flash.".into(),
                 self.get_level() + 1,
-                Some(Box::new(self)),
+                Some(Box::new(self.clone())),
             )))
         }
     }
