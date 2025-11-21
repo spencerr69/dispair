@@ -22,6 +22,23 @@ use crate::common::{
     roguegame::*, weapon::DamageArea,
 };
 
+pub type Debuffs = Vec<Debuff>;
+
+pub trait GetDebuffTypes {
+    fn get_on_death_effects(&self) -> Vec<&Debuff>;
+    fn get_on_tick_effects(&self) -> Vec<&Debuff>;
+}
+
+impl GetDebuffTypes for Debuffs {
+    fn get_on_death_effects(&self) -> Vec<&Debuff> {
+        self.iter().filter(|d| d.stats.on_death_effect).collect()
+    }
+
+    fn get_on_tick_effects(&self) -> Vec<&Debuff> {
+        self.iter().filter(|d| d.stats.on_tick_effect).collect()
+    }
+}
+
 /// Represents debuffs that can be applied to enemies.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DebuffTypes {

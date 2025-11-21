@@ -248,7 +248,7 @@ impl RogueGame {
             self.generate_popup();
         }
 
-        let mut debuffed_enemies: Vec<Enemy> = Vec::new();
+        let mut on_death_enemies: Vec<Enemy> = Vec::new();
 
         self.enemies = self
             .enemies
@@ -256,8 +256,8 @@ impl RogueGame {
             .into_iter()
             .filter(|e| {
                 if !e.is_alive() {
-                    if e.debuffs.len() > 0 {
-                        debuffed_enemies.push(e.clone());
+                    if e.debuffs.get_on_death_effects().len() > 0 {
+                        on_death_enemies.push(e.clone());
                     }
                     self.player_state.inventory.add_gold(e.get_worth());
 
@@ -268,7 +268,7 @@ impl RogueGame {
             })
             .collect();
 
-        debuffed_enemies.into_iter().for_each(|e| {
+        on_death_enemies.into_iter().for_each(|e| {
             e.debuffs
                 .iter()
                 .map(|d| d.on_death(e.clone(), &self.layer_base))
