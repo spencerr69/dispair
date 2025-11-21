@@ -10,7 +10,7 @@ A work-in-progress TUI game being written in Rust about unpairing the [BAD] from
 
 *   **Cross-Platform**: Play natively in your terminal or in the browser (WASM).
 *   **Incremental Gameplay**: Earn resources to buy upgrades and improve your character.
-*   **Roguelite Gameplay**: Survive waves of enemies, collect orbs, and upgrade your character.
+*   **Roguelite Gameplay**: l o o k  d e e p e r  l o o k  d e e p e r  l o o k  d e e p e r  l o o k  d e e p e r  l o o k  d e e p e r  l o o k  d e e p e r  l o o k  d e e p e r  l o o k  d e e p e r 
 
 ## Controls
 
