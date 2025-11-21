@@ -3,17 +3,18 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     symbols::border,
     text::ToLine,
-    widgets::{Block, Clear, Paragraph},
+    widgets::{Block, Clear, Paragraph, TableState},
 };
 
 use crate::common::{
     center_horizontal, center_vertical,
     popups::popup_area,
-    powerup::{DynPowerup, PoweruppableWeapon, WeaponPowerup},
+    powerup::{DynPowerup, PoweruppableWeapon},
 };
 
 pub struct PowerupPopup {
     powerup_choices: Vec<DynPowerup>,
+    selection_state: TableState,
 }
 
 impl PowerupPopup {
@@ -28,6 +29,7 @@ impl PowerupPopup {
         });
 
         Self {
+            selection_state: TableState::new(),
             powerup_choices: choices,
         }
     }
