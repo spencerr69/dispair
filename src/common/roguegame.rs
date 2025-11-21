@@ -389,9 +389,7 @@ impl RogueGame {
 
         let offset = self.player_state.stats.game_stats.time_offset;
 
-        self.timescaler = TimeScaler::now();
-
-        self.timescaler.offset_start_time(offset.clone());
+        self.timescaler.offset_start_time(offset);
     }
 
     pub fn generate_popup(&mut self) {
