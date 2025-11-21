@@ -15,10 +15,35 @@ use crate::common::{
     character::{Character, Damageable, Movable},
     coords::{Area, ChaosArea, Direction, Position, SquareArea},
     enemy::{Debuffable, Enemy, move_to_point_granular},
-    powerup::{Poweruppable, WeaponPowerup},
+    powerup::{DynPowerup, Poweruppable, PoweruppableWeapon},
     roguegame::{EntityCharacters, Layer},
     upgrade::WeaponStats,
 };
+
+#[derive(Clone)]
+pub enum WeaponWrapper {
+    Flash(Flash),
+    Pillar(Pillar),
+    Lightning(Lightning),
+}
+
+impl WeaponWrapper {
+    pub fn get_inner(&self) -> &dyn PoweruppableWeapon {
+        match self {
+            WeaponWrapper::Flash(flash) => flash,
+            WeaponWrapper::Pillar(pillar) => pillar,
+            WeaponWrapper::Lightning(lightning) => lightning,
+        }
+    }
+
+    pub fn get_inner_mut(&mut self) -> &mut dyn PoweruppableWeapon {
+        match self {
+            WeaponWrapper::Flash(flash) => flash,
+            WeaponWrapper::Pillar(pillar) => pillar,
+            WeaponWrapper::Lightning(lightning) => lightning,
+        }
+    }
+}
 
 /// Represents an area where damage is applied, created by a weapon attack.
 #[derive(Clone)]
@@ -77,7 +102,6 @@ pub struct Flash {
 impl Flash {
     const BASE_SIZE: i32 = 1;
     const BASE_DAMAGE: i32 = 2;
-    const MAX_LEVEL: i32 = 5;
 
     /// Creates a new `Flash' with stats based on the player's current `Stats`.
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
@@ -93,24 +117,15 @@ impl Flash {
 }
 
 impl Poweruppable for Flash {
+    fn get_name(&self) -> String {
+        "FLASH".into()
+    }
+
     fn get_level(&self) -> i32 {
         self.stats.level
     }
 
-    fn get_next_upgrade(&self) -> Option<super::powerup::DynPowerup> {
-        if self.get_level() >= Self::MAX_LEVEL {
-            None
-        } else {
-            Some(Box::new(WeaponPowerup::new(
-                "FLASH".into(),
-                "Upgrade flash.".into(),
-                self.get_level() + 1,
-                Some(Box::new(self.clone())),
-            )))
-        }
-    }
-
-    fn upgrade_self(&mut self, powerup: &dyn super::powerup::Powerup) {
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
         self.stats.level = powerup.get_new_level();
 
         for i in 1..=self.stats.level {
@@ -131,6 +146,17 @@ impl Poweruppable for Flash {
                 }
                 _ => {}
             }
+        }
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase size by 1, increase base damage by 1".into(),
+            3 => "Increase base damage by 2".into(),
+            4 => "Increase damage scalar by 25%".into(),
+            5 => "Increase damage scalar by 75%".into(),
+            _ => "".into(),
         }
     }
 }
@@ -193,7 +219,6 @@ pub struct Pillar {
 impl Pillar {
     const BASE_SIZE: i32 = 0;
     const BASE_DAMAGE: i32 = 3;
-    const MAX_LEVEL: i32 = 5;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Pillar {
@@ -237,24 +262,26 @@ impl Weapon for Pillar {
 }
 
 impl Poweruppable for Pillar {
+    fn get_name(&self) -> String {
+        "PILLAR".into()
+    }
+
     fn get_level(&self) -> i32 {
         self.stats.level
     }
 
-    fn get_next_upgrade(&self) -> Option<super::powerup::DynPowerup> {
-        if self.get_level() >= Self::MAX_LEVEL {
-            None
-        } else {
-            Some(Box::new(WeaponPowerup::new(
-                "FLASH".into(),
-                "Upgrade flash.".into(),
-                self.get_level() + 1,
-                Some(Box::new(self.clone())),
-            )))
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase size by 1, increase base damage by 1".into(),
+            3 => "Increase base damage by 2".into(),
+            4 => "Increase damage scalar by 25%".into(),
+            5 => "Increase damage scalar by 75%".into(),
+            _ => "".into(),
         }
     }
 
-    fn upgrade_self(&mut self, powerup: &dyn super::powerup::Powerup) {
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
         self.stats.level = powerup.get_new_level();
 
         for i in 1..=self.stats.level {
@@ -289,7 +316,6 @@ pub struct Lightning {
 impl Lightning {
     const BASE_DAMAGE: i32 = 1;
     const BASE_SIZE: i32 = 1;
-    const MAX_LEVEL: i32 = 5;
 
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Lightning {
@@ -374,24 +400,26 @@ impl Weapon for Lightning {
 }
 
 impl Poweruppable for Lightning {
+    fn get_name(&self) -> String {
+        "LIGHTNING".into()
+    }
+
     fn get_level(&self) -> i32 {
         self.stats.level
     }
 
-    fn get_next_upgrade(&self) -> Option<super::powerup::DynPowerup> {
-        if self.get_level() >= Self::MAX_LEVEL {
-            None
-        } else {
-            Some(Box::new(WeaponPowerup::new(
-                "FLASH".into(),
-                "Upgrade flash.".into(),
-                self.get_level() + 1,
-                Some(Box::new(self.clone())),
-            )))
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "".into(),
+            2 => "Increase bounces by 1, increase base damage by 1".into(),
+            3 => "Increase bounces by 1, increase base damage by 2".into(),
+            4 => "Increase bounces by 1, increase damage scalar by 25%".into(),
+            5 => "Double bounces, increase damage scalar by 75%".into(),
+            _ => "".into(),
         }
     }
 
-    fn upgrade_self(&mut self, powerup: &dyn super::powerup::Powerup) {
+    fn upgrade_self(&mut self, powerup: &DynPowerup) {
         self.stats.level = powerup.get_new_level();
 
         for i in 1..=self.stats.level {
@@ -402,12 +430,15 @@ impl Poweruppable for Lightning {
                     self.stats.damage_flat_boost += 1;
                 }
                 3 => {
+                    self.stats.size += 1;
                     self.stats.damage_flat_boost += 2;
                 }
                 4 => {
+                    self.stats.size += 1;
                     self.damage_scalar += 0.25;
                 }
                 5 => {
+                    self.stats.size *= 2;
                     self.damage_scalar += 0.75;
                 }
                 _ => {}

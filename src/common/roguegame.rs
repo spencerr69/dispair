@@ -190,6 +190,14 @@ impl RogueGame {
     }
 
     pub fn on_tick(&mut self) {
+        if let Some(ref powerup_popup) = self.powerup_popup {
+            if powerup_popup.finished {
+                self.game_paused = false;
+                self.character.weapons = powerup_popup.weapons.clone();
+                self.powerup_popup = None;
+            }
+        }
+
         if self.game_over || self.game_paused {
             return;
         }
@@ -360,6 +368,7 @@ impl RogueGame {
 
     pub fn generate_popup(&mut self) {
         self.powerup_popup = Some(PowerupPopup::new(&self.character.weapons));
+        self.start_popup = false;
     }
 
     fn scale_enemies(&mut self) {
@@ -405,6 +414,8 @@ impl RogueGame {
                 KeyCode::Esc => self.exit = true,
                 _ => {}
             }
+        } else if let Some(powerup_popup) = &mut self.powerup_popup {
+            powerup_popup.handle_key_event(key_event);
         } else {
             match key_event.code {
                 KeyCode::Char('s') | KeyCode::Down => move_entity(

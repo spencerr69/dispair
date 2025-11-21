@@ -1,16 +1,35 @@
 use crate::common::weapon::Weapon;
 
 pub trait Poweruppable {
-    fn get_next_upgrade(&self) -> Option<DynPowerup>;
+    fn get_max_level(&self) -> i32 {
+        5
+    }
 
-    fn upgrade_self(&mut self, powerup: &dyn Powerup);
+    fn get_next_upgrade(&self, levels_up: i32) -> Option<super::powerup::DynPowerup> {
+        if self.get_level() >= self.get_max_level() {
+            None
+        } else {
+            let new_level = self.get_level() + levels_up;
+
+            Some(Box::new(WeaponPowerup::new(
+                self.get_name(),
+                self.upgrade_desc(new_level),
+                self.get_level(),
+                new_level,
+            )))
+        }
+    }
+
+    fn get_name(&self) -> String;
+
+    fn upgrade_desc(&self, level: i32) -> String;
+
+    fn upgrade_self(&mut self, powerup: &DynPowerup);
 
     fn get_level(&self) -> i32;
 }
 
 pub trait Powerup {
-    fn upgrade_parent(&self, parent: &mut dyn Poweruppable);
-
     fn get_name(&self) -> &str;
 
     fn get_desc(&self) -> &str;
@@ -25,39 +44,26 @@ pub struct WeaponPowerup {
     pub name: String,
     pub desc: String,
     pub new_level: i32,
-    pub current_weapon: Option<Box<dyn PoweruppableWeapon>>,
+    pub curr_level: i32,
 }
 
 pub trait PoweruppableWeapon: Weapon + Poweruppable {}
 impl<T> PoweruppableWeapon for T where T: Weapon + Poweruppable {}
 
 impl WeaponPowerup {
-    pub fn new(
-        name: String,
-        desc: String,
-        new_level: i32,
-        current_weapon: Option<Box<dyn PoweruppableWeapon>>,
-    ) -> Self {
+    pub fn new(name: String, desc: String, curr_level: i32, new_level: i32) -> Self {
         Self {
             name,
             desc,
+            curr_level,
             new_level,
-            current_weapon,
         }
     }
 }
 
 impl Powerup for WeaponPowerup {
-    fn upgrade_parent(&self, parent: &mut dyn Poweruppable) {
-        parent.upgrade_self(self);
-    }
-
     fn get_current_level(&self) -> i32 {
-        if let Some(ref current_weapon) = self.current_weapon {
-            current_weapon.get_level()
-        } else {
-            0
-        }
+        self.curr_level
     }
 
     fn get_name(&self) -> &str {
