@@ -10,18 +10,24 @@ use ratatui::{
 
 use crate::{
     KeyCode, KeyEvent,
-    common::{popups::popup_area, powerup::DynPowerup, weapon::WeaponWrapper},
+    common::{
+        charms::CharmWrapper,
+        popups::popup_area,
+        powerup::{DynPowerup, PowerupTypes},
+        weapon::WeaponWrapper,
+    },
 };
 
 pub struct PowerupPopup {
     powerup_choices: Vec<DynPowerup>,
     selection_state: TableState,
     pub weapons: Vec<WeaponWrapper>,
+    pub charms: Vec<CharmWrapper>,
     pub finished: bool,
 }
 
 impl PowerupPopup {
-    pub fn new(current_weapons: &Vec<WeaponWrapper>) -> Self {
+    pub fn new(current_weapons: &Vec<WeaponWrapper>, current_charms: &Vec<CharmWrapper>) -> Self {
         let mut choices = Vec::new();
 
         current_weapons.iter().for_each(|weapon| {
@@ -31,7 +37,16 @@ impl PowerupPopup {
             }
         });
 
+        current_charms.iter().for_each(|charm| {
+            let next_upgrade = charm.get_inner().get_next_upgrade(1);
+            if let Some(next_upgrade) = next_upgrade {
+                choices.push(next_upgrade);
+            }
+        });
+
         choices.shuffle(&mut rand::rng());
+
+        let _ = choices.split_off(3.min(choices.len()));
 
         let mut selection_state = TableState::new();
 
@@ -42,6 +57,7 @@ impl PowerupPopup {
         Self {
             finished: false,
             weapons: current_weapons.clone(),
+            charms: current_charms.clone(),
             selection_state,
             powerup_choices: choices,
         }
@@ -69,15 +85,28 @@ impl PowerupPopup {
             }
             let selected_powerup = &self.powerup_choices[col];
 
-            let mut new_weapons = self.weapons.clone();
-
-            new_weapons.iter_mut().for_each(|weapon| {
-                if weapon.get_inner().get_name() == selected_powerup.get_name() {
-                    weapon.get_inner_mut().upgrade_self(selected_powerup);
+            match selected_powerup.get_powerup_type() {
+                PowerupTypes::Weapon => {
+                    let mut new_weapons = self.weapons.clone();
+                    new_weapons.iter_mut().for_each(|weapon| {
+                        if weapon.get_inner().get_name() == selected_powerup.get_name() {
+                            weapon.get_inner_mut().upgrade_self(selected_powerup);
+                        }
+                    });
+                    self.weapons = new_weapons;
                 }
-            });
 
-            self.weapons = new_weapons;
+                PowerupTypes::Charm => {
+                    let mut new_charms = self.charms.clone();
+                    new_charms.iter_mut().for_each(|charm| {
+                        if charm.get_inner().get_name() == selected_powerup.get_name() {
+                            charm.get_inner_mut().upgrade_self(selected_powerup);
+                        }
+                    });
+                    self.charms = new_charms;
+                }
+            };
+
             self.finished = true;
         }
     }

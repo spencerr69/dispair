@@ -16,11 +16,14 @@ pub trait Poweruppable {
                 self.upgrade_desc(new_level),
                 self.get_level(),
                 new_level,
+                self.get_powerup_type(),
             )))
         }
     }
 
     fn get_name(&self) -> String;
+
+    fn get_powerup_type(&self) -> PowerupTypes;
 
     fn upgrade_desc(&self, level: i32) -> String;
 
@@ -34,6 +37,8 @@ pub trait Powerup {
 
     fn get_desc(&self) -> &str;
 
+    fn get_powerup_type(&self) -> PowerupTypes;
+
     fn get_new_level(&self) -> i32;
 
     fn get_current_level(&self) -> i32;
@@ -45,23 +50,41 @@ pub struct PowerupUpgrade {
     pub desc: String,
     pub new_level: i32,
     pub curr_level: i32,
+    pub powerup_type: PowerupTypes,
 }
 
 pub trait PoweruppableWeapon: Weapon + Poweruppable {}
 impl<T> PoweruppableWeapon for T where T: Weapon + Poweruppable {}
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum PowerupTypes {
+    Weapon,
+    Charm,
+}
+
 impl PowerupUpgrade {
-    pub fn new(name: String, desc: String, curr_level: i32, new_level: i32) -> Self {
+    pub fn new(
+        name: String,
+        desc: String,
+        curr_level: i32,
+        new_level: i32,
+        powerup_type: PowerupTypes,
+    ) -> Self {
         Self {
             name,
             desc,
             curr_level,
             new_level,
+            powerup_type,
         }
     }
 }
 
 impl Powerup for PowerupUpgrade {
+    fn get_powerup_type(&self) -> PowerupTypes {
+        self.powerup_type
+    }
+
     fn get_current_level(&self) -> i32 {
         self.curr_level
     }

@@ -209,7 +209,7 @@ impl RogueGame {
             if powerup_popup.finished {
                 self.game_paused = false;
                 self.character.weapons = powerup_popup.weapons;
-                // self.character.charms = powerup_popup.charms;
+                self.character.charms = powerup_popup.charms;
                 self.reset_stats();
                 self.update_stats_with_charms();
                 self.update_stats();
@@ -255,7 +255,6 @@ impl RogueGame {
                             false,
                         ));
 
-                        self.game_paused = true;
                         self.start_popup = true;
                     }
                 }
@@ -393,7 +392,11 @@ impl RogueGame {
     }
 
     pub fn generate_popup(&mut self) {
-        self.powerup_popup = Some(PowerupPopup::new(&self.character.weapons));
+        self.game_paused = true;
+        self.powerup_popup = Some(PowerupPopup::new(
+            &self.character.weapons,
+            &self.character.charms,
+        ));
         self.start_popup = false;
     }
 
@@ -463,6 +466,8 @@ impl RogueGame {
                     Direction::LEFT,
                 ),
                 KeyCode::Esc => self.game_over = true,
+                #[cfg(debug_assertions)]
+                KeyCode::Char('u') => self.generate_popup(),
                 _ => {}
             }
         }
