@@ -3,6 +3,7 @@
 use ratatui::style::{Style, Stylize};
 
 use crate::common::{
+    charms::{CharmAttackSpeed, CharmDamageMult, CharmOffsetAdd, CharmWrapper},
     coords::{Direction, Position},
     effects::DamageEffect,
     enemy::Enemy,
@@ -18,25 +19,6 @@ use std::time::{Duration, Instant};
 use web_time::{Duration, Instant};
 
 use crate::common::roguegame::EntityCharacters;
-
-/// Represents the player character in the game.
-pub struct Character {
-    position: Position,
-    prev_position: Position,
-    last_moved: Instant,
-    pub facing: Direction,
-
-    pub stats: PlayerStats,
-
-    health: i32,
-    max_health: i32,
-    is_alive: bool,
-
-    pub weapons: Vec<WeaponWrapper>,
-
-    // pub player_stats: Stats,
-    entitychar: EntityCharacters,
-}
 
 /// A trait for entities that can move within the game world.
 pub trait Movable {
@@ -105,6 +87,26 @@ pub trait Damageable {
     fn is_alive(&self) -> bool;
 }
 
+/// Represents the player character in the game.
+pub struct Character {
+    position: Position,
+    prev_position: Position,
+    last_moved: Instant,
+    pub facing: Direction,
+
+    pub stats: PlayerStats,
+
+    health: i32,
+    max_health: i32,
+    is_alive: bool,
+
+    pub weapons: Vec<WeaponWrapper>,
+    pub charms: Vec<CharmWrapper>,
+
+    // pub player_stats: Stats,
+    entitychar: EntityCharacters,
+}
+
 impl Character {
     /// Creates a new Character initialized from the given player state.
     ///
@@ -147,7 +149,11 @@ impl Character {
                 WeaponWrapper::Pillar(Pillar::new(weapon_stats.clone())),
                 WeaponWrapper::Lightning(Lightning::new(weapon_stats)),
             ],
-            // weapons: vec![],
+            charms: vec![
+                CharmWrapper::DamageMult(CharmDamageMult::new()),
+                CharmWrapper::OffsetAdd(CharmOffsetAdd::new()),
+                CharmWrapper::AttackSpeed(CharmAttackSpeed::new()),
+            ], // weapons: vec![],
         }
     }
 

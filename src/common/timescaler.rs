@@ -25,9 +25,8 @@ impl TimeScaler {
     }
 
     /// Offsets the start time by a given `Duration`.
-    pub fn offset_start_time(mut self, offset: Duration) -> Self {
+    pub fn offset_start_time(&mut self, offset: Duration) {
         self.start_time -= offset;
-        self
     }
 
     /// Returns the elapsed time in seconds since the `start_time`.
