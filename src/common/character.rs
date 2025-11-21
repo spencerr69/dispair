@@ -145,9 +145,9 @@ impl Character {
             entitychar: EntityCharacters::Character(Style::default()),
 
             weapons: vec![
-                WeaponWrapper::Flash(Flash::new(weapon_stats.clone())),
-                WeaponWrapper::Pillar(Pillar::new(weapon_stats.clone())),
-                WeaponWrapper::Lightning(Lightning::new(weapon_stats)),
+                WeaponWrapper::Flash(Some(Flash::new(weapon_stats.clone()))),
+                WeaponWrapper::Pillar(Some(Pillar::new(weapon_stats.clone()))),
+                WeaponWrapper::Lightning(Some(Lightning::new(weapon_stats))),
             ],
             charms: vec![
                 CharmWrapper::DamageMult(CharmDamageMult::new()),

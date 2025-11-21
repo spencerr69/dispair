@@ -14,6 +14,7 @@ use crate::{
         charms::CharmWrapper,
         popups::popup_area,
         powerup::{DynPowerup, PowerupTypes},
+        upgrade::WeaponStats,
         weapon::WeaponWrapper,
     },
 };
@@ -23,11 +24,16 @@ pub struct PowerupPopup {
     selection_state: TableState,
     pub weapons: Vec<WeaponWrapper>,
     pub charms: Vec<CharmWrapper>,
+    pub base_weapon_stats: WeaponStats,
     pub finished: bool,
 }
 
 impl PowerupPopup {
-    pub fn new(current_weapons: &Vec<WeaponWrapper>, current_charms: &Vec<CharmWrapper>) -> Self {
+    pub fn new(
+        current_weapons: &Vec<WeaponWrapper>,
+        current_charms: &Vec<CharmWrapper>,
+        weapon_stats: WeaponStats,
+    ) -> Self {
         let mut choices = Vec::new();
 
         current_weapons.iter().for_each(|weapon| {
@@ -60,6 +66,7 @@ impl PowerupPopup {
             charms: current_charms.clone(),
             selection_state,
             powerup_choices: choices,
+            base_weapon_stats: weapon_stats,
         }
     }
 

@@ -6,6 +6,7 @@
 use std::time::Duration;
 use std::{cell::RefCell, rc::Rc};
 
+use strum::{EnumIter, IntoStaticStr};
 #[cfg(target_family = "wasm")]
 use web_time::Duration;
 
@@ -20,27 +21,27 @@ use crate::common::{
     upgrade::WeaponStats,
 };
 
-#[derive(Clone)]
+#[derive(Clone, EnumIter, IntoStaticStr)]
 pub enum WeaponWrapper {
-    Flash(Flash),
-    Pillar(Pillar),
-    Lightning(Lightning),
+    Flash(Option<Flash>),
+    Pillar(Option<Pillar>),
+    Lightning(Option<Lightning>),
 }
 
 impl WeaponWrapper {
     pub fn get_inner(&self) -> &dyn PoweruppableWeapon {
         match self {
-            WeaponWrapper::Flash(flash) => flash,
-            WeaponWrapper::Pillar(pillar) => pillar,
-            WeaponWrapper::Lightning(lightning) => lightning,
+            WeaponWrapper::Flash(flash) => flash.as_ref().unwrap(),
+            WeaponWrapper::Pillar(pillar) => pillar.as_ref().unwrap(),
+            WeaponWrapper::Lightning(lightning) => lightning.as_ref().unwrap(),
         }
     }
 
     pub fn get_inner_mut(&mut self) -> &mut dyn PoweruppableWeapon {
         match self {
-            WeaponWrapper::Flash(flash) => flash,
-            WeaponWrapper::Pillar(pillar) => pillar,
-            WeaponWrapper::Lightning(lightning) => lightning,
+            WeaponWrapper::Flash(flash) => flash.as_mut().unwrap(),
+            WeaponWrapper::Pillar(pillar) => pillar.as_mut().unwrap(),
+            WeaponWrapper::Lightning(lightning) => lightning.as_mut().unwrap(),
         }
     }
 }
