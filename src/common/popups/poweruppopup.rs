@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use rand::seq::SliceRandom;
 use ratatui::{
     Frame,
@@ -7,13 +9,15 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Cell, Clear, Row, Table, TableState},
 };
+use strum::IntoEnumIterator;
 
 use crate::{
     KeyCode, KeyEvent,
     common::{
         charms::CharmWrapper,
         popups::popup_area,
-        powerup::{DynPowerup, PowerupTypes},
+        powerup::{DynPowerup, PowerupTypes, PowerupUpgrade},
+        upgrade::WeaponStats,
         weapon::WeaponWrapper,
     },
 };
@@ -23,24 +27,41 @@ pub struct PowerupPopup {
     selection_state: TableState,
     pub weapons: Vec<WeaponWrapper>,
     pub charms: Vec<CharmWrapper>,
+    pub base_weapon_stats: WeaponStats,
     pub finished: bool,
 }
 
 impl PowerupPopup {
-    pub fn new(current_weapons: &Vec<WeaponWrapper>, current_charms: &Vec<CharmWrapper>) -> Self {
+    pub fn new(
+        current_weapons: &Vec<WeaponWrapper>,
+        current_charms: &Vec<CharmWrapper>,
+        weapon_stats: WeaponStats,
+    ) -> Self {
         let mut choices = Vec::new();
 
-        current_weapons.iter().for_each(|weapon| {
-            let next_upgrade = weapon.get_inner().get_next_upgrade(1);
-            if let Some(next_upgrade) = next_upgrade {
-                choices.push(next_upgrade);
+        WeaponWrapper::iter().for_each(|weapon_wrapper| {
+            if let Some(weapon) = current_weapons.iter().find(|w| *w == &weapon_wrapper) {
+                let next_upgrade = weapon.get_inner().get_next_upgrade(1);
+                if let Some(next_upgrade) = next_upgrade {
+                    choices.push(next_upgrade);
+                }
+            } else if current_weapons.len() < 3 {
+                let weapon = weapon_wrapper;
+                let powerup = PowerupUpgrade::init_weapon(weapon);
+                choices.push(Box::new(powerup));
             }
         });
 
-        current_charms.iter().for_each(|charm| {
-            let next_upgrade = charm.get_inner().get_next_upgrade(1);
-            if let Some(next_upgrade) = next_upgrade {
-                choices.push(next_upgrade);
+        CharmWrapper::iter().for_each(|charm_wrapper| {
+            if let Some(charm) = current_charms.iter().find(|c| *c == &charm_wrapper) {
+                let next_upgrade = charm.get_inner().get_next_upgrade(1);
+                if let Some(next_upgrade) = next_upgrade {
+                    choices.push(next_upgrade);
+                }
+            } else if current_charms.len() < 3 {
+                let charm = charm_wrapper;
+                let powerup = PowerupUpgrade::init_charm(charm);
+                choices.push(Box::new(powerup));
             }
         });
 
@@ -60,6 +81,7 @@ impl PowerupPopup {
             charms: current_charms.clone(),
             selection_state,
             powerup_choices: choices,
+            base_weapon_stats: weapon_stats,
         }
     }
 
@@ -89,20 +111,57 @@ impl PowerupPopup {
                 PowerupTypes::Weapon => {
                     let mut new_weapons = self.weapons.clone();
                     new_weapons.iter_mut().for_each(|weapon| {
-                        if weapon.get_inner().get_name() == selected_powerup.get_name() {
+                        if weapon.get_inner().get_name().to_uppercase()
+                            == selected_powerup.get_name().to_uppercase()
+                        {
                             weapon.get_inner_mut().upgrade_self(selected_powerup);
                         }
                     });
+
+                    if new_weapons
+                        .iter()
+                        .find(|weapon| {
+                            weapon.get_inner().get_name().to_uppercase()
+                                == selected_powerup.get_name().to_uppercase()
+                        })
+                        .is_none()
+                    {
+                        if let Ok(mut new_weapon) = WeaponWrapper::from_str(
+                            selected_powerup.get_name().to_uppercase().as_str(),
+                        ) {
+                            new_weapon.populate_inner(self.base_weapon_stats.clone());
+                            new_weapons.push(new_weapon)
+                        }
+                    }
+
                     self.weapons = new_weapons;
                 }
 
                 PowerupTypes::Charm => {
                     let mut new_charms = self.charms.clone();
                     new_charms.iter_mut().for_each(|charm| {
-                        if charm.get_inner().get_name() == selected_powerup.get_name() {
+                        if charm.get_inner().get_name().to_uppercase()
+                            == selected_powerup.get_name().to_uppercase()
+                        {
                             charm.get_inner_mut().upgrade_self(selected_powerup);
                         }
                     });
+
+                    if new_charms
+                        .iter()
+                        .find(|charm| {
+                            charm.get_inner().get_name().to_uppercase()
+                                == selected_powerup.get_name().to_uppercase()
+                        })
+                        .is_none()
+                    {
+                        if let Ok(mut new_charm) = CharmWrapper::from_str(
+                            selected_powerup.get_name().to_uppercase().as_str(),
+                        ) {
+                            new_charm.populate_inner();
+                            new_charms.push(new_charm)
+                        }
+                    }
                     self.charms = new_charms;
                 }
             };

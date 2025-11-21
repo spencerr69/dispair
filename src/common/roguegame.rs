@@ -396,6 +396,7 @@ impl RogueGame {
         self.powerup_popup = Some(PowerupPopup::new(
             &self.character.weapons,
             &self.character.charms,
+            self.player_state.stats.weapon_stats.clone(),
         ));
         self.start_popup = false;
     }
