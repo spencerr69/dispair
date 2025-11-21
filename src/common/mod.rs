@@ -5,6 +5,7 @@
 use ratatui::layout::{Constraint, Layout, Rect};
 
 pub mod character;
+pub mod charms;
 pub mod coords;
 pub mod effects;
 pub mod enemy;
