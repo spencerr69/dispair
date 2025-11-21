@@ -16,7 +16,7 @@ pub trait Pickupable {
     /// Animates the pickup based on the current game tick.
     fn animate(&mut self, tick: u64);
 
-    // sets picked_up to true and returns pickupeffect
+    /// sets picked_up to true and returns pickupeffect
     fn on_pickup(&mut self) -> PickupEffect;
 
     fn is_picked_up(&self) -> bool;

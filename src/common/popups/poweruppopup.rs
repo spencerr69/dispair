@@ -35,7 +35,9 @@ impl PowerupPopup {
 
         let mut selection_state = TableState::new();
 
-        selection_state.select_first();
+        if !choices.is_empty() {
+            selection_state.select_first();
+        }
 
         Self {
             finished: false,
@@ -55,8 +57,16 @@ impl PowerupPopup {
     }
 
     pub fn select_current(&mut self) {
+        if self.powerup_choices.is_empty() {
+            self.finished = true;
+            return;
+        }
+
         let maybe_selected_index = self.selection_state.selected_cell();
         if let Some((_, col)) = maybe_selected_index {
+            if col >= self.powerup_choices.len() {
+                return;
+            }
             let selected_powerup = &self.powerup_choices[col];
 
             let mut new_weapons = self.weapons.clone();

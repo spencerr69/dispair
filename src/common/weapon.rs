@@ -126,9 +126,14 @@ impl Poweruppable for Flash {
     }
 
     fn upgrade_self(&mut self, powerup: &DynPowerup) {
-        self.stats.level = powerup.get_new_level();
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
 
-        for i in 1..=self.stats.level {
+        for i in (from + 1)..=to {
             match i {
                 1 => {}
                 2 => {
@@ -282,9 +287,14 @@ impl Poweruppable for Pillar {
     }
 
     fn upgrade_self(&mut self, powerup: &DynPowerup) {
-        self.stats.level = powerup.get_new_level();
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
 
-        for i in 1..=self.stats.level {
+        for i in (from + 1)..=to {
             match i {
                 1 => {}
                 2 => {
@@ -420,9 +430,14 @@ impl Poweruppable for Lightning {
     }
 
     fn upgrade_self(&mut self, powerup: &DynPowerup) {
-        self.stats.level = powerup.get_new_level();
+        let from = powerup.get_current_level();
+        let to = powerup.get_new_level();
+        if to <= from {
+            return;
+        }
+        self.stats.level = to;
 
-        for i in 1..=self.stats.level {
+        for i in (from + 1)..=to {
             match i {
                 1 => {}
                 2 => {

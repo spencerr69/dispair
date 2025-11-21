@@ -190,11 +190,12 @@ impl RogueGame {
     }
 
     pub fn on_tick(&mut self) {
-        if let Some(ref powerup_popup) = self.powerup_popup {
+        if let Some(powerup_popup) = self.powerup_popup.take() {
             if powerup_popup.finished {
                 self.game_paused = false;
-                self.character.weapons = powerup_popup.weapons.clone();
-                self.powerup_popup = None;
+                self.character.weapons = powerup_popup.weapons;
+            } else {
+                self.powerup_popup = Some(powerup_popup);
             }
         }
 
