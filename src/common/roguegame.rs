@@ -89,6 +89,10 @@ pub struct RogueGame {
 }
 
 impl RogueGame {
+    const DEFAULT_ATTACK_P_S: f64 = 1.5;
+    const DEFAULT_SPAWN_P_S: f64 = 0.4;
+    const DEFAULT_MOVE_P_S: f64 = 2.;
+
     pub fn new(player_state: PlayerState) -> Self {
         let width = player_state.stats.game_stats.width;
         let height = player_state.stats.game_stats.height;
@@ -121,13 +125,17 @@ impl RogueGame {
             pickups.push(pickupsline);
         }
 
-        let attack_ticks = Self::per_sec_to_tick_count(1.5);
-        let enemy_move_ticks = Self::per_sec_to_tick_count(2.);
-        let enemy_spawn_ticks =
-            Self::per_sec_to_tick_count(0.4 * player_state.stats.game_stats.enemy_spawn_mult);
+        let attack_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
+        let enemy_move_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
+        let enemy_spawn_ticks = Self::per_sec_to_tick_count(
+            Self::DEFAULT_SPAWN_P_S * player_state.stats.game_stats.enemy_spawn_mult,
+        );
 
         let start_time = Instant::now();
         let timer = Duration::from_secs(player_state.stats.game_stats.timer);
+
+        let mut timescaler = TimeScaler::now();
+        timescaler.offset_start_time(player_state.stats.game_stats.time_offset);
 
         let mut game = RogueGame {
             player_state: player_state.clone(),
@@ -161,14 +169,21 @@ impl RogueGame {
             active_damage_effects: vec![],
             start_time,
             timer,
-            timescaler: TimeScaler::now()
-                .offset_start_time(player_state.stats.game_stats.time_offset),
+            timescaler,
 
             view_area: Rect::new(0, 0, width as u16, height as u16),
             camera_area: SquareArea::new(Position(0, 0), Position(width as i32, height as i32)),
         };
 
         game.init_character();
+
+        // game.character.charms.iter_mut().for_each(|charm_wrapper| {
+        //     let charm = charm_wrapper.get_inner_mut();
+        //     let upgrade = charm.get_next_upgrade(1).unwrap();
+        //     charm.upgrade_self(&upgrade);
+        // });
+
+        game.update_stats_with_charms();
         game.update_stats();
 
         if game.player_state.upgrade_owned("53") {
@@ -194,6 +209,11 @@ impl RogueGame {
             if powerup_popup.finished {
                 self.game_paused = false;
                 self.character.weapons = powerup_popup.weapons;
+                self.character.charms = powerup_popup.charms;
+                self.reset_stats();
+                self.update_stats_with_charms();
+                self.update_stats();
+                self.character.stats = self.player_state.stats.player_stats.clone()
             } else {
                 self.powerup_popup = Some(powerup_popup);
             }
@@ -235,7 +255,6 @@ impl RogueGame {
                             false,
                         ));
 
-                        self.game_paused = true;
                         self.start_popup = true;
                     }
                 }
@@ -362,13 +381,22 @@ impl RogueGame {
     }
 
     pub fn update_stats(&mut self) {
+        self.attack_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
         self.attack_ticks = (self.attack_ticks as f64
             / self.player_state.stats.game_stats.attack_speed_mult)
             .ceil() as u64;
+
+        let offset = self.player_state.stats.game_stats.time_offset;
+
+        self.timescaler.offset_start_time(offset);
     }
 
     pub fn generate_popup(&mut self) {
-        self.powerup_popup = Some(PowerupPopup::new(&self.character.weapons));
+        self.game_paused = true;
+        self.powerup_popup = Some(PowerupPopup::new(
+            &self.character.weapons,
+            &self.character.charms,
+        ));
         self.start_popup = false;
     }
 
@@ -438,6 +466,8 @@ impl RogueGame {
                     Direction::LEFT,
                 ),
                 KeyCode::Esc => self.game_over = true,
+                #[cfg(debug_assertions)]
+                KeyCode::Char('u') => self.generate_popup(),
                 _ => {}
             }
         }
@@ -517,6 +547,18 @@ impl RogueGame {
             .collect();
 
         out
+    }
+
+    pub fn reset_stats(&mut self) {
+        self.player_state.refresh();
+    }
+
+    pub fn update_stats_with_charms(&mut self) {
+        self.character.charms.iter().for_each(|charm_wrapper| {
+            charm_wrapper
+                .get_inner()
+                .manipulate_stats(&mut self.player_state.stats);
+        });
     }
 
     /// Returns the character's current position.

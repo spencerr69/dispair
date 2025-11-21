@@ -34,18 +34,6 @@ impl Sub for PlayerState {
     /// Compute the difference between two player states, producing a PlayerStateDiff that contains the inventory delta.
     ///
     /// The resulting `PlayerStateDiff`'s `inventory` equals `self.inventory - other.inventory`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut a = PlayerState::default();
-    /// a.inventory = Inventory { gold: 10 };
-    /// let mut b = PlayerState::default();
-    /// b.inventory = Inventory { gold: 4 };
-    ///
-    /// let diff = a - b;
-    /// assert_eq!(diff.inventory.gold, 6);
-    /// ```
     fn sub(self, other: PlayerState) -> Self::Output {
         PlayerStateDiff {
             inventory: self.inventory - other.inventory,

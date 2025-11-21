@@ -13,6 +13,8 @@ pub struct TimeScaler {
     pub start_time: SystemTime,
     /// The current scaling factor.
     pub scale_amount: f64,
+    /// The original start time (to work out offset)
+    original_start_time: SystemTime,
 }
 
 impl TimeScaler {
@@ -20,14 +22,14 @@ impl TimeScaler {
     pub fn now() -> Self {
         Self {
             start_time: SystemTime::now(),
+            original_start_time: SystemTime::now(),
             scale_amount: 1.0,
         }
     }
 
     /// Offsets the start time by a given `Duration`.
-    pub fn offset_start_time(mut self, offset: Duration) -> Self {
-        self.start_time -= offset;
-        self
+    pub fn offset_start_time(&mut self, offset: Duration) {
+        self.start_time = self.original_start_time - offset;
     }
 
     /// Returns the elapsed time in seconds since the `start_time`.

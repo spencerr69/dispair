@@ -117,6 +117,10 @@ impl Flash {
 }
 
 impl Poweruppable for Flash {
+    fn get_powerup_type(&self) -> super::powerup::PowerupTypes {
+        super::powerup::PowerupTypes::Weapon
+    }
+
     fn get_name(&self) -> String {
         "FLASH".into()
     }
@@ -267,6 +271,10 @@ impl Weapon for Pillar {
 }
 
 impl Poweruppable for Pillar {
+    fn get_powerup_type(&self) -> super::powerup::PowerupTypes {
+        super::powerup::PowerupTypes::Weapon
+    }
+
     fn get_name(&self) -> String {
         "PILLAR".into()
     }
@@ -410,6 +418,10 @@ impl Weapon for Lightning {
 }
 
 impl Poweruppable for Lightning {
+    fn get_powerup_type(&self) -> super::powerup::PowerupTypes {
+        super::powerup::PowerupTypes::Weapon
+    }
+
     fn get_name(&self) -> String {
         "LIGHTNING".into()
     }
