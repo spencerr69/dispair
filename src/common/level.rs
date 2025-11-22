@@ -5,7 +5,7 @@ pub struct Level {
 }
 
 impl Level {
-    const SCALE_MULT: f64 = 1.5;
+    const SCALE_MULT: f64 = 2.5;
 
     pub fn new() -> Self {
         Level {
@@ -19,11 +19,14 @@ impl Level {
         self.xp += xp;
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> Option<i32> {
         if self.xp >= self.xp_to_level {
             self.level += 1;
             self.xp = 0;
             self.xp_to_level = (self.xp_to_level as f64 * Self::SCALE_MULT).ceil() as u128;
+            Some(self.level)
+        } else {
+            None
         }
     }
 

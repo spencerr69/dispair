@@ -11,7 +11,7 @@ use crate::common::enemy::Debuff;
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Inventory {
     /// The amount of gold the player has.
-    pub gold: u32,
+    pub gold: u128,
 }
 
 impl Sub for Inventory {
@@ -26,7 +26,7 @@ impl Sub for Inventory {
 
 impl Inventory {
     /// Adds a specified amount of gold to the player's inventory.
-    pub fn add_gold(&mut self, amount: u32) {
+    pub fn add_gold(&mut self, amount: u128) {
         self.gold = self.gold.saturating_add(amount);
     }
 }

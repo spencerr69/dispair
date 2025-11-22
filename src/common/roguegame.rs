@@ -7,6 +7,7 @@ use crate::{
         coords::{Area, Direction, Position, SquareArea},
         effects::DamageEffect,
         enemy::*,
+        level::Level,
         pickups::{PickupEffect, Pickupable, PowerupOrb},
         popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
         timescaler::TimeScaler,
@@ -56,7 +57,7 @@ pub struct RogueGame {
 
     enemy_health: i32,
     enemy_damage: i32,
-    enemy_worth: u32,
+    enemy_drops: EnemyDrops,
 
     attack_ticks: u64,
 
@@ -70,6 +71,8 @@ pub struct RogueGame {
     active_damage_effects: Vec<DamageEffect>,
 
     pickups: Vec<Box<dyn Pickupable>>,
+
+    pub level: Level,
 
     timer: Duration,
     start_time: Instant,
@@ -119,6 +122,8 @@ impl RogueGame {
         let mut timescaler = TimeScaler::now();
         timescaler.offset_start_time(player_state.stats.game_stats.time_offset);
 
+        let level = Level::new();
+
         let mut game = RogueGame {
             player_state: player_state.clone(),
             character: Character::new(player_state.clone()),
@@ -138,9 +143,11 @@ impl RogueGame {
             exit: false,
             game_paused: false,
 
+            level,
+
             enemy_damage: 1,
             enemy_health: 3,
-            enemy_worth: 1,
+            enemy_drops: EnemyDrops { gold: 1, xp: 0 },
 
             tickcount: 0,
             enemies: vec![],
@@ -215,6 +222,10 @@ impl RogueGame {
             return;
         }
 
+        if let Some(_) = self.level.update() {
+            self.start_popup = true;
+        }
+
         let char_pos = self.get_character_pos().clone();
 
         self.pickups.iter_mut().for_each(|pickup| {
@@ -249,18 +260,24 @@ impl RogueGame {
 
         let mut on_death_enemies: Vec<Enemy> = Vec::new();
 
-        self.enemies.retain(|e| {
-            if !e.is_alive() {
-                if e.debuffs.get_on_death_effects().len() > 0 {
-                    on_death_enemies.push(e.clone());
-                }
-                self.player_state.inventory.add_gold(e.get_worth());
+        self.enemies = self
+            .enemies
+            .clone()
+            .into_iter()
+            .filter(|e| {
+                if !e.is_alive() {
+                    if e.debuffs.get_on_death_effects().len() > 0 {
+                        on_death_enemies.push(e.clone());
+                    }
 
-                return false;
-            } else {
-                return true;
-            };
-        });
+                    self.consume_drops(e.get_drops());
+
+                    return false;
+                } else {
+                    return true;
+                };
+            })
+            .collect();
 
         on_death_enemies.into_iter().for_each(|e| {
             e.debuffs
@@ -326,6 +343,11 @@ impl RogueGame {
             .for_each(|pickup| pickup.animate(self.tickcount % 1000));
     }
 
+    pub fn consume_drops(&mut self, drops: EnemyDrops) {
+        self.player_state.inventory.gold += drops.gold;
+        self.level.add_xp(drops.xp);
+    }
+
     pub fn on_frame(&mut self) {
         if self.game_paused {
             return;
@@ -374,7 +396,8 @@ impl RogueGame {
         let init_enemy_damage = 1.;
         let init_enemy_spawn_secs = 0.4 * self.player_state.stats.game_stats.enemy_spawn_mult;
         let init_enemy_move_secs = 2. * self.player_state.stats.game_stats.enemy_move_mult;
-        let init_enemy_worth: u32 = 1;
+        let init_enemy_gold: u128 = 1;
+        let init_enemy_xp: u128 = 1;
 
         self.enemy_health =
             (init_enemy_health * (self.timescaler.scale_amount).max(1.)).ceil() as i32;
@@ -389,8 +412,11 @@ impl RogueGame {
             init_enemy_move_secs as f64 * (self.timescaler.scale_amount / 3.5).max(1.),
         );
 
-        self.enemy_worth =
-            (init_enemy_worth as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u32;
+        self.enemy_drops = EnemyDrops {
+            gold: (init_enemy_gold as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil()
+                as u128,
+            xp: (init_enemy_xp as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u128,
+        }
     }
 
     pub fn spawn_enemy(&mut self) {
@@ -398,7 +424,7 @@ impl RogueGame {
             get_rand_position_on_edge(&self.layer_base),
             self.enemy_damage,
             self.enemy_health,
-            self.enemy_worth,
+            self.enemy_drops.clone(),
         ))
     }
 
