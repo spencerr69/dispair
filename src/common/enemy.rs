@@ -1,96 +1,20 @@
 //! This module defines the `Enemy` struct and its related traits and behaviors.
 //! It includes logic for enemy movement, health, attacks, and debuffs.
-use crate::target_types::Duration;
-
-use std::{cell::RefCell, rc::Rc};
-
-use serde::{Deserialize, Serialize};
+use crate::{
+    common::debuffs::{Debuff, DebuffTypes},
+    target_types::Duration,
+};
 
 use rand::Rng;
 use ratatui::style::{Style, Stylize};
 
 use crate::common::{
     character::*,
-    coords::{Area, Direction, Position, SquareArea},
+    coords::{Direction, Position, SquareArea},
     effects::DamageEffect,
     roguegame::*,
-    stats::{DebuffStats, Proc},
-    weapons::DamageArea,
+    stats::Proc,
 };
-
-pub type Debuffs = Vec<Debuff>;
-
-pub trait GetDebuffTypes {
-    fn get_on_death_effects(&self) -> Vec<&Debuff>;
-    fn get_on_tick_effects(&self) -> Vec<&Debuff>;
-}
-
-impl GetDebuffTypes for Debuffs {
-    fn get_on_death_effects(&self) -> Vec<&Debuff> {
-        self.iter().filter(|d| d.stats.on_death_effect).collect()
-    }
-
-    fn get_on_tick_effects(&self) -> Vec<&Debuff> {
-        self.iter().filter(|d| d.stats.on_tick_effect).collect()
-    }
-}
-
-/// Represents debuffs that can be applied to enemies.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DebuffTypes {
-    MarkedForExplosion,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub struct Debuff {
-    pub debuff_type: DebuffTypes,
-    pub stats: DebuffStats,
-}
-
-impl Debuff {}
-
-/// A trait for effects that trigger when an enemy dies.
-pub trait OnDeathEffect {
-    /// Called when an enemy dies, potentially creating a `DamageArea`.
-    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea>;
-}
-
-impl OnDeathEffect for Debuff {
-    /// Produces an optional area-of-effect damage specification to emit when this debuff triggers on an enemy's death.
-    ///
-    /// If the debuff is `MarkedForExplosion` and `stats.size` is `Some(size)`, returns a `DamageArea` describing a square area centered on the enemy with radius `size`, using `stats.damage` (or `0` if absent) as the damage amount, an `AttackMist` visual styled dark gray, a duration of 0.15 seconds, `blink = false`, and no `weapon_stats`. If `stats.size` is `None`, returns `None`.
-    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea> {
-        match self.debuff_type {
-            DebuffTypes::MarkedForExplosion => {
-                if let Some(size) = self.stats.size {
-                    let mut area = SquareArea {
-                        corner1: Position(
-                            enemy.position.0.saturating_sub(size),
-                            enemy.position.1.saturating_sub(size),
-                        ),
-                        corner2: Position(
-                            enemy.position.0.saturating_add(size),
-                            enemy.position.1.saturating_add(size),
-                        ),
-                    };
-
-                    area.constrain(layer);
-
-                    Some(DamageArea {
-                        damage_amount: self.stats.damage.unwrap_or(0),
-                        area: Rc::new(RefCell::new(area)),
-                        entity: EntityCharacters::AttackMist(Style::new().dark_gray()),
-                        duration: Duration::from_secs_f64(0.05),
-                        blink: false,
-                        weapon_stats: None,
-                    })
-                } else {
-                    None
-                }
-            }
-        }
-    }
-}
 
 /// A trait defining the behavior of an enemy.
 pub trait EnemyBehaviour {
@@ -118,7 +42,7 @@ pub struct EnemyDrops {
 /// Represents an enemy in the game.
 #[derive(Clone, PartialEq, Eq)]
 pub struct Enemy {
-    position: Position,
+    pub position: Position,
     prev_position: Position,
 
     pub facing: Direction,
@@ -151,10 +75,26 @@ impl Debuffable for Enemy {
 
         let roll = rng.random_range(1..=100);
 
-        match proc.debuff.debuff_type {
-            DebuffTypes::MarkedForExplosion => {
-                if roll <= proc.chance && self.count_debuff(&proc.debuff) < 1 {
-                    self.debuffs.push(proc.debuff.clone());
+        if roll <= proc.chance {
+            match proc.debuff.debuff_type {
+                DebuffTypes::FlameBurn => {
+                    if self.count_debuff(&proc.debuff) < 2 {
+                        self.debuffs.push(proc.debuff.clone());
+                    } else {
+                        self.try_proc(&Proc {
+                            chance: 100,
+                            debuff: Debuff {
+                                debuff_type: DebuffTypes::FlameIgnite,
+                                stats: proc.debuff.stats.clone(),
+                                complete: false,
+                            },
+                        })
+                    }
+                }
+                _ => {
+                    if self.count_debuff(&proc.debuff) < 1 {
+                        self.debuffs.push(proc.debuff.clone());
+                    }
                 }
             }
         }
@@ -182,9 +122,7 @@ impl Debuffable for Enemy {
 
 impl Enemy {
     /// Update the enemy's visual style to reflect any active debuffs.
-    ///
-    /// Currently applies styling for `DebuffTypes::MarkedForExplosion` by making the
-    /// enemy's character style bold and gray.
+
     fn change_style_with_debuff(&mut self) {
         let style = self.entitychar.style_mut();
 
@@ -192,8 +130,10 @@ impl Enemy {
             .iter()
             .for_each(|debuff| match debuff.debuff_type {
                 DebuffTypes::MarkedForExplosion => {
-                    *style = style.bold().gray();
+                    *style = style.bold();
                 }
+                DebuffTypes::FlameBurn => *style = style.red(),
+                _ => {}
             })
     }
 }
