@@ -30,7 +30,7 @@ pub trait EnemyBehaviour {
         character: &mut Character,
         layer: &Layer,
         damage_effects: &mut Vec<DamageEffect>,
-    );
+    ) -> Option<(Position, Direction)>;
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -78,7 +78,7 @@ impl Debuffable for Enemy {
         if roll <= proc.chance {
             match proc.debuff.debuff_type {
                 DebuffTypes::FlameBurn => {
-                    if self.count_debuff(&proc.debuff) < 2 {
+                    if self.count_debuff(&proc.debuff) < 1 {
                         self.debuffs.push(proc.debuff.clone());
                     } else {
                         self.try_proc(&Proc {
@@ -169,7 +169,7 @@ impl EnemyBehaviour for Enemy {
         character: &mut Character,
         layer: &Layer,
         damage_effects: &mut Vec<DamageEffect>,
-    ) {
+    ) -> Option<(Position, Direction)> {
         self.prev_position = self.position.clone();
 
         self.change_style_with_debuff();
@@ -188,7 +188,9 @@ impl EnemyBehaviour for Enemy {
             move_to_point_granular(&self.position, character.get_pos(), true);
 
         if can_stand(layer, &desired_pos) && &desired_pos != character.get_pos() {
-            self.move_to(desired_pos, desired_facing);
+            return Some((desired_pos, desired_facing));
+        } else {
+            return None;
         }
     }
 }

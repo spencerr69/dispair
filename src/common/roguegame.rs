@@ -319,28 +319,38 @@ impl RogueGame {
         }
 
         if self.tickcount % self.enemy_move_ticks == 0 {
-            self.enemies.iter_mut().for_each(|enemy| {
-                enemy.update(
-                    &mut self.character,
-                    &self.layer_base,
-                    &mut self.active_damage_effects,
-                );
-                // update_entity_positions(&mut self.layer_entities, enemy);
-
-                if self.character.stats.shove_amount > 0
-                    && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
-                {
-                    if self.character.stats.shove_damage > 0 {
-                        enemy.take_damage(
-                            (self.character.stats.shove_damage as f64
-                                * self.character.stats.damage_mult)
-                                .ceil() as i32,
-                        );
+            self.enemies = self
+                .enemies
+                .clone()
+                .into_iter()
+                .map(|mut enemy| {
+                    if let Some((desired_pos, desired_facing)) = enemy.update(
+                        &mut self.character,
+                        &self.layer_base,
+                        &mut self.active_damage_effects,
+                    ) {
+                        if self.can_stand(&desired_pos) {
+                            enemy.move_to(desired_pos, desired_facing);
+                        }
                     }
+                    // update_entity_positions(&mut self.layer_entities, enemy);
 
-                    enemy.move_back(self.character.stats.shove_amount as i32, &self.layer_base);
-                }
-            });
+                    if self.character.stats.shove_amount > 0
+                        && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
+                    {
+                        if self.character.stats.shove_damage > 0 {
+                            enemy.take_damage(
+                                (self.character.stats.shove_damage as f64
+                                    * self.character.stats.damage_mult)
+                                    .ceil() as i32,
+                            );
+                        }
+
+                        enemy.move_back(self.character.stats.shove_amount as i32, &self.layer_base);
+                    }
+                    return enemy;
+                })
+                .collect();
             // self.change_low_health_enemies_questionable();
         }
 
