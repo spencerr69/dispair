@@ -220,7 +220,8 @@ impl PowerupPopup {
             ],
         );
 
-        let table = table.cell_highlight_style(Style::default().fg(Color::Yellow));
+        let table =
+            table.cell_highlight_style(Style::default().bg(Color::LightBlue).fg(Color::Black));
 
         frame.render_stateful_widget(table, rect, &mut self.selection_state);
     }

@@ -5,7 +5,7 @@ use crate::target_types::Duration;
 use derive_more::Sub;
 use serde::{Deserialize, Serialize};
 
-use crate::common::enemy::Debuff;
+use crate::common::debuffs::Debuff;
 
 /// Represents the player's inventory.
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -76,6 +76,8 @@ pub struct WeaponStats {
     pub size: i32,
 
     pub level: i32,
+
+    pub elemental_honage: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -133,6 +135,7 @@ impl Default for WeaponStats {
             size: 0,
             procs: HashMap::new(),
             level: 1,
+            elemental_honage: 1.,
         }
     }
 }

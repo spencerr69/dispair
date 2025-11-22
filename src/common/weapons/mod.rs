@@ -2,10 +2,11 @@
 //! It includes a `Weapon` trait, a `Sword` implementation, and a `DamageArea` struct
 //! for handling attacks and their effects on enemies.
 
-use crate::target_types::Duration;
+use crate::{common::debuffs::Elements, target_types::Duration};
 
 use std::{cell::RefCell, rc::Rc};
 
+use ratatui::style::{Style, Stylize};
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::{
@@ -112,4 +113,13 @@ pub trait Weapon {
     /// Calculates and returns the base damage of the weapon.
     ///Damage should be rounded up to nearest int.
     fn get_damage(&self) -> i32;
+
+    fn get_element(&self) -> Option<Elements>;
+
+    fn get_elemental_style(&self) -> Option<Style> {
+        match self.get_element() {
+            Some(Elements::Flame(_)) => Some(Style::new().red()),
+            None => None,
+        }
+    }
 }

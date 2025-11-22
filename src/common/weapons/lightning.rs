@@ -107,6 +107,10 @@ impl Weapon for Lightning {
         }
     }
 
+    fn get_element(&self) -> Option<crate::common::debuffs::Elements> {
+        None
+    }
+
     fn get_damage(&self) -> i32 {
         (self.base_damage as f64 * self.damage_scalar).ceil() as i32
     }
