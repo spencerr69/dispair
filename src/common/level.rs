@@ -30,7 +30,9 @@ impl Level {
         }
     }
 
-    pub fn get_progress_percentage(&self) -> f64 {
-        self.xp as f64 / self.xp_to_level as f64 * 100.0
+    pub fn get_progress_percentage(&self) -> u16 {
+        (self.xp as f64 / self.xp_to_level as f64 * 100.0)
+            .floor()
+            .min(100.) as u16
     }
 }

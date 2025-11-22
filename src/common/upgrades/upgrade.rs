@@ -86,6 +86,11 @@ impl PlayerState {
             player_stats.health_mult += 0.1 * self.amount_owned("222") as f64;
         }
 
+        //upgrade 223 health/exp_mult_up
+        if self.upgrade_owned("223") {
+            player_stats.health_mult *= 1.5 * self.amount_owned("223") as f64;
+        }
+
         //upgrade 23 attack_rate
         if self.upgrade_owned("23") {
             game_stats.attack_speed_mult += 0.15 * self.amount_owned("23") as f64;

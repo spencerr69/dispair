@@ -19,11 +19,11 @@ use crate::{
 use rand::Rng;
 use ratatui::{
     Frame,
-    layout::Rect,
+    layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
     symbols::border,
     text::{Line, Span, Text},
-    widgets::{Block, Paragraph},
+    widgets::{Block, Gauge, Paragraph},
 };
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
@@ -186,9 +186,11 @@ impl RogueGame {
     }
 
     pub fn spawn_orb(&mut self) {
-        let position = get_rand_position_on_layer(&self.layer_base);
+        if !self.player_state.upgrade_owned("A") {
+            let position = get_rand_position_on_layer(&self.layer_base);
 
-        self.pickups.push(Box::new(PowerupOrb::new(position)));
+            self.pickups.push(Box::new(PowerupOrb::new(position)));
+        }
     }
 
     pub fn on_tick(&mut self) {
@@ -200,7 +202,9 @@ impl RogueGame {
                 self.reset_stats();
                 self.update_stats_with_charms();
                 self.update_stats();
-                self.character.stats = self.player_state.stats.player_stats.clone()
+                self.character.stats = self.player_state.stats.player_stats.clone();
+
+                self.player_state.upgrades.insert("A".to_string(), 1);
             } else {
                 self.powerup_popup = Some(powerup_popup);
             }
@@ -415,7 +419,11 @@ impl RogueGame {
         self.enemy_drops = EnemyDrops {
             gold: (init_enemy_gold as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil()
                 as u128,
-            xp: (init_enemy_xp as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u128,
+            xp: if self.player_state.upgrade_owned("A") {
+                (init_enemy_xp as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u128
+            } else {
+                0
+            },
         }
     }
 
@@ -639,7 +647,23 @@ impl RogueGame {
             .title_bottom(instructions.right_aligned())
             .border_set(border::THICK);
 
-        self.view_area = block.inner(frame.area());
+        let mut game_area = block.inner(frame.area());
+        frame.render_widget(&block, frame.area());
+
+        if self.player_state.upgrade_owned("A") {
+            let progress_bar_area;
+
+            [progress_bar_area, game_area] =
+                Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]).areas(game_area);
+
+            let progress_bar = Gauge::default()
+                .gauge_style(Style::new().light_blue())
+                .percent(self.level.get_progress_percentage());
+
+            frame.render_widget(progress_bar, progress_bar_area);
+        }
+
+        self.view_area = game_area;
 
         let content_area = self.view_area;
 
@@ -650,7 +674,6 @@ impl RogueGame {
 
         let content = Paragraph::new(self.map_text.clone()).centered();
 
-        frame.render_widget(block, frame.area());
         frame.render_widget(content, centered_area);
 
         if let Some(ref mut carnage) = self.carnage_report {
