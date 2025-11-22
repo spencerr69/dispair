@@ -85,10 +85,10 @@ impl UpgradesMenu {
 
                 if self.player_state.amount_owned(&current_node.id) >= current_node.limit {
                     return Err("Upgrade already owned".to_string());
-                } else if next_cost > self.player_state.inventory.gold {
+                } else if next_cost as u128 > self.player_state.inventory.gold {
                     return Err("Not enough money".to_string());
                 }
-                self.player_state.inventory.gold -= next_cost;
+                self.player_state.inventory.gold -= next_cost as u128;
                 let upgrade_count = self.player_state.upgrades.get_mut(&current_node.id);
                 if let Some(count) = upgrade_count {
                     *count += 1;

@@ -95,10 +95,10 @@ impl OnDeathEffect for Debuff {
 /// A trait defining the behavior of an enemy.
 pub trait EnemyBehaviour {
     /// Creates a new enemy with the given properties.
-    fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self;
+    fn new(position: Position, damage: i32, health: i32, drops: EnemyDrops) -> Self;
 
     /// Gets the amount of gold the enemy is worth.
-    fn get_worth(&self) -> u32;
+    fn get_drops(&self) -> EnemyDrops;
 
     /// Updates the enemy's state, including movement and attacks.
     fn update(
@@ -107,6 +107,12 @@ pub trait EnemyBehaviour {
         layer: &Layer,
         damage_effects: &mut Vec<DamageEffect>,
     );
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct EnemyDrops {
+    pub gold: u128,
+    pub xp: u128,
 }
 
 /// Represents an enemy in the game.
@@ -125,7 +131,7 @@ pub struct Enemy {
 
     entitychar: EntityCharacters,
 
-    worth: u32,
+    drops: EnemyDrops,
 
     pub debuffs: Vec<Debuff>,
 }
@@ -193,7 +199,7 @@ impl Enemy {
 }
 
 impl EnemyBehaviour for Enemy {
-    fn new(position: Position, damage: i32, health: i32, worth: u32) -> Self {
+    fn new(position: Position, damage: i32, health: i32, drops: EnemyDrops) -> Self {
         Enemy {
             position: position.clone(),
             prev_position: position,
@@ -208,14 +214,14 @@ impl EnemyBehaviour for Enemy {
 
             entitychar: EntityCharacters::Enemy(Style::default()),
 
-            worth,
+            drops,
 
             debuffs: Vec::new(),
         }
     }
 
-    fn get_worth(&self) -> u32 {
-        self.worth.clone()
+    fn get_drops(&self) -> EnemyDrops {
+        self.drops.clone()
     }
 
     fn update(

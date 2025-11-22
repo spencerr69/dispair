@@ -9,6 +9,7 @@ pub mod charms;
 pub mod coords;
 pub mod effects;
 pub mod enemy;
+pub mod level;
 pub mod pickups;
 pub mod popups;
 pub mod powerup;

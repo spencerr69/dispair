@@ -113,6 +113,18 @@
                         "limit": 3,
                         "requires": [],
                         "children": null
+                    },
+                    {
+                        "title": "STATS::\\health::\\exp_mult_up",
+                        "description": "increase health by 1.5x",
+                        "id": "223",
+                        "cost": 1000,
+                        "limit": 3,
+                        "requires": [
+                            "A"
+                        ],
+                        "children": null,
+                        "costscale_override": 2.0
                     }
                 ]
             },
