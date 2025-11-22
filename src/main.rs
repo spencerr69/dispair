@@ -21,6 +21,18 @@ pub type KeyEvent = ratzilla::event::KeyEvent;
 #[cfg(not(target_family = "wasm"))]
 pub type KeyEvent = crossterm::event::KeyEvent;
 
+#[cfg(target_family = "wasm")]
+pub type Duration = web_time::Duration;
+
+#[cfg(not(target_family = "wasm"))]
+pub type Duration = std::time::Duration;
+
+#[cfg(target_family = "wasm")]
+pub type SystemTime = web_time::SystemTime;
+
+#[cfg(not(target_family = "wasm"))]
+pub type SystemTime = std::time::SystemTime;
+
 /// The main entry point for the terminal application.
 #[cfg(not(target_family = "wasm"))]
 #[tokio::main]

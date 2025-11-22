@@ -8,7 +8,7 @@ use ratatui::{
 use crate::common::{
     center_horizontal, center_vertical,
     popups::popup_area,
-    upgrade::{PlayerState, PlayerStateDiff},
+    upgrades::upgrade::{PlayerState, PlayerStateDiff},
 };
 
 /// Displays the results of a game level to the player.

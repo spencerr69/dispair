@@ -20,8 +20,8 @@ use super::tui::{Event, Tui};
 use crate::common::{
     popups::carnagereport::CarnageReport,
     roguegame::RogueGame,
-    upgrade::PlayerState,
-    upgrademenu::{Goto, UpgradesMenu},
+    upgrades::upgrade::PlayerState,
+    upgrades::upgrademenu::{Goto, UpgradesMenu},
 };
 
 /// Saves the player's progress to a JSON file.
