@@ -14,12 +14,16 @@ pub struct CharmOffsetAdd {
 
 impl CharmOffsetAdd {
     pub fn new() -> Self {
-        let out = Self {
-            stat_boost: Duration::from_secs(1 * 60),
+        Self {
+            stat_boost: Duration::from_secs(60),
             level: 1,
-        };
+        }
+    }
+}
 
-        out
+impl Default for CharmOffsetAdd {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -63,7 +67,7 @@ impl Poweruppable for CharmOffsetAdd {
 
         for i in (from + 1)..=to {
             match i {
-                1 => self.stat_boost = Duration::from_secs(1 * 60),
+                1 => self.stat_boost = Duration::from_secs(60),
                 2 => self.stat_boost = Duration::from_secs((1.5 * 60.) as u64),
                 3 => self.stat_boost = Duration::from_secs(2 * 60),
                 4 => self.stat_boost = Duration::from_secs((2.5 * 60.) as u64),

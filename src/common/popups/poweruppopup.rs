@@ -33,8 +33,8 @@ pub struct PowerupPopup {
 
 impl PowerupPopup {
     pub fn new(
-        current_weapons: &Vec<WeaponWrapper>,
-        current_charms: &Vec<CharmWrapper>,
+        current_weapons: &[WeaponWrapper],
+        current_charms: &[CharmWrapper],
         weapon_stats: WeaponStats,
     ) -> Self {
         let mut choices = Vec::new();
@@ -77,8 +77,8 @@ impl PowerupPopup {
 
         Self {
             finished: false,
-            weapons: current_weapons.clone(),
-            charms: current_charms.clone(),
+            weapons: Vec::from(current_weapons),
+            charms: Vec::from(current_charms),
             selection_state,
             powerup_choices: choices,
             base_weapon_stats: weapon_stats,
@@ -118,20 +118,14 @@ impl PowerupPopup {
                         }
                     });
 
-                    if new_weapons
-                        .iter()
-                        .find(|weapon| {
-                            weapon.get_inner().get_name().to_uppercase()
-                                == selected_powerup.get_name().to_uppercase()
-                        })
-                        .is_none()
+                    if !new_weapons.iter().any(|weapon| {
+                        weapon.get_inner().get_name().to_uppercase()
+                            == selected_powerup.get_name().to_uppercase()
+                    }) && let Ok(mut new_weapon) =
+                        WeaponWrapper::from_str(selected_powerup.get_name().to_uppercase().as_str())
                     {
-                        if let Ok(mut new_weapon) = WeaponWrapper::from_str(
-                            selected_powerup.get_name().to_uppercase().as_str(),
-                        ) {
-                            new_weapon.populate_inner(self.base_weapon_stats.clone());
-                            new_weapons.push(new_weapon)
-                        }
+                        new_weapon.populate_inner(self.base_weapon_stats.clone());
+                        new_weapons.push(new_weapon)
                     }
 
                     self.weapons = new_weapons;
@@ -147,20 +141,14 @@ impl PowerupPopup {
                         }
                     });
 
-                    if new_charms
-                        .iter()
-                        .find(|charm| {
-                            charm.get_inner().get_name().to_uppercase()
-                                == selected_powerup.get_name().to_uppercase()
-                        })
-                        .is_none()
+                    if !new_charms.iter().any(|charm| {
+                        charm.get_inner().get_name().to_uppercase()
+                            == selected_powerup.get_name().to_uppercase()
+                    }) && let Ok(mut new_charm) =
+                        CharmWrapper::from_str(selected_powerup.get_name().to_uppercase().as_str())
                     {
-                        if let Ok(mut new_charm) = CharmWrapper::from_str(
-                            selected_powerup.get_name().to_uppercase().as_str(),
-                        ) {
-                            new_charm.populate_inner();
-                            new_charms.push(new_charm)
-                        }
+                        new_charm.populate_inner();
+                        new_charms.push(new_charm)
                     }
                     self.charms = new_charms;
                 }

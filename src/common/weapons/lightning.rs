@@ -43,12 +43,12 @@ impl Lightning {
 }
 
 impl Weapon for Lightning {
-    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>, layer: &Layer) -> DamageArea {
+    fn attack(&self, wielder: &Character, enemies: &[Enemy], layer: &Layer) -> DamageArea {
         let mut begin_pos = wielder.get_pos().clone();
 
         let mut positions = Vec::new();
 
-        let mut enemies = enemies.clone();
+        let mut enemies = Vec::from(enemies);
 
         for _ in 0..self.stats.size {
             let closest = enemies.iter().reduce(|acc, enemy| {
@@ -83,13 +83,7 @@ impl Weapon for Lightning {
 
                 enemies = enemies
                     .iter()
-                    .filter_map(|e| {
-                        if e != closest {
-                            return Some(e.clone());
-                        } else {
-                            return None;
-                        }
-                    })
+                    .filter_map(|e| if e != closest { Some(e.clone()) } else { None })
                     .collect();
             }
         }

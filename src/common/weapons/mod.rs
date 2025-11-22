@@ -85,20 +85,20 @@ impl DamageArea {
     ///
     /// For each affected enemy, reduces its health by `damage_amount`. If `weapon_stats` is present,
     /// iterates its `procs` and invokes each proc with `chance > 0` on the enemy.
-    pub fn deal_damage(&self, enemies: &mut Vec<Enemy>) {
+    pub fn deal_damage(&self, enemies: &mut [Enemy]) {
         enemies.iter_mut().for_each(|enemy| {
             if enemy.get_pos().is_in_area(self.area.clone()) {
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon do the following
-                if let Some(stats) = &self.weapon_stats {
-                    if !stats.procs.is_empty() {
-                        stats.procs.iter().for_each(|(_key, proc)| {
-                            if proc.chance > 0 {
-                                enemy.try_proc(proc);
-                            }
-                        })
-                    }
+                if let Some(stats) = &self.weapon_stats
+                    && !stats.procs.is_empty()
+                {
+                    stats.procs.iter().for_each(|(_key, proc)| {
+                        if proc.chance > 0 {
+                            enemy.try_proc(proc);
+                        }
+                    })
                 }
             }
         });
@@ -108,7 +108,7 @@ impl DamageArea {
 /// A trait for any weapon that can be used to attack.
 pub trait Weapon {
     /// Creates a `DamageArea` representing the attack.
-    fn attack(&self, wielder: &Character, enemies: &Vec<Enemy>, layer: &Layer) -> DamageArea;
+    fn attack(&self, wielder: &Character, enemies: &[Enemy], layer: &Layer) -> DamageArea;
 
     /// Calculates and returns the base damage of the weapon.
     ///Damage should be rounded up to nearest int.
@@ -117,9 +117,8 @@ pub trait Weapon {
     fn get_element(&self) -> Option<Elements>;
 
     fn get_elemental_style(&self) -> Option<Style> {
-        match self.get_element() {
-            Some(Elements::Flame(_)) => Some(Style::new().red()),
-            None => None,
-        }
+        self.get_element().map(|element| match element {
+            Elements::Flame(_) => Some(Style::new().red()),
+        })?
     }
 }

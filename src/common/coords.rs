@@ -11,18 +11,8 @@ pub struct Position(pub i32, pub i32);
 impl Position {
     /// Creates a new `Position`, ensuring that coordinates are not negative.
     pub fn new(x: i32, y: i32) -> Self {
-        let new_x: i32;
-        let new_y: i32;
-        if x < 0 {
-            new_x = 0;
-        } else {
-            new_x = x;
-        }
-        if y < 0 {
-            new_y = 0;
-        } else {
-            new_y = y;
-        }
+        let new_x = if x < 0 { 0 } else { x };
+        let new_y = if y < 0 { 0 } else { y };
 
         Position(new_x, new_y)
     }

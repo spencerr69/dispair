@@ -65,7 +65,7 @@ impl UpgradesMenu {
             KeyCode::Char(' ') => self.close = Some(Goto::Game),
 
             KeyCode::Esc => {
-                if self.history.len() > 0 {
+                if !self.history.is_empty() {
                     self.go_back();
                     self.upgrade_selection.select_first();
                 } else {
@@ -151,10 +151,11 @@ impl UpgradesMenu {
     ) -> Vec<ListItem<'static>> {
         upgrade_nodes
             .iter()
-            .map(|node| {
-                let have_required = node.requires.iter().fold(true, |acc, current| {
-                    acc && player_state.amount_owned(&current) > 0
-                });
+            .filter_map(|node| {
+                let have_required = node
+                    .requires
+                    .iter()
+                    .all(|current| player_state.amount_owned(current) > 0);
 
                 if node.limit == 0 && Self::own_children(node.clone(), player_state.clone())
                     || (node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit)
@@ -166,22 +167,21 @@ impl UpgradesMenu {
                     None
                 }
             })
-            .filter(|i| i.is_some())
-            .map(|i| i.unwrap())
             .collect()
     }
 
     /// Recursively checks if all children of an upgrade node are owned.
     pub fn own_children(upgrade_node: UpgradeNode, player_state: PlayerState) -> bool {
-        let have_required = upgrade_node.requires.iter().fold(true, |acc, current| {
-            acc && player_state.amount_owned(&current) > 0
-        });
+        let have_required = upgrade_node
+            .requires
+            .iter()
+            .all(|current| player_state.amount_owned(current) > 0);
 
         if upgrade_node.children.is_none() {
             if !have_required {
                 return true;
             }
-            return player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit;
+            player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit
         } else {
             for child in upgrade_node.children.unwrap() {
                 if !Self::own_children(child, player_state.clone()) {
@@ -218,7 +218,7 @@ impl UpgradesMenu {
             .highlight_style(Style::new().bold())
             .highlight_symbol(">");
 
-        let current_upgrade = self.get_selected_node().unwrap_or(UpgradeNode::default());
+        let current_upgrade = self.get_selected_node().unwrap_or_default();
 
         let upgrade_block = Block::bordered().border_set(border::ROUNDED);
         let upgrade_title = Line::from(current_upgrade.clone().title);

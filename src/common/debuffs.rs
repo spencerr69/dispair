@@ -117,7 +117,7 @@ impl OnTickEffect for Debuff {
         match self.debuff_type {
             DebuffTypes::FlameBurn => {
                 let ticks = crate::common::TICK_RATE as u64;
-                if tickcount % ticks != 0 {
+                if !tickcount.is_multiple_of(ticks) {
                     return None;
                 }
 
@@ -127,7 +127,7 @@ impl OnTickEffect for Debuff {
                 None
             }
             DebuffTypes::FlameIgnite => {
-                if tickcount % 3 != 0 || self.complete {
+                if !tickcount.is_multiple_of(3) || self.complete {
                     return None;
                 }
 
@@ -166,7 +166,7 @@ impl OnTickEffect for Debuff {
                         duration: Duration::from_secs_f64(0.05),
                         blink: false,
                         weapon_stats: Some(WeaponStats {
-                            procs: procs,
+                            procs,
                             ..Default::default()
                         }),
                     })

@@ -4,6 +4,16 @@ pub struct Level {
     xp_to_level: u128,
 }
 
+impl Default for Level {
+    fn default() -> Self {
+        Level {
+            xp: 0,
+            level: 0,
+            xp_to_level: 100,
+        }
+    }
+}
+
 impl Level {
     const SCALE_MULT: f64 = 2.5;
 

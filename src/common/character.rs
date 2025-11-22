@@ -123,7 +123,6 @@ impl Character {
     ///
     /// A `Character` populated with position, facing, health, stats, entity character,
     /// and weapons derived from the provided `player_state`.
-
     pub fn new(player_state: PlayerState) -> Self {
         let stats = player_state.stats;
         let weapon_stats = stats.weapon_stats.clone();
@@ -140,7 +139,7 @@ impl Character {
 
             // player_stats: player_state.stats.clone(),
             health: max_health,
-            max_health: max_health,
+            max_health,
             is_alive: true,
 
             entitychar: EntityCharacters::Character(Style::default()),
@@ -157,24 +156,19 @@ impl Character {
     /// # Returns
     ///
     /// A tuple where the first element is a `Vec<DamageArea>` produced by the weapons, and the second element is a `Vec<DamageEffect>` derived from those areas with staggered delays applied (`0.15` seconds multiplied by each effect's index).
-    pub fn attack(
-        &self,
-        layer: &Layer,
-        enemies: &Vec<Enemy>,
-    ) -> (Vec<DamageArea>, Vec<DamageEffect>) {
+    pub fn attack(&self, layer: &Layer, enemies: &[Enemy]) -> (Vec<DamageArea>, Vec<DamageEffect>) {
         let damage_areas: Vec<DamageArea> = self
             .weapons
             .iter()
-            .map(|weapon| weapon.get_inner().attack(&self, enemies, layer))
-            .map(|damage_area| {
+            .map(|weapon| weapon.get_inner().attack(self, enemies, layer))
+            .inspect(|damage_area| {
                 damage_area.area.borrow_mut().constrain(layer);
-                damage_area
             })
             .collect();
         let mut damage_effects: Vec<DamageEffect> = damage_areas
             .clone()
             .into_iter()
-            .map(|damage_area| DamageEffect::from(damage_area))
+            .map(DamageEffect::from)
             .collect();
         damage_effects
             .iter_mut()
@@ -198,8 +192,6 @@ impl Movable for Character {
     }
 
     /// Attempts to move the character to `new_pos` and update its facing; movement is throttled by the character's movement speed multiplier and `last_moved` is updated when the move occurs.
-    ///
-
     fn move_to(&mut self, new_pos: Position, facing: Direction) {
         self.facing = facing;
 
@@ -256,6 +248,6 @@ impl Damageable for Character {
     }
 
     fn is_alive(&self) -> bool {
-        self.is_alive.clone()
+        self.is_alive
     }
 }

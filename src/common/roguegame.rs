@@ -97,7 +97,7 @@ impl RogueGame {
         let width = player_state.stats.game_stats.width;
         let height = player_state.stats.game_stats.height;
 
-        let mut base: Layer = Vec::from(Vec::new());
+        let mut base: Layer = Vec::new();
 
         let mut rng = rand::rng();
 
@@ -229,7 +229,7 @@ impl RogueGame {
             return;
         }
 
-        if let Some(_) = self.level.update() {
+        if self.level.update().is_some() {
             self.start_popup = true;
         }
 
@@ -273,7 +273,7 @@ impl RogueGame {
             .into_iter()
             .filter_map(|mut e| {
                 e.debuffs.retain(|debuff| !debuff.complete);
-                if e.debuffs.get_on_tick_effects().len() > 0 {
+                if !e.debuffs.get_on_tick_effects().is_empty() {
                     e.debuffs
                         .clone()
                         .iter_mut()
@@ -286,7 +286,7 @@ impl RogueGame {
                 }
 
                 if !e.is_alive() {
-                    if e.debuffs.get_on_death_effects().len() > 0 {
+                    if !e.debuffs.get_on_death_effects().is_empty() {
                         e.debuffs
                             .iter()
                             .map(|d| d.on_death(e.clone(), &self.layer_base))
@@ -299,10 +299,10 @@ impl RogueGame {
 
                     self.consume_drops(e.get_drops());
 
-                    return None;
+                    None
                 } else {
-                    return Some(e);
-                };
+                    Some(e)
+                }
             })
             .collect();
 
@@ -314,11 +314,11 @@ impl RogueGame {
             self.active_damage_effects.push(damage_effect);
         });
 
-        if self.tickcount % self.enemy_spawn_ticks == 0 {
+        if self.tickcount.is_multiple_of(self.enemy_spawn_ticks) {
             self.spawn_enemy();
         }
 
-        if self.tickcount % self.enemy_move_ticks == 0 {
+        if self.tickcount.is_multiple_of(self.enemy_move_ticks) {
             self.enemies = self
                 .enemies
                 .clone()
@@ -328,12 +328,10 @@ impl RogueGame {
                         &mut self.character,
                         &self.layer_base,
                         &mut self.active_damage_effects,
-                    ) {
-                        if self.can_stand(&desired_pos) {
-                            enemy.move_to(desired_pos, desired_facing);
-                        }
+                    ) && self.can_stand(&desired_pos)
+                    {
+                        enemy.move_to(desired_pos, desired_facing);
                     }
-                    // update_entity_positions(&mut self.layer_entities, enemy);
 
                     if self.character.stats.shove_amount > 0
                         && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
@@ -348,20 +346,20 @@ impl RogueGame {
 
                         enemy.move_back(self.character.stats.shove_amount as i32, &self.layer_base);
                     }
-                    return enemy;
+                    enemy
                 })
                 .collect();
             // self.change_low_health_enemies_questionable();
         }
 
-        if self.tickcount % TICK_RATE.floor() as u64 == 0 {
+        if self.tickcount.is_multiple_of(TICK_RATE.floor() as u64) {
             self.scale();
             self.scale_enemies();
         }
 
-        if self.tickcount % self.attack_ticks == 0 {
+        if self.tickcount.is_multiple_of(self.attack_ticks) {
             let (damage_areas, mut damage_effects) =
-                self.character.attack(&mut self.layer_base, &self.enemies);
+                self.character.attack(&self.layer_base, &self.enemies);
             damage_areas.iter().for_each(|area| {
                 area.deal_damage(&mut self.enemies);
             });
@@ -435,12 +433,11 @@ impl RogueGame {
 
         self.enemy_damage =
             (init_enemy_damage * (self.timescaler.scale_amount / 5.).max(1.)).ceil() as i32;
-        self.enemy_spawn_ticks = Self::per_sec_to_tick_count(
-            init_enemy_spawn_secs as f64 * self.timescaler.scale_amount,
-        );
+        self.enemy_spawn_ticks =
+            Self::per_sec_to_tick_count(init_enemy_spawn_secs * self.timescaler.scale_amount);
 
         self.enemy_move_ticks = Self::per_sec_to_tick_count(
-            init_enemy_move_secs as f64 * (self.timescaler.scale_amount / 3.5).max(1.),
+            init_enemy_move_secs * (self.timescaler.scale_amount / 3.5).max(1.),
         );
 
         self.enemy_drops = EnemyDrops {
@@ -468,10 +465,9 @@ impl RogueGame {
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
-        if let Some(_) = self.carnage_report {
-            match key_event.code {
-                KeyCode::Esc => self.exit = true,
-                _ => {}
+        if self.carnage_report.is_some() {
+            if key_event.code == KeyCode::Esc {
+                self.exit = true
             }
         } else if let Some(powerup_popup) = &mut self.powerup_popup {
             powerup_popup.handle_key_event(key_event);
@@ -577,16 +573,14 @@ impl RogueGame {
             *character_place = self.character.get_entity_char().to_styled();
         }
 
-        let out = enum_2d
+        enum_2d
             .into_iter()
             .map(|(_, vec)| vec.into_iter().map(|(_, item)| item).collect())
-            .collect();
-
-        out
+            .collect()
     }
 
     pub fn get_mut_item_in_2d_enum_vec<'a, T>(
-        vec: &'a mut Vec<(usize, Vec<(usize, T)>)>,
+        vec: &'a mut [(usize, Vec<(usize, T)>)],
         position: &'a Position,
     ) -> Option<&'a mut T> {
         let (x, y) = position.get_as_usize();
@@ -663,7 +657,7 @@ impl RogueGame {
             self.character.get_health().to_string().bold(),
             " ".into(),
             " Time: ".dark_gray(),
-            timer.as_secs().to_string().bold().into(),
+            timer.as_secs().to_string().bold(),
             " ".into(),
             " Gold: ".dark_gray(),
             self.player_state.inventory.gold.to_string().into(),
@@ -771,8 +765,8 @@ pub fn clear_layer(layer: &mut Layer) {
     });
 }
 
-pub fn update_effects(damage_effects: &mut Vec<DamageEffect>) {
-    damage_effects.into_iter().for_each(|effect| {
+pub fn update_effects(damage_effects: &mut [DamageEffect]) {
+    damage_effects.iter_mut().for_each(|effect| {
         effect.update();
     });
 }
@@ -820,7 +814,8 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     let mut rng = rand::rng();
 
     let which_edge = rng.random_range(0..4);
-    let position = match which_edge {
+
+    match which_edge {
         0 => Position::new(0, rng.random_range(0..layer.len() as i32)),
         1 => Position::new(
             layer[0].len() as i32 - 1,
@@ -832,8 +827,7 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
             layer.len() as i32 - 1,
         ),
         _ => Position::new(0, 0),
-    };
-    position
+    }
 }
 
 pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
@@ -848,15 +842,8 @@ pub fn is_next_to_character(char_position: &Position, position: &Position) -> bo
     let (x, y) = position.get_as_usize();
     let (char_x, char_y) = char_position.get_as_usize();
 
-    if x == char_x.saturating_add(1) && y == char_y
-        || x == char_x.saturating_sub(1) && y == char_y
-        || y == char_y.saturating_add(1) && x == char_x
-        || y == char_y.saturating_sub(1) && x == char_x
-    {
-        true
-    } else {
-        false
-    }
+    (x == char_x.saturating_add(1) || x == char_x.saturating_sub(1)) && y == char_y
+        || (y == char_y.saturating_add(1) || y == char_y.saturating_sub(1)) && x == char_x
 }
 
 #[derive(PartialEq, Eq, Clone)]
@@ -877,21 +864,19 @@ impl EntityCharacters {
         match self {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
             EntityCharacters::Background2 => Span::from(",").dark_gray(),
-            EntityCharacters::Character(style) => {
-                Span::from("0").white().bold().style(style.clone())
-            }
-            EntityCharacters::Enemy(style) => Span::from("x").white().style(style.clone()),
+            EntityCharacters::Character(style) => Span::from("0").white().bold().style(*style),
+            EntityCharacters::Enemy(style) => Span::from("x").white().style(*style),
             EntityCharacters::Empty => Span::from(" "),
             EntityCharacters::AttackBlackout(style) => {
-                Span::from(ratatui::symbols::block::FULL).style(style.clone())
+                Span::from(ratatui::symbols::block::FULL).style(*style)
             }
             EntityCharacters::AttackMist(style) => {
-                Span::from(ratatui::symbols::shade::MEDIUM).style(style.clone())
+                Span::from(ratatui::symbols::shade::MEDIUM).style(*style)
             }
             EntityCharacters::AttackWeak(style) => {
-                Span::from(ratatui::symbols::shade::LIGHT).style(style.clone())
+                Span::from(ratatui::symbols::shade::LIGHT).style(*style)
             }
-            EntityCharacters::Orb(style) => Span::from("o").style(style.clone()),
+            EntityCharacters::Orb(style) => Span::from("o").style(*style),
         }
     }
 
@@ -913,10 +898,7 @@ impl EntityCharacters {
 
     /// Checks if the entity is a player character.
     pub fn is_char(&self) -> bool {
-        match self {
-            EntityCharacters::Character(_) => true,
-            _ => false,
-        }
+        matches!(self, EntityCharacters::Character(_))
     }
 }
 

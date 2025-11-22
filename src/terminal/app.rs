@@ -198,16 +198,16 @@ impl App {
             }
         }
 
-        if let Some(upgrades_menu) = &mut self.upgrades_view {
-            if let Some(close) = upgrades_menu.close.clone() {
-                self.player_state = Some(upgrades_menu.player_state.clone());
-                self.player_state.as_mut().unwrap().refresh();
-                self.upgrades_view = None;
-                save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
-                match close {
-                    Goto::Game => self.start_game(),
-                    Goto::Menu => save_progress(&self.player_state.clone().unwrap()).unwrap_or(()),
-                }
+        if let Some(upgrades_menu) = &mut self.upgrades_view
+            && let Some(close) = upgrades_menu.close.clone()
+        {
+            self.player_state = Some(upgrades_menu.player_state.clone());
+            self.player_state.as_mut().unwrap().refresh();
+            self.upgrades_view = None;
+            save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
+            match close {
+                Goto::Game => self.start_game(),
+                Goto::Menu => save_progress(&self.player_state.clone().unwrap()).unwrap_or(()),
             }
         }
     }
@@ -255,5 +255,11 @@ impl App {
 
         frame.render_widget(title, title_area);
         frame.render_stateful_widget(options, options_area, &mut self.current_selection);
+    }
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
     }
 }

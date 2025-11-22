@@ -122,7 +122,6 @@ impl Debuffable for Enemy {
 
 impl Enemy {
     /// Update the enemy's visual style to reflect any active debuffs.
-
     fn change_style_with_debuff(&mut self) {
         let style = self.entitychar.style_mut();
 
@@ -188,9 +187,9 @@ impl EnemyBehaviour for Enemy {
             move_to_point_granular(&self.position, character.get_pos(), true);
 
         if can_stand(layer, &desired_pos) && &desired_pos != character.get_pos() {
-            return Some((desired_pos, desired_facing));
+            Some((desired_pos, desired_facing))
         } else {
-            return None;
+            None
         }
     }
 }
@@ -207,14 +206,12 @@ pub fn move_to_point_granular(
 
     let total_dist = dist_x.abs() + dist_y.abs();
 
-    let choice: bool;
-
-    if random {
+    let choice: bool = if random {
         let mut rng = rand::rng();
-        choice = rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32);
+        rng.random_ratio(dist_x.abs().max(1) as u32, total_dist.abs().max(1) as u32)
     } else {
-        choice = dist_x.abs() > dist_y.abs();
-    }
+        dist_x.abs() > dist_y.abs()
+    };
 
     if choice {
         if dist_x > 0 {
@@ -224,14 +221,12 @@ pub fn move_to_point_granular(
             desired_pos = Position::new(x - 1, y);
             desired_facing = Direction::LEFT;
         }
+    } else if dist_y > 0 {
+        desired_pos = Position::new(x, y + 1);
+        desired_facing = Direction::DOWN;
     } else {
-        if dist_y > 0 {
-            desired_pos = Position::new(x, y + 1);
-            desired_facing = Direction::DOWN;
-        } else {
-            desired_pos = Position::new(x, y - 1);
-            desired_facing = Direction::UP;
-        }
+        desired_pos = Position::new(x, y - 1);
+        desired_facing = Direction::UP;
     }
 
     (desired_pos, desired_facing)
@@ -275,7 +270,7 @@ impl Damageable for Enemy {
     }
 
     fn is_alive(&self) -> bool {
-        self.is_alive.clone()
+        self.is_alive
     }
 
     fn take_damage(&mut self, damage: i32) {

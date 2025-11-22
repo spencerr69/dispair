@@ -126,7 +126,7 @@ impl Weapon for Flash {
     /// Creates a DamageArea representing this weapon's attack originating from the wielder's position and facing direction.
     ///
     /// The produced DamageArea is positioned immediately in front of the wielder according to their facing, carries this weapon's damage scaled by `wielder.stats.damage_mult` (rounded up to an integer), and includes this weapon's `WeaponStats`.
-    fn attack(&self, wielder: &Character, _: &Vec<Enemy>, layer: &Layer) -> DamageArea {
+    fn attack(&self, wielder: &Character, _: &[Enemy], layer: &Layer) -> DamageArea {
         let (x, y) = wielder.get_pos().clone().get();
         let direction = wielder.facing.clone();
 
@@ -162,7 +162,7 @@ impl Weapon for Flash {
         DamageArea {
             area: Rc::new(RefCell::new(new_area)),
             damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
-            entity: entity,
+            entity,
             duration: Duration::from_secs_f32(0.05),
             blink: false,
             weapon_stats: Some(self.stats.clone()),
@@ -175,6 +175,6 @@ impl Weapon for Flash {
 
     /// Returns the damage of the sword, calculated from its base damage and scalar.
     fn get_damage(&self) -> i32 {
-        return (self.base_damage as f64 * self.damage_scalar).ceil() as i32;
+        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
     }
 }

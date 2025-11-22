@@ -132,7 +132,7 @@ impl App {
             let maybe_reference = self_ref_draw.try_borrow_mut();
 
             if let Ok(mut reference) = maybe_reference {
-                let last_frame = reference.last_frame.clone();
+                let last_frame = reference.last_frame;
 
                 if Instant::now().duration_since(last_frame) >= tick_delay {
                     reference.on_tick();
@@ -225,27 +225,27 @@ impl App {
             }
         }
 
-        if let Some(upgrades_menu) = &mut self.upgrades_view {
-            if let Some(close) = upgrades_menu.close.clone() {
-                self.player_state = Some(upgrades_menu.player_state.clone());
-                self.player_state.as_mut().unwrap().refresh();
-                self.upgrades_view = None;
-                save_progress(&self.player_state.clone().unwrap())
-                    .map_err(|_| {
-                        web_sys::console::log_1(&JsValue::from_str("couldn't save"));
-                        JsValue::from_str("couldn't save")
-                    })
-                    .unwrap_or(());
-                match close {
-                    Goto::Game => self.start_game(),
-                    Goto::Menu => {
-                        save_progress(&self.player_state.clone().unwrap())
-                            .map_err(|_| {
-                                web_sys::console::log_1(&JsValue::from_str("couldn't save"));
-                                JsValue::from_str("couldn't save")
-                            })
-                            .unwrap_or(());
-                    }
+        if let Some(upgrades_menu) = &mut self.upgrades_view
+            && let Some(close) = upgrades_menu.close.clone()
+        {
+            self.player_state = Some(upgrades_menu.player_state.clone());
+            self.player_state.as_mut().unwrap().refresh();
+            self.upgrades_view = None;
+            save_progress(&self.player_state.clone().unwrap())
+                .map_err(|_| {
+                    web_sys::console::log_1(&JsValue::from_str("couldn't save"));
+                    JsValue::from_str("couldn't save")
+                })
+                .unwrap_or(());
+            match close {
+                Goto::Game => self.start_game(),
+                Goto::Menu => {
+                    save_progress(&self.player_state.clone().unwrap())
+                        .map_err(|_| {
+                            web_sys::console::log_1(&JsValue::from_str("couldn't save"));
+                            JsValue::from_str("couldn't save")
+                        })
+                        .unwrap_or(());
                 }
             }
         }
@@ -297,5 +297,11 @@ impl App {
 
         frame.render_widget(title, title_area);
         frame.render_stateful_widget(options, options_area, &mut self.current_selection)
+    }
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
     }
 }

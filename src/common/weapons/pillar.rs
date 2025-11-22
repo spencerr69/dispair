@@ -44,7 +44,7 @@ impl Pillar {
 }
 
 impl Weapon for Pillar {
-    fn attack(&self, wielder: &Character, _: &Vec<Enemy>, layer: &Layer) -> DamageArea {
+    fn attack(&self, wielder: &Character, _: &[Enemy], layer: &Layer) -> DamageArea {
         let (x, _) = wielder.get_pos().clone().get();
 
         //size should be half the size for balancing

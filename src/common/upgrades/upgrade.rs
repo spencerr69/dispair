@@ -68,7 +68,7 @@ impl PlayerState {
         //upgrades 2 STATS
         //upgrade 211 damage/flat_up
         if self.upgrade_owned("211") {
-            weapon_stats.damage_flat_boost += 1 * self.amount_owned("211") as i32;
+            weapon_stats.damage_flat_boost += self.amount_owned("211") as i32;
         }
 
         //upgrade 212 damage/mult_up
@@ -78,7 +78,7 @@ impl PlayerState {
 
         //upgrade 221 health/flat_up
         if self.upgrade_owned("221") {
-            player_stats.base_health += 1 * self.amount_owned("221") as i32;
+            player_stats.base_health += self.amount_owned("221") as i32;
         }
 
         //upgrade 222 health/mult_up
@@ -104,12 +104,11 @@ impl PlayerState {
 
         //upgrade 25 movement_speed
         if self.upgrade_owned("25") {
-            player_stats.movement_speed_mult =
-                player_stats.movement_speed_mult + (0.5 * self.amount_owned("25") as f64)
+            player_stats.movement_speed_mult += 0.5 * self.amount_owned("25") as f64
         }
         //upgrade 26 gold_gain
         if self.upgrade_owned("26") {
-            game_stats.gold_mult = game_stats.gold_mult + (0.5 * self.amount_owned("26") as f64)
+            game_stats.gold_mult += 0.5 * self.amount_owned("26") as f64
         }
 
         //upgrade 31 MARK
@@ -149,12 +148,12 @@ impl PlayerState {
         //upgrade 32 shove
         //upgrade 321 shove amount
         if self.upgrade_owned("321") {
-            player_stats.shove_amount += 1 * self.amount_owned("321");
+            player_stats.shove_amount += self.amount_owned("321");
         }
 
         //upgrade 322 shove damage
         if self.upgrade_owned("322") {
-            player_stats.shove_damage += 1 * self.amount_owned("322");
+            player_stats.shove_damage += self.amount_owned("322");
         }
 
         // upgrade 4 GREED
@@ -216,12 +215,12 @@ impl PlayerState {
 
     /// Returns the number of times an upgrade has been purchased.
     pub fn amount_owned(&self, id: &str) -> u32 {
-        self.upgrades.get(id).unwrap_or(&0).clone()
+        *self.upgrades.get(id).unwrap_or(&0)
     }
 
     /// Checks if the player owns at least one of a specific upgrade.
     pub fn upgrade_owned(&self, id: &str) -> bool {
-        self.upgrades.get(id).unwrap_or(&0).clone() > 0
+        *self.upgrades.get(id).unwrap_or(&0) > 0
     }
 }
 
@@ -260,7 +259,7 @@ pub struct UpgradeNode {
 impl UpgradeNode {
     /// Checks if the upgrade node has any children.
     pub fn has_children(&self) -> bool {
-        self.children.is_some() && self.children.clone().unwrap().len() > 0
+        self.children.is_some() && !self.children.clone().unwrap().is_empty()
     }
 
     /// Returns the display title for the upgrade.

@@ -66,23 +66,20 @@ impl Pickupable for PowerupOrb {
 
     /// Animates the orb by cycling through colors every 5 ticks.
     fn animate(&mut self, tick: u64) {
-        if !(tick % 5 == 0) {
-            return;
-        } else {
-            if let EntityCharacters::Orb(style) = &mut self.entity_char {
-                *style = match style.fg {
-                    None => style.fg(Color::LightRed),
-                    Some(colour) => match colour {
-                        Color::LightRed => style.fg(Color::LightYellow),
-                        Color::LightYellow => style.fg(Color::LightGreen),
-                        Color::LightGreen => style.fg(Color::LightBlue),
-                        Color::LightBlue => style.fg(Color::LightMagenta),
-                        Color::LightMagenta => style.fg(Color::LightCyan),
-                        Color::LightCyan => style.fg(Color::LightRed),
-                        _ => style.fg(Color::LightRed),
-                    },
-                };
-            }
+        if !tick.is_multiple_of(5) {
+        } else if let EntityCharacters::Orb(style) = &mut self.entity_char {
+            *style = match style.fg {
+                None => style.fg(Color::LightRed),
+                Some(colour) => match colour {
+                    Color::LightRed => style.fg(Color::LightYellow),
+                    Color::LightYellow => style.fg(Color::LightGreen),
+                    Color::LightGreen => style.fg(Color::LightBlue),
+                    Color::LightBlue => style.fg(Color::LightMagenta),
+                    Color::LightMagenta => style.fg(Color::LightCyan),
+                    Color::LightCyan => style.fg(Color::LightRed),
+                    _ => style.fg(Color::LightRed),
+                },
+            };
         }
     }
 

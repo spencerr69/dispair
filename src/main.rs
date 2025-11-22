@@ -37,13 +37,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut app = App::new();
 
-    let result = app.run().await?;
+    app.run().await?;
     if let Err(err) = crate::terminal::tui::restore() {
         eprintln!(
             "failed to restore terminal. Run `reset` or restart your terminal to recover: {err}"
         );
     }
-    Ok(result)
+    Ok(())
 }
 
 /// The main entry point for the WASM application.

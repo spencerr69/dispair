@@ -12,12 +12,16 @@ pub struct CharmAttackSpeed {
 
 impl CharmAttackSpeed {
     pub fn new() -> Self {
-        let out = Self {
+        Self {
             stat_boost: 1.25,
             level: 1,
-        };
+        }
+    }
+}
 
-        out
+impl Default for CharmAttackSpeed {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

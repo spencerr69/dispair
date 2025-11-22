@@ -12,12 +12,16 @@ pub struct CharmDamageMult {
 
 impl CharmDamageMult {
     pub fn new() -> Self {
-        let out = Self {
+        Self {
             stat_boost: 1.25,
             level: 1,
-        };
+        }
+    }
+}
 
-        out
+impl Default for CharmDamageMult {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

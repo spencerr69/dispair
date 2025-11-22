@@ -29,8 +29,6 @@ impl From<DamageArea> for DamageEffect {
     /// The resulting DamageEffect uses the DamageArea's area and entity as its initial
     /// active_area and active_entity, sets `complete` to `false`, and records the
     /// current time as the effect's start time.
-    ///
-
     fn from(damage_area: DamageArea) -> Self {
         Self {
             damage_area: damage_area.clone(),
