@@ -110,6 +110,10 @@ impl PlayerState {
         if self.upgrade_owned("26") {
             game_stats.gold_mult += 0.5 * self.amount_owned("26") as f64
         }
+        //upgrade 27 elemental_honage
+        if self.upgrade_owned("27") {
+            weapon_stats.elemental_honage += 0.25 * self.amount_owned("27") as f64
+        }
 
         //upgrade 31 MARK
         //upgrade 311 mark chance

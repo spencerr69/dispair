@@ -168,6 +168,17 @@
                     "42"
                 ],
                 "children": null
+            },
+            {
+                "title": "STATS::\\elemental_honage",
+                "description": "increase elemental honage by 25%",
+                "id": "27",
+                "cost": 3000,
+                "limit": 4,
+                "requires": [
+                    "A"
+                ],
+                "children": null
             }
         ]
     },

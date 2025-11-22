@@ -86,7 +86,7 @@ impl Poweruppable for Flash {
                                 debuff_type: DebuffTypes::FlameBurn,
                                 complete: false,
                                 stats: DebuffStats {
-                                    size: Some((5. * honage).ceil() as i32),
+                                    size: Some((3. * honage).ceil() as i32),
                                     damage: Some((1. * honage).ceil() as i32),
                                     misc_value: None,
                                     on_death_effect: false,

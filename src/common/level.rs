@@ -15,7 +15,7 @@ impl Default for Level {
 }
 
 impl Level {
-    const SCALE_MULT: f64 = 2.5;
+    const SCALE_MULT: f64 = 1.5;
 
     pub fn new() -> Self {
         Level {
