@@ -13,10 +13,10 @@ pub mod pickups;
 pub mod popups;
 pub mod powerup;
 pub mod roguegame;
+pub mod stats;
 pub mod timescaler;
-pub mod upgrade;
-pub mod upgrademenu;
-pub mod weapon;
+pub mod upgrades;
+pub mod weapons;
 
 /// Centers a `Rect` vertically within a given area.
 pub fn center_vertical(area: Rect, height: u16) -> Rect {

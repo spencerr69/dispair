@@ -11,7 +11,7 @@ use web_time::{Duration, Instant};
 use crate::common::{
     coords::{Area, Position, SquareArea},
     roguegame::{EntityCharacters, Layer, set_entity},
-    weapon::DamageArea,
+    weapons::DamageArea,
 };
 
 /// Represents a visual effect that occurs over a specified area for a certain duration.

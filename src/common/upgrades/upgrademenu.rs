@@ -10,7 +10,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
 
-use crate::common::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
+use crate::common::upgrades::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
 
 /// An enum representing the possible destinations when closing the upgrade menu.
 #[derive(Clone)]

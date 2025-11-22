@@ -1,25 +1,24 @@
 //! This module defines the `Enemy` struct and its related traits and behaviors.
 //! It includes logic for enemy movement, health, attacks, and debuffs.
-use std::cell::RefCell;
-use std::rc::Rc;
 #[cfg(not(target_family = "wasm"))]
 use std::time::Duration;
-
-use serde::Deserialize;
-use serde::Serialize;
 #[cfg(target_family = "wasm")]
 use web_time::Duration;
 
-use rand::Rng;
-use ratatui::style::Style;
-use ratatui::style::Stylize;
+use std::{cell::RefCell, rc::Rc};
 
-use crate::common::coords::Area;
-use crate::common::upgrade::DebuffStats;
-use crate::common::upgrade::Proc;
+use serde::{Deserialize, Serialize};
+
+use rand::Rng;
+use ratatui::style::{Style, Stylize};
+
 use crate::common::{
-    character::*, coords::Direction, coords::Position, coords::SquareArea, effects::DamageEffect,
-    roguegame::*, weapon::DamageArea,
+    character::*,
+    coords::{Area, Direction, Position, SquareArea},
+    effects::DamageEffect,
+    roguegame::*,
+    stats::{DebuffStats, Proc},
+    weapons::DamageArea,
 };
 
 pub type Debuffs = Vec<Debuff>;

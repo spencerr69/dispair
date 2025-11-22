@@ -16,7 +16,7 @@ use crate::common::{
     pickups::{PickupEffect, Pickupable, PowerupOrb},
     popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
     timescaler::TimeScaler,
-    upgrade::PlayerState,
+    upgrades::upgrade::PlayerState,
 };
 use crate::{KeyCode, KeyEvent};
 use rand::Rng;
@@ -861,7 +861,7 @@ impl EntityCharacters {
 mod tests {
     use std::time::Instant;
 
-    use crate::common::{roguegame::RogueGame, upgrade::PlayerState};
+    use crate::common::{roguegame::RogueGame, upgrades::upgrade::PlayerState};
 
     #[test]
     fn renderspeed() {
