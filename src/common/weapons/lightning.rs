@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    Duration,
     common::{character::Movable, coords::Area},
+    target_types::Duration,
 };
 
 use ratatui::style::{Style, Stylize};

@@ -12,7 +12,6 @@ use ratatui::{
 use strum::IntoEnumIterator;
 
 use crate::{
-    KeyCode, KeyEvent,
     common::{
         charms::CharmWrapper,
         popups::popup_area,
@@ -20,6 +19,7 @@ use crate::{
         stats::WeaponStats,
         weapons::WeaponWrapper,
     },
+    target_types::{KeyCode, KeyEvent},
 };
 
 pub struct PowerupPopup {

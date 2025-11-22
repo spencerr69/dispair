@@ -4,11 +4,7 @@ use crate::common::{
     stats::Stats,
 };
 
-#[cfg(not(target_family = "wasm"))]
-use std::time::Duration;
-
-#[cfg(target_family = "wasm")]
-use web_time::Duration;
+use crate::target_types::Duration;
 
 #[derive(Clone)]
 pub struct CharmOffsetAdd {

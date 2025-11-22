@@ -4,7 +4,7 @@
 use crate::common::{FRAME_RATE, TICK_RATE, center_horizontal, center_vertical};
 use std::fs::{File, OpenOptions};
 
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::target_types::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},

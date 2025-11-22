@@ -1,24 +1,20 @@
 //! This module implements the core game logic for the roguelike.
 //! It manages game state, character movement, enemy behavior, and rendering.
-
-#[cfg(not(target_family = "wasm"))]
-use std::time::{Duration, Instant};
-
-#[cfg(target_family = "wasm")]
-use web_time::{Duration, Instant};
-
-use crate::common::{
-    TICK_RATE, center,
-    character::{Character, Damageable, Movable},
-    coords::{Area, Direction, Position, SquareArea},
-    effects::DamageEffect,
-    enemy::*,
-    pickups::{PickupEffect, Pickupable, PowerupOrb},
-    popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
-    timescaler::TimeScaler,
-    upgrades::upgrade::PlayerState,
+use crate::{
+    common::{
+        TICK_RATE, center,
+        character::{Character, Damageable, Movable},
+        coords::{Area, Direction, Position, SquareArea},
+        effects::DamageEffect,
+        enemy::*,
+        pickups::{PickupEffect, Pickupable, PowerupOrb},
+        popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
+        timescaler::TimeScaler,
+        upgrades::upgrade::PlayerState,
+    },
+    target_types::{Duration, Instant, KeyCode, KeyEvent},
 };
-use crate::{KeyCode, KeyEvent};
+
 use rand::Rng;
 use ratatui::{
     Frame,

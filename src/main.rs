@@ -10,28 +10,22 @@ pub mod terminal;
 pub mod wasm;
 
 #[cfg(target_family = "wasm")]
-pub type KeyCode = ratzilla::event::KeyCode;
+pub mod target_types {
+    pub type KeyCode = ratzilla::event::KeyCode;
+    pub type KeyEvent = ratzilla::event::KeyEvent;
+    pub type Duration = web_time::Duration;
+    pub type SystemTime = web_time::SystemTime;
+    pub type Instant = web_time::Instant;
+}
 
 #[cfg(not(target_family = "wasm"))]
-pub type KeyCode = crossterm::event::KeyCode;
-
-#[cfg(target_family = "wasm")]
-pub type KeyEvent = ratzilla::event::KeyEvent;
-
-#[cfg(not(target_family = "wasm"))]
-pub type KeyEvent = crossterm::event::KeyEvent;
-
-#[cfg(target_family = "wasm")]
-pub type Duration = web_time::Duration;
-
-#[cfg(not(target_family = "wasm"))]
-pub type Duration = std::time::Duration;
-
-#[cfg(target_family = "wasm")]
-pub type SystemTime = web_time::SystemTime;
-
-#[cfg(not(target_family = "wasm"))]
-pub type SystemTime = std::time::SystemTime;
+pub mod target_types {
+    pub type KeyCode = crossterm::event::KeyCode;
+    pub type KeyEvent = crossterm::event::KeyEvent;
+    pub type Duration = std::time::Duration;
+    pub type SystemTime = std::time::SystemTime;
+    pub type Instant = std::time::Instant;
+}
 
 /// The main entry point for the terminal application.
 #[cfg(not(target_family = "wasm"))]

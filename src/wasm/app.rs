@@ -3,8 +3,8 @@
 
 use std::{cell::RefCell, io, rc::Rc};
 
+use crate::target_types::Instant;
 use serde::de::Error;
-use web_time::Instant;
 
 use ratzilla::{
     DomBackend, WebRenderer,

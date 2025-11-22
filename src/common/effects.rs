@@ -1,12 +1,9 @@
 //! This module handles visual and gameplay effects, such as damage indicators.
 //! It defines the `DamageEffect` struct, which represents a temporary effect in a given area.
 
-#[cfg(not(target_family = "wasm"))]
-use std::time::{Duration, Instant};
-use std::{cell::RefCell, rc::Rc};
+use crate::target_types::{Duration, Instant};
 
-#[cfg(target_family = "wasm")]
-use web_time::{Duration, Instant};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::common::{
     coords::{Area, Position, SquareArea},

@@ -1,11 +1,7 @@
 //! This module provides a `TimeScaler` that dynamically adjusts a scaling factor
 //! over time. This is used to increase the game's difficulty as time progresses.
 
-#[cfg(not(target_family = "wasm"))]
-use std::time::{Duration, SystemTime};
-
-#[cfg(target_family = "wasm")]
-use web_time::{Duration, SystemTime};
+use crate::target_types::{Duration, SystemTime};
 
 /// Handles the scaling of game difficulty over time.
 pub struct TimeScaler {

@@ -2,7 +2,7 @@
 //! It includes a `Weapon` trait, a `Sword` implementation, and a `DamageArea` struct
 //! for handling attacks and their effects on enemies.
 
-use crate::Duration;
+use crate::target_types::Duration;
 
 use std::{cell::RefCell, rc::Rc};
 

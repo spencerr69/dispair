@@ -1,6 +1,6 @@
 //! This module provides the UI and logic for the upgrade menu.
 //! It allows the player to navigate and purchase upgrades for their character.
-use crate::{KeyCode, KeyEvent};
+use crate::target_types::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},

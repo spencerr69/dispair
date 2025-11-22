@@ -1,12 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    Duration,
     common::{
         character::Movable,
         coords::{Area, Position, SquareArea},
         powerup::PowerupTypes,
     },
+    target_types::Duration,
 };
 
 use ratatui::style::{Style, Stylize};

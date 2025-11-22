@@ -1,9 +1,6 @@
 //! This module defines the `Enemy` struct and its related traits and behaviors.
 //! It includes logic for enemy movement, health, attacks, and debuffs.
-#[cfg(not(target_family = "wasm"))]
-use std::time::Duration;
-#[cfg(target_family = "wasm")]
-use web_time::Duration;
+use crate::target_types::Duration;
 
 use std::{cell::RefCell, rc::Rc};
 
