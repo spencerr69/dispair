@@ -1,7 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    common::{character::Movable, coords::Area},
+    common::{
+        character::Movable,
+        coords::Area,
+        debuffs::{Debuff, DebuffTypes, Elements},
+        stats::{DebuffStats, Proc},
+    },
     target_types::Duration,
 };
 
@@ -23,6 +28,7 @@ pub struct Flash {
     base_damage: i32,
     damage_scalar: f64,
     stats: WeaponStats,
+    element: Option<Elements>,
 }
 
 impl Flash {
@@ -38,6 +44,7 @@ impl Flash {
                 size: Self::BASE_SIZE + base_weapon_stats.size,
                 ..base_weapon_stats
             },
+            element: None,
         }
     }
 }
@@ -69,6 +76,25 @@ impl Poweruppable for Flash {
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
+                    self.element = Some(Elements::Flame(self.stats.elemental_honage));
+                    let honage = self.element.expect("something crazy happened").get_honage();
+                    self.stats.procs.insert(
+                        "burn".into(),
+                        Proc {
+                            chance: 100,
+                            debuff: Debuff {
+                                debuff_type: DebuffTypes::FlameBurn,
+                                complete: false,
+                                stats: DebuffStats {
+                                    size: Some((5. * honage).ceil() as i32),
+                                    damage: Some((1. * honage).ceil() as i32),
+                                    misc_value: None,
+                                    on_death_effect: false,
+                                    on_tick_effect: true,
+                                },
+                            },
+                        },
+                    );
                 }
                 3 => {
                     self.stats.damage_flat_boost += 2;
@@ -127,14 +153,24 @@ impl Weapon for Flash {
 
         new_area.constrain(layer);
 
+        let mut entity = EntityCharacters::AttackBlackout(Style::new().bold().white());
+
+        if let Some(style) = self.get_elemental_style() {
+            *entity.style_mut() = style
+        }
+
         DamageArea {
             area: Rc::new(RefCell::new(new_area)),
             damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
-            entity: EntityCharacters::AttackBlackout(Style::new().bold().white()),
+            entity: entity,
             duration: Duration::from_secs_f32(0.05),
             blink: false,
             weapon_stats: Some(self.stats.clone()),
         }
+    }
+
+    fn get_element(&self) -> Option<Elements> {
+        self.element
     }
 
     /// Returns the damage of the sword, calculated from its base damage and scalar.

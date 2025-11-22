@@ -192,7 +192,7 @@
                         "description": "+1 size to explosion",
                         "id": "312",
                         "cost": 50,
-                        "limit": 5,
+                        "limit": 2,
                         "requires": [
                             "311"
                         ],

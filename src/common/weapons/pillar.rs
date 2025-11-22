@@ -70,6 +70,10 @@ impl Weapon for Pillar {
     fn get_damage(&self) -> i32 {
         (self.base_damage as f64 * self.damage_scalar).ceil() as i32
     }
+
+    fn get_element(&self) -> Option<crate::common::debuffs::Elements> {
+        None
+    }
 }
 
 impl Poweruppable for Pillar {

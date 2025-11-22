@@ -1,10 +1,12 @@
 //! This module implements the core game logic for the roguelike.
 //! It manages game state, character movement, enemy behavior, and rendering.
+
 use crate::{
     common::{
         TICK_RATE, center,
         character::{Character, Damageable, Movable},
         coords::{Area, Direction, Position, SquareArea},
+        debuffs::{GetDebuffTypes, OnDeathEffect, OnTickEffect},
         effects::DamageEffect,
         enemy::*,
         level::Level,
@@ -12,6 +14,7 @@ use crate::{
         popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
         timescaler::TimeScaler,
         upgrades::upgrade::PlayerState,
+        weapons::DamageArea,
     },
     target_types::{Duration, Instant, KeyCode, KeyEvent},
 };
@@ -262,40 +265,53 @@ impl RogueGame {
             self.generate_popup();
         }
 
-        let mut on_death_enemies: Vec<Enemy> = Vec::new();
+        let mut damage_areas: Vec<DamageArea> = Vec::new();
 
         self.enemies = self
             .enemies
             .clone()
             .into_iter()
-            .filter(|e| {
+            .filter_map(|mut e| {
+                e.debuffs.retain(|debuff| !debuff.complete);
+                if e.debuffs.get_on_tick_effects().len() > 0 {
+                    e.debuffs
+                        .clone()
+                        .iter_mut()
+                        .map(|d| d.on_tick(&mut e, &self.layer_base, self.tickcount))
+                        .for_each(|maybe_damage_area| {
+                            if let Some(damage_area) = maybe_damage_area {
+                                damage_areas.push(damage_area);
+                            }
+                        })
+                }
+
                 if !e.is_alive() {
                     if e.debuffs.get_on_death_effects().len() > 0 {
-                        on_death_enemies.push(e.clone());
+                        e.debuffs
+                            .iter()
+                            .map(|d| d.on_death(e.clone(), &self.layer_base))
+                            .for_each(|maybe_damage_area| {
+                                if let Some(damage_area) = maybe_damage_area {
+                                    damage_areas.push(damage_area);
+                                }
+                            });
                     }
 
                     self.consume_drops(e.get_drops());
 
-                    return false;
+                    return None;
                 } else {
-                    return true;
+                    return Some(e);
                 };
             })
             .collect();
 
-        on_death_enemies.into_iter().for_each(|e| {
-            e.debuffs
-                .iter()
-                .map(|d| d.on_death(e.clone(), &self.layer_base))
-                .for_each(|maybe_damage_area| {
-                    if let Some(damage_area) = maybe_damage_area {
-                        damage_area.deal_damage(&mut self.enemies);
+        damage_areas.into_iter().for_each(|damage_area| {
+            damage_area.deal_damage(&mut self.enemies);
 
-                        let damage_effect = DamageEffect::from(damage_area);
+            let damage_effect = DamageEffect::from(damage_area);
 
-                        self.active_damage_effects.push(damage_effect);
-                    }
-                });
+            self.active_damage_effects.push(damage_effect);
         });
 
         if self.tickcount % self.enemy_spawn_ticks == 0 {
@@ -876,6 +892,10 @@ impl EntityCharacters {
         match self {
             EntityCharacters::Character(style) => style,
             EntityCharacters::Enemy(style) => style,
+            EntityCharacters::Orb(style) => style,
+            EntityCharacters::AttackBlackout(style) => style,
+            EntityCharacters::AttackMist(style) => style,
+            EntityCharacters::AttackWeak(style) => style,
             _ => panic!("Cannot get style_mut for non-styled entity"),
         }
     }

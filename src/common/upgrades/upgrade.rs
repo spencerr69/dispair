@@ -8,7 +8,7 @@ use crate::target_types::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::common::{
-    enemy::{Debuff, DebuffTypes},
+    debuffs::{Debuff, DebuffTypes},
     stats::{DebuffStats, GameStats, Inventory, PlayerStats, Proc, Stats, WeaponStats},
 };
 
@@ -124,6 +124,7 @@ impl PlayerState {
                             on_death_effect: true,
                             on_tick_effect: false,
                         },
+                        complete: false,
                         debuff_type: DebuffTypes::MarkedForExplosion,
                     },
                 },
@@ -192,12 +193,10 @@ impl PlayerState {
         //debug
         #[cfg(debug_assertions)]
         if self.upgrade_owned("9999") {
-            game_stats.width = 400;
-            game_stats.height = 400;
-            weapon_stats.size *= 6;
-            game_stats.enemy_spawn_mult = 12.;
-            game_stats.enemy_move_mult = 3.;
+            game_stats.width = 100;
+            game_stats.height = 100;
             player_stats.base_health = 10000;
+            game_stats.time_offset = Duration::from_secs(60);
         }
 
         //cleanups
