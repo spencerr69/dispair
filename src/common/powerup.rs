@@ -1,6 +1,6 @@
 use crate::common::{
     charms::CharmWrapper,
-    weapon::{Weapon, WeaponWrapper},
+    weapons::{Weapon, WeaponWrapper},
 };
 
 pub trait Poweruppable {

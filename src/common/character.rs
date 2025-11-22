@@ -8,8 +8,9 @@ use crate::common::{
     effects::DamageEffect,
     enemy::Enemy,
     roguegame::Layer,
-    upgrade::{PlayerState, PlayerStats},
-    weapon::{DamageArea, Flash, WeaponWrapper},
+    stats::PlayerStats,
+    upgrades::upgrade::PlayerState,
+    weapons::{DamageArea, WeaponWrapper, flash::Flash},
 };
 
 #[cfg(not(target_family = "wasm"))]

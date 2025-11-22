@@ -17,8 +17,8 @@ use crate::{
         charms::CharmWrapper,
         popups::popup_area,
         powerup::{DynPowerup, PowerupTypes, PowerupUpgrade},
-        upgrade::WeaponStats,
-        weapon::WeaponWrapper,
+        stats::WeaponStats,
+        weapons::WeaponWrapper,
     },
 };
 
