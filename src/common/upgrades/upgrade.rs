@@ -107,6 +107,10 @@ impl PlayerState {
             player_stats.movement_speed_mult =
                 player_stats.movement_speed_mult + (0.5 * self.amount_owned("25") as f64)
         }
+        //upgrade 26 gold_gain
+        if self.upgrade_owned("26") {
+            game_stats.gold_mult = game_stats.gold_mult + (0.5 * self.amount_owned("26") as f64)
+        }
 
         //upgrade 31 MARK
         //upgrade 311 mark chance

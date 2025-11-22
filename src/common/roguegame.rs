@@ -364,7 +364,8 @@ impl RogueGame {
     }
 
     pub fn consume_drops(&mut self, drops: EnemyDrops) {
-        self.player_state.inventory.gold += drops.gold;
+        self.player_state.inventory.gold +=
+            (drops.gold as f64 * self.player_state.stats.game_stats.gold_mult) as u128;
         self.level.add_xp(drops.xp);
     }
 
