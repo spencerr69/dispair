@@ -44,6 +44,12 @@ impl PartialEq for WeaponWrapper {
 }
 
 impl WeaponWrapper {
+    /// Get a reference to the inner weapon.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if there is no inner weapon.
+    #[must_use]
     pub fn get_inner(&self) -> &dyn PoweruppableWeapon {
         match self {
             WeaponWrapper::Flash(flash) => flash.as_ref().unwrap(),
@@ -52,6 +58,11 @@ impl WeaponWrapper {
         }
     }
 
+    /// Get a mutable reference to the inner weapon.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if there is no inner weapon.
     pub fn get_inner_mut(&mut self) -> &mut dyn PoweruppableWeapon {
         match self {
             WeaponWrapper::Flash(flash) => flash.as_mut().unwrap(),
@@ -86,8 +97,8 @@ impl DamageArea {
     /// For each affected enemy, reduces its health by `damage_amount`. If `weapon_stats` is present,
     /// iterates its `procs` and invokes each proc with `chance > 0` on the enemy.
     pub fn deal_damage(&self, enemies: &mut [Enemy]) {
-        enemies.iter_mut().for_each(|enemy| {
-            if enemy.get_pos().is_in_area(self.area.clone()) {
+        for enemy in enemies.iter_mut() {
+            if enemy.get_pos().is_in_area(&self.area) {
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon do the following
@@ -98,10 +109,10 @@ impl DamageArea {
                         if proc.chance > 0 {
                             enemy.try_proc(proc);
                         }
-                    })
+                    });
                 }
             }
-        });
+        }
     }
 }
 

@@ -1,5 +1,12 @@
 //! The main entry point for the application, responsible for initializing and running
 //! the appropriate version (terminal or WASM) of the game.
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::if_not_else
+)]
 
 pub mod common;
 

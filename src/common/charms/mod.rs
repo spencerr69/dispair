@@ -36,6 +36,12 @@ impl PartialEq for CharmWrapper {
 }
 
 impl CharmWrapper {
+    /// Get a reference to the inner weapon.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if there is no inner weapon.
+    #[must_use]
     pub fn get_inner(&self) -> &dyn Charm {
         match self {
             CharmWrapper::DamageMult(damage_mult) => damage_mult.as_ref().unwrap(),
@@ -43,7 +49,11 @@ impl CharmWrapper {
             CharmWrapper::AttackSpeed(attack_speed) => attack_speed.as_ref().unwrap(),
         }
     }
-
+    /// Get a mutable reference to the inner weapon.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if there is no inner weapon.
     pub fn get_inner_mut(&mut self) -> &mut dyn Charm {
         match self {
             CharmWrapper::DamageMult(damage_mult) => damage_mult.as_mut().unwrap(),
@@ -57,7 +67,7 @@ impl CharmWrapper {
             CharmWrapper::DamageMult(damage_mult) => *damage_mult = Some(CharmDamageMult::new()),
             CharmWrapper::OffsetAdd(offset_add) => *offset_add = Some(CharmOffsetAdd::new()),
             CharmWrapper::AttackSpeed(attack_speed) => {
-                *attack_speed = Some(CharmAttackSpeed::new())
+                *attack_speed = Some(CharmAttackSpeed::new());
             }
         }
     }

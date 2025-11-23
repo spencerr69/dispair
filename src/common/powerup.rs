@@ -15,7 +15,7 @@ pub trait Poweruppable {
             let new_level = self.get_level() + levels_up;
 
             Some(Box::new(PowerupUpgrade::new(
-                self.get_name(),
+                &self.get_name(),
                 self.upgrade_desc(new_level),
                 self.get_level(),
                 new_level,
@@ -66,8 +66,9 @@ pub enum PowerupTypes {
 }
 
 impl PowerupUpgrade {
+    #[must_use]
     pub fn new(
-        name: String,
+        name: &str,
         desc: String,
         curr_level: i32,
         new_level: i32,
@@ -82,24 +83,26 @@ impl PowerupUpgrade {
         }
     }
 
+    #[must_use]
     pub fn init_weapon(wrapper: WeaponWrapper) -> Self {
         let weapon_name: &'static str = wrapper.into();
         let upper = weapon_name.to_uppercase();
         Self::new(
-            upper.clone(),
-            format!("New METHOD: {}", upper),
+            &upper,
+            format!("New METHOD: {upper}"),
             0,
             1,
             PowerupTypes::Weapon,
         )
     }
 
+    #[must_use]
     pub fn init_charm(wrapper: CharmWrapper) -> Self {
         let charm_name: &'static str = wrapper.into();
         let upper = charm_name.to_uppercase();
         Self::new(
-            upper.clone(),
-            format!("New CHARM: {}", upper),
+            &upper,
+            format!("New CHARM: {upper}"),
             0,
             1,
             PowerupTypes::Charm,

@@ -8,7 +8,7 @@ use crate::{
         coords::{Area, Direction, Position, SquareArea},
         debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect},
         effects::DamageEffect,
-        enemy::*,
+        enemy::{Enemy, EnemyBehaviour, EnemyDrops},
         level::Level,
         pickups::{PickupEffect, Pickupable, PowerupOrb},
         popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
@@ -30,6 +30,13 @@ use ratatui::{
 };
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
+
+pub enum GameState {
+    Paused,
+    GameOver,
+    Exit,
+    Play,
+}
 
 /// Represents the main game state and logic.
 pub struct RogueGame {
@@ -64,12 +71,7 @@ pub struct RogueGame {
 
     attack_ticks: u64,
 
-    /// A flag indicating whether the game is over.
-    pub game_over: bool,
-
-    pub game_paused: bool,
-    /// A flag indicating whether the game should exit.
-    pub exit: bool,
+    pub game_state: GameState,
 
     active_damage_effects: Vec<DamageEffect>,
 
@@ -93,7 +95,8 @@ impl RogueGame {
     const DEFAULT_SPAWN_P_S: f64 = 0.4;
     const DEFAULT_MOVE_P_S: f64 = 2.;
 
-    pub fn new(player_state: PlayerState) -> Self {
+    #[must_use]
+    pub fn new(player_state: &PlayerState) -> Self {
         let width = player_state.stats.game_stats.width;
         let height = player_state.stats.game_stats.height;
 
@@ -141,10 +144,10 @@ impl RogueGame {
             map_text: Text::from(""),
             start_popup: false,
 
+            game_state: GameState::Play,
+
             carnage_report: None,
             powerup_popup: None,
-            exit: false,
-            game_paused: false,
 
             level,
 
@@ -155,13 +158,15 @@ impl RogueGame {
             tickcount: 0,
             enemies: vec![],
             pickups: vec![],
-            game_over: false,
             active_damage_effects: vec![],
             start_time,
             timer,
             timescaler,
 
+            //IDGAF !!! there shouldn't be any cases where values get truncated here
+            #[allow(clippy::cast_possible_truncation)]
             view_area: Rect::new(0, 0, width as u16, height as u16),
+            #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
             camera_area: SquareArea::new(Position(0, 0), Position(width as i32, height as i32)),
         };
 
@@ -183,6 +188,8 @@ impl RogueGame {
         game
     }
 
+    #[must_use]
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     pub fn per_sec_to_tick_count(per_sec: f64) -> u64 {
         let per_tick = TICK_RATE / per_sec;
         per_tick.ceil() as u64
@@ -196,10 +203,11 @@ impl RogueGame {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     pub fn on_tick(&mut self) {
         if let Some(powerup_popup) = self.powerup_popup.take() {
             if powerup_popup.finished {
-                self.game_paused = false;
+                self.game_state = GameState::Play;
                 self.character.weapons = powerup_popup.weapons;
                 self.character.charms = powerup_popup.charms;
                 self.reset_stats();
@@ -213,208 +221,215 @@ impl RogueGame {
             }
         }
 
-        if self.game_over || self.game_paused {
-            return;
-        }
+        match self.game_state {
+            GameState::Paused | GameState::GameOver | GameState::Exit => {}
+            GameState::Play => {
+                self.tickcount += 1;
 
-        self.tickcount += 1;
-
-        if self.start_time.elapsed() >= self.timer {
-            self.game_over = true;
-            return;
-        }
-
-        if !self.character.is_alive() {
-            self.game_over = true;
-            return;
-        }
-
-        if self.level.update().is_some() {
-            self.start_popup = true;
-        }
-
-        let char_pos = self.get_character_pos().clone();
-
-        self.pickups.iter_mut().for_each(|pickup| {
-            if pickup.get_pos() == &char_pos {
-                let effect = pickup.on_pickup();
-
-                match effect {
-                    PickupEffect::PowerupOrb => {
-                        let area = SquareArea::new(
-                            Position(0, 0),
-                            Position(self.width as i32, self.height as i32),
-                        );
-
-                        self.active_damage_effects.push(DamageEffect::new(
-                            area,
-                            EntityCharacters::AttackWeak(Style::new().red()),
-                            Duration::from_secs_f64(0.5),
-                            false,
-                        ));
-
-                        self.start_popup = true;
-                    }
+                if self.start_time.elapsed() >= self.timer {
+                    self.game_state = GameState::GameOver;
+                    return;
                 }
-            }
-        });
 
-        self.pickups.retain(|pickup| !pickup.is_picked_up());
+                if !self.character.is_alive() {
+                    self.game_state = GameState::GameOver;
+                    return;
+                }
 
-        if self.start_popup {
-            self.generate_popup();
-        }
+                if self.level.update().is_some() {
+                    self.start_popup = true;
+                }
 
-        let mut damage_areas: Vec<DamageArea> = Vec::new();
+                let char_pos = self.get_character_pos().clone();
 
-        self.enemies = self
-            .enemies
-            .clone()
-            .into_iter()
-            .filter_map(|mut e| {
-                if !e.debuffs.get_on_tick_effects().is_empty() {
-                    e.debuffs = e
-                        .debuffs
-                        .clone()
-                        .into_iter()
-                        .map(|mut d| {
-                            if let Some(damage_area) =
-                                d.on_tick(&mut e, &self.layer_base, self.tickcount)
-                            {
-                                damage_areas.push(damage_area);
+                self.pickups.iter_mut().for_each(|pickup| {
+                    if pickup.get_pos() == &char_pos {
+                        let effect = pickup.on_pickup();
+
+                        match effect {
+                            PickupEffect::PowerupOrb => {
+                                let area = SquareArea::new(
+                                    Position(0, 0),
+                                    Position(self.width as i32, self.height as i32),
+                                );
+
+                                self.active_damage_effects.push(DamageEffect::new(
+                                    area,
+                                    EntityCharacters::AttackWeak(Style::new().red()),
+                                    Duration::from_secs_f64(0.5),
+                                    false,
+                                ));
+
+                                self.start_popup = true;
                             }
-                            d
-                        })
-                        .collect();
-                }
-
-                if !e.debuffs.get_on_damage_effects().is_empty() {
-                    e.debuffs = e
-                        .debuffs
-                        .clone()
-                        .into_iter()
-                        .map(|mut d| {
-                            if let Some(damage_area) =
-                                d.on_damage(&mut e, &self.layer_base, &self.enemies)
-                            {
-                                damage_areas.push(damage_area);
-                            }
-                            d
-                        })
-                        .collect();
-                }
-
-                e.debuffs.retain(|d| !d.complete);
-
-                if !e.is_alive() {
-                    if !e.debuffs.get_on_death_effects().is_empty() {
-                        e.debuffs.iter().for_each(|d| {
-                            if let Some(damage_area) = d.on_death(e.clone(), &self.layer_base) {
-                                damage_areas.push(damage_area);
-                            }
-                        });
+                        }
                     }
+                });
 
-                    self.consume_drops(e.get_drops());
+                self.pickups.retain(|pickup| !pickup.is_picked_up());
 
-                    None
-                } else {
-                    Some(e)
+                if self.start_popup {
+                    self.generate_popup();
                 }
-            })
-            .collect();
 
-        damage_areas.into_iter().for_each(|damage_area| {
-            damage_area.deal_damage(&mut self.enemies);
+                let mut damage_areas: Vec<DamageArea> = Vec::new();
 
-            let damage_effect = DamageEffect::from(damage_area);
-
-            self.active_damage_effects.push(damage_effect);
-        });
-
-        if self.tickcount.is_multiple_of(self.enemy_spawn_ticks) {
-            self.spawn_enemy();
-        }
-
-        if self.tickcount.is_multiple_of(self.enemy_move_ticks) {
-            self.enemies = self
-                .enemies
-                .clone()
-                .into_iter()
-                .map(|mut enemy| {
-                    if let Some((desired_pos, desired_facing)) = enemy.update(
-                        &mut self.character,
-                        &self.layer_base,
-                        &mut self.active_damage_effects,
-                    ) && self.can_stand(&desired_pos)
-                    {
-                        enemy.move_to(desired_pos, desired_facing);
-                    }
-
-                    if self.character.stats.shove_amount > 0
-                        && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
-                    {
-                        if self.character.stats.shove_damage > 0 {
-                            enemy.take_damage(
-                                (self.character.stats.shove_damage as f64
-                                    * self.character.stats.damage_mult)
-                                    .ceil() as i32,
-                            );
+                self.enemies = self
+                    .enemies
+                    .clone()
+                    .into_iter()
+                    .filter_map(|mut e| {
+                        if !e.debuffs.get_on_tick_effects().is_empty() {
+                            e.debuffs = e
+                                .debuffs
+                                .clone()
+                                .into_iter()
+                                .map(|mut d| {
+                                    if let Some(damage_area) =
+                                        d.on_tick(&mut e, &self.layer_base, self.tickcount)
+                                    {
+                                        damage_areas.push(damage_area);
+                                    }
+                                    d
+                                })
+                                .collect();
                         }
 
-                        enemy.move_back(self.character.stats.shove_amount as i32, &self.layer_base);
+                        if !e.debuffs.get_on_damage_effects().is_empty() {
+                            e.debuffs = e
+                                .debuffs
+                                .clone()
+                                .into_iter()
+                                .map(|mut d| {
+                                    if let Some(damage_area) =
+                                        d.on_damage(&mut e, &self.layer_base, &self.enemies)
+                                    {
+                                        damage_areas.push(damage_area);
+                                    }
+                                    d
+                                })
+                                .collect();
+                        }
+
+                        e.debuffs.retain(|d| !d.complete);
+
+                        if e.is_alive() {
+                            Some(e)
+                        } else {
+                            if !e.debuffs.get_on_death_effects().is_empty() {
+                                e.debuffs.iter().for_each(|d| {
+                                    if let Some(damage_area) =
+                                        d.on_death(e.clone(), &self.layer_base)
+                                    {
+                                        damage_areas.push(damage_area);
+                                    }
+                                });
+                            }
+
+                            self.consume_drops(&e.get_drops());
+
+                            None
+                        }
+                    })
+                    .collect();
+
+                for damage_area in damage_areas {
+                    damage_area.deal_damage(&mut self.enemies);
+
+                    let damage_effect = DamageEffect::from(damage_area);
+
+                    self.active_damage_effects.push(damage_effect);
+                }
+
+                if self.tickcount.is_multiple_of(self.enemy_spawn_ticks) {
+                    self.spawn_enemy();
+                }
+
+                if self.tickcount.is_multiple_of(self.enemy_move_ticks) {
+                    self.enemies = self
+                        .enemies
+                        .clone()
+                        .into_iter()
+                        .map(|mut enemy| {
+                            if let Some((desired_pos, desired_facing)) = enemy.update(
+                                &mut self.character,
+                                &self.layer_base,
+                                &mut self.active_damage_effects,
+                            ) && self.can_stand(&desired_pos)
+                            {
+                                enemy.move_to(desired_pos, desired_facing);
+                            }
+
+                            if self.character.stats.shove_amount > 0
+                                && is_next_to_character(
+                                    self.character.get_pos(),
+                                    enemy.get_prev_pos(),
+                                )
+                            {
+                                if self.character.stats.shove_damage > 0 {
+                                    enemy.take_damage(
+                                        (f64::from(self.character.stats.shove_damage)
+                                            * self.character.stats.damage_mult)
+                                            .ceil() as i32,
+                                    );
+                                }
+
+                                enemy.move_back(
+                                    self.character.stats.shove_amount as i32,
+                                    &self.layer_base,
+                                );
+                            }
+                            enemy
+                        })
+                        .collect();
+                    // self.change_low_health_enemies_questionable();
+                }
+
+                if self.tickcount.is_multiple_of(TICK_RATE.floor() as u64) {
+                    self.scale();
+                    self.scale_enemies();
+                }
+
+                if self.tickcount.is_multiple_of(self.attack_ticks) {
+                    let (damage_areas, mut damage_effects) =
+                        self.character.attack(&self.layer_base, &self.enemies);
+                    for area in damage_areas {
+                        area.deal_damage(&mut self.enemies);
                     }
-                    enemy
-                })
-                .collect();
-            // self.change_low_health_enemies_questionable();
-        }
+                    self.active_damage_effects.append(&mut damage_effects);
+                }
 
-        if self.tickcount.is_multiple_of(TICK_RATE.floor() as u64) {
-            self.scale();
-            self.scale_enemies();
+                self.pickups
+                    .iter_mut()
+                    .for_each(|pickup| pickup.animate(self.tickcount % 1000));
+            }
         }
-
-        if self.tickcount.is_multiple_of(self.attack_ticks) {
-            let (damage_areas, mut damage_effects) =
-                self.character.attack(&self.layer_base, &self.enemies);
-            damage_areas.iter().for_each(|area| {
-                area.deal_damage(&mut self.enemies);
-            });
-            self.active_damage_effects.append(&mut damage_effects)
-        }
-
-        self.pickups
-            .iter_mut()
-            .for_each(|pickup| pickup.animate(self.tickcount % 1000));
     }
 
-    pub fn consume_drops(&mut self, drops: EnemyDrops) {
+    pub fn consume_drops(&mut self, drops: &EnemyDrops) {
         self.player_state.inventory.gold +=
             (drops.gold as f64 * self.player_state.stats.game_stats.gold_mult) as u128;
         self.level.add_xp(drops.xp);
     }
 
     pub fn on_frame(&mut self) {
-        if self.game_paused {
-            return;
+        if let GameState::Play = self.game_state {
+            update_effects(&mut self.active_damage_effects);
+
+            self.active_damage_effects = self
+                .active_damage_effects
+                .clone()
+                .into_iter()
+                .filter(|effect| !effect.complete)
+                .collect();
+
+            self.camera_area =
+                get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
+
+            let spans = self.flatten_to_span(Some(self.camera_area.clone()));
+
+            self.map_text = Self::spans_to_text(spans);
         }
-
-        update_effects(&mut self.active_damage_effects);
-
-        self.active_damage_effects = self
-            .active_damage_effects
-            .clone()
-            .into_iter()
-            .filter(|effect| !effect.complete)
-            .collect();
-
-        self.camera_area =
-            get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
-
-        let spans = self.flatten_to_span(Some(self.camera_area.clone()));
-
-        self.map_text = Self::spans_to_text(spans);
     }
 
     pub fn update_stats(&mut self) {
@@ -429,7 +444,7 @@ impl RogueGame {
     }
 
     pub fn generate_popup(&mut self) {
-        self.game_paused = true;
+        self.game_state = GameState::Paused;
         self.powerup_popup = Some(PowerupPopup::new(
             &self.character.weapons,
             &self.character.charms,
@@ -477,7 +492,7 @@ impl RogueGame {
             self.enemy_damage,
             self.enemy_health,
             self.enemy_drops.clone(),
-        ))
+        ));
     }
 
     fn scale(&mut self) -> f64 {
@@ -487,25 +502,25 @@ impl RogueGame {
     pub fn handle_key_event(&mut self, key_event: KeyEvent) {
         if self.carnage_report.is_some() {
             if key_event.code == KeyCode::Esc {
-                self.exit = true
+                self.game_state = GameState::Exit;
             }
         } else if let Some(powerup_popup) = &mut self.powerup_popup {
             powerup_popup.handle_key_event(key_event);
         } else {
             match key_event.code {
                 KeyCode::Char('s') | KeyCode::Down => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::DOWN)
+                    move_entity(&mut self.layer_base, &mut self.character, Direction::DOWN);
                 }
                 KeyCode::Char('w') | KeyCode::Up => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::UP)
+                    move_entity(&mut self.layer_base, &mut self.character, Direction::UP);
                 }
                 KeyCode::Char('d') | KeyCode::Right => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::RIGHT)
+                    move_entity(&mut self.layer_base, &mut self.character, Direction::RIGHT);
                 }
                 KeyCode::Char('a') | KeyCode::Left => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::LEFT)
+                    move_entity(&mut self.layer_base, &mut self.character, Direction::LEFT);
                 }
-                KeyCode::Esc => self.game_over = true,
+                KeyCode::Esc => self.game_state = GameState::GameOver,
                 #[cfg(debug_assertions)]
                 KeyCode::Char('u') => self.generate_popup(),
                 _ => {}
@@ -524,6 +539,7 @@ impl RogueGame {
         self.character.set_pos(Position(x, y));
     }
 
+    #[must_use]
     pub fn flatten_to_span(&self, area: Option<SquareArea>) -> Vec<Vec<Span<'static>>> {
         let (x1, y1, x2, y2);
         if let Some(inner_area) = area {
@@ -617,6 +633,7 @@ impl RogueGame {
         }
     }
 
+    #[must_use]
     pub fn get_enemy_positions(&self) -> Vec<Position> {
         self.enemies
             .iter()
@@ -624,6 +641,7 @@ impl RogueGame {
             .collect()
     }
 
+    #[must_use]
     pub fn spans_to_text(spans: Vec<Vec<Span<'_>>>) -> Text<'_> {
         let map = spans;
 
@@ -648,10 +666,12 @@ impl RogueGame {
     }
 
     /// Returns the character's current position.
+    #[must_use]
     pub fn get_character_pos(&self) -> &Position {
         self.character.get_pos()
     }
 
+    #[must_use]
     pub fn can_stand(&self, position: &Position) -> bool {
         let (x, y) = position.get();
 
@@ -728,9 +748,10 @@ impl RogueGame {
 }
 
 /// Calculates the camera's visible area based on the player's position and the layer dimensions.
+#[must_use]
 pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer) -> SquareArea {
-    let view_height = content_area.height as i32;
-    let view_width = content_area.width as i32;
+    let view_height = i32::from(content_area.height);
+    let view_width = i32::from(content_area.width);
 
     let layer_height = layer.len() as i32;
     let layer_width = layer[0].len() as i32;
@@ -738,72 +759,51 @@ pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer)
     let (player_x, player_y) = player_pos.get();
 
     // Center the camera on the player
-    let mut camera_x1 = player_x - view_width / 2;
-    let mut camera_y1 = player_y - view_height / 2;
-    let mut camera_x2 = camera_x1 + view_width;
-    let mut camera_y2 = camera_y1 + view_height;
+    let mut x1 = player_x - view_width / 2;
+    let mut y1 = player_y - view_height / 2;
+    let mut x2 = x1 + view_width;
+    let mut y2 = y1 + view_height;
 
     // Clamp to left edge
-    if camera_x1 < 0 {
-        camera_x1 = 0;
-        camera_x2 = view_width;
+    if x1 < 0 {
+        x1 = 0;
+        x2 = view_width;
     }
 
     // Clamp to top edge
-    if camera_y1 < 0 {
-        camera_y1 = 0;
-        camera_y2 = view_height;
+    if y1 < 0 {
+        y1 = 0;
+        y2 = view_height;
     }
 
     // Clamp to right edge
-    if camera_x2 > layer_width {
-        camera_x2 = layer_width;
-        camera_x1 = (layer_width - view_width).max(0);
+    if x2 > layer_width {
+        x2 = layer_width;
+        x1 = (layer_width - view_width).max(0);
     }
 
     // Clamp to bottom edge
-    if camera_y2 > layer_height {
-        camera_y2 = layer_height;
-        camera_y1 = (layer_height - view_height).max(0);
+    if y2 > layer_height {
+        y2 = layer_height;
+        y1 = (layer_height - view_height).max(0);
     }
 
     SquareArea {
-        corner1: Position(camera_x1, camera_y1),
-        corner2: Position(camera_x2, camera_y2),
+        corner1: Position(x1, y1),
+        corner2: Position(x2, y2),
     }
 }
 
+#[must_use]
 pub fn get_pos<'a>(layer: &'a Layer, position: &Position) -> &'a EntityCharacters {
     let (x, y) = position.get_as_usize();
     &layer[y][x]
 }
 
-pub fn clear_layer(layer: &mut Layer) {
-    layer.iter_mut().for_each(|row| {
-        row.iter_mut()
-            .for_each(|ent| ent.replace(EntityCharacters::Empty))
-    });
-}
-
 pub fn update_effects(damage_effects: &mut [DamageEffect]) {
-    damage_effects.iter_mut().for_each(|effect| {
+    for effect in damage_effects.iter_mut() {
         effect.update();
-    });
-}
-
-pub fn set_entity(
-    layer: &mut Vec<Vec<EntityCharacters>>,
-    position: &Position,
-    entity: EntityCharacters,
-) -> Result<(), String> {
-    let mut position = position.clone();
-    position.constrain(layer);
-    let (x, y) = position.get_as_usize();
-    if x >= layer[0].len() || y >= layer.len() {
-        return Err("Position out of bounds".to_string());
     }
-    layer[y][x] = entity;
-    Ok(())
 }
 
 pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Direction) {
@@ -825,11 +825,13 @@ pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Dire
     }
 }
 
+#[must_use]
 pub fn can_stand(layer: &Layer, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
     x < layer[0].len() && y < layer.len()
 }
 
+#[must_use]
 pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     let mut rng = rand::rng();
 
@@ -850,6 +852,7 @@ pub fn get_rand_position_on_edge(layer: &Layer) -> Position {
     }
 }
 
+#[must_use]
 pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
     let mut rng = rand::rng();
 
@@ -858,6 +861,7 @@ pub fn get_rand_position_on_layer(layer: &Layer) -> Position {
     Position::new(x, y)
 }
 
+#[must_use]
 pub fn is_next_to_character(char_position: &Position, position: &Position) -> bool {
     let (x, y) = position.get_as_usize();
     let (char_x, char_y) = char_position.get_as_usize();
@@ -880,6 +884,7 @@ pub enum EntityCharacters {
 }
 
 impl EntityCharacters {
+    #[must_use]
     pub fn to_styled(&self) -> Span<'static> {
         match self {
             EntityCharacters::Background1 => Span::from(".").dark_gray(),
@@ -904,19 +909,25 @@ impl EntityCharacters {
         *self = new_entity;
     }
 
+    /// Get mutable reference to inner style, if it exists.
+    ///
+    /// # Panics
+    ///
+    /// If trying to call `style_mut` on an `EntityCharacters` which does not have an inner style, it will panic.
     pub fn style_mut(&mut self) -> &mut Style {
         match self {
-            EntityCharacters::Character(style) => style,
-            EntityCharacters::Enemy(style) => style,
-            EntityCharacters::Orb(style) => style,
-            EntityCharacters::AttackBlackout(style) => style,
-            EntityCharacters::AttackMist(style) => style,
-            EntityCharacters::AttackWeak(style) => style,
+            EntityCharacters::Character(style)
+            | EntityCharacters::Enemy(style)
+            | EntityCharacters::Orb(style)
+            | EntityCharacters::AttackBlackout(style)
+            | EntityCharacters::AttackMist(style)
+            | EntityCharacters::AttackWeak(style) => style,
             _ => panic!("Cannot get style_mut for non-styled entity"),
         }
     }
 
     /// Checks if the entity is a player character.
+    #[must_use]
     pub fn is_char(&self) -> bool {
         matches!(self, EntityCharacters::Character(_))
     }
@@ -935,7 +946,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = RogueGame::new(player_state);
+        let mut rogue_game = RogueGame::new(&player_state);
 
         rogue_game.on_tick();
         rogue_game.on_frame();
@@ -947,7 +958,7 @@ mod tests {
 
         let elapsed = start_time.elapsed().as_millis();
 
-        println!("Renderspeed Time taken: {:?}", elapsed);
+        println!("Renderspeed Time taken: {elapsed}");
 
         #[cfg(not(debug_assertions))]
         assert!(elapsed < 100);
@@ -960,7 +971,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = RogueGame::new(player_state);
+        let mut rogue_game = RogueGame::new(&player_state);
 
         let start_time = Instant::now();
 
@@ -984,7 +995,7 @@ mod tests {
 
         let elapsed = start_time.elapsed().as_millis();
 
-        println!("UpdateRenderspeed Time taken: {:?}", elapsed);
+        println!("UpdateRenderspeed Time taken: {elapsed}");
 
         #[cfg(not(debug_assertions))]
         assert!(elapsed < 500);

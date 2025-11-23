@@ -7,7 +7,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::common::{
     coords::{Area, Position, SquareArea},
-    roguegame::{EntityCharacters, Layer, set_entity},
+    roguegame::EntityCharacters,
     weapons::DamageArea,
 };
 
@@ -24,11 +24,6 @@ pub struct DamageEffect {
 }
 
 impl From<DamageArea> for DamageEffect {
-    /// Creates a DamageEffect populated from the given DamageArea.
-    ///
-    /// The resulting DamageEffect uses the DamageArea's area and entity as its initial
-    /// active_area and active_entity, sets `complete` to `false`, and records the
-    /// current time as the effect's start time.
     fn from(damage_area: DamageArea) -> Self {
         Self {
             damage_area: damage_area.clone(),
@@ -42,11 +37,6 @@ impl From<DamageArea> for DamageEffect {
 }
 
 impl DamageEffect {
-    /// Constructs a `DamageEffect` representing a temporary damage visual tied to a specific area and entity.
-    ///
-    /// The created effect uses the provided `area` and `entity`, applies the given `duration` and `blink` behaviour,
-    /// sets `start_time` to the current instant, marks the effect as not complete, and initializes `active_area` and
-    /// `active_entity` from the provided values.
     pub fn new(
         area: impl Area + 'static,
         entity: EntityCharacters,
@@ -102,7 +92,7 @@ impl DamageEffect {
         }
 
         if now.duration_since(self.start_time) >= self.damage_area.duration {
-            self.complete = true
+            self.complete = true;
         } else if self.damage_area.blink {
             if self.active_entity == self.damage_area.entity {
                 self.active_entity = EntityCharacters::Empty;
@@ -117,6 +107,7 @@ impl DamageEffect {
     /// The returned iterator yields `(Position, EntityCharacters)` for every position in `self.active_area`.
     /// The positions and the active entity are captured by value at the time of the call so the iterator
     /// can be used independently of subsequent mutations to the `DamageEffect`.
+    #[must_use]
     pub fn get_instructions(&self) -> Box<dyn Iterator<Item = (Position, EntityCharacters)>> {
         let active_entity = self.active_entity.clone();
 
@@ -128,12 +119,4 @@ impl DamageEffect {
                 .map(move |pos| (pos, active_entity.clone())),
         )
     }
-}
-
-/// Changes the entity character within a specified area of a layer.
-pub fn change_area(layer: &mut Layer, area: SquareArea, entity: &EntityCharacters) {
-    area.clone().pos_iter().for_each(|mut position| {
-        position.constrain(layer);
-        set_entity(layer, &position, entity.clone()).unwrap_or(())
-    });
 }

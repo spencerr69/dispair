@@ -20,6 +20,7 @@ pub struct CarnageReport {
 
 impl CarnageReport {
     /// Creates a new `CarnageReport`.
+    #[must_use]
     pub fn new(prev_player_state: PlayerState, new_player_state: PlayerState) -> Self {
         Self {
             prev_player_state,
@@ -28,6 +29,7 @@ impl CarnageReport {
     }
 
     /// Calculates the difference between the player's state before and after the level.
+    #[must_use]
     pub fn get_diff(&self) -> PlayerStateDiff {
         self.new_player_state.clone() - self.prev_player_state.clone()
     }

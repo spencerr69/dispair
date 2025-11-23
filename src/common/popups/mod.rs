@@ -4,6 +4,7 @@ pub mod carnagereport;
 pub mod poweruppopup;
 
 /// Helper function to create a centered popup area.
+#[must_use]
 pub fn popup_area(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
     let vertical = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
     let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);

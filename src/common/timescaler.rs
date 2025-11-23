@@ -15,6 +15,7 @@ pub struct TimeScaler {
 
 impl TimeScaler {
     /// Creates a new `TimeScaler` with the start time set to now.
+    #[must_use]
     pub fn now() -> Self {
         Self {
             start_time: SystemTime::now(),
@@ -29,6 +30,7 @@ impl TimeScaler {
     }
 
     /// Returns the elapsed time in seconds since the `start_time`.
+    #[must_use]
     pub fn time_in_secs(&self) -> u64 {
         if let Ok(elapsed) = self.start_time.elapsed() {
             elapsed.as_secs()
@@ -55,6 +57,7 @@ mod tests {
     use crate::common::timescaler::TimeScaler;
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn scale_at_0s() {
         let mut scaler = TimeScaler::now();
         println!("\n0s: {}\n", scaler.scale());
@@ -98,7 +101,7 @@ mod tests {
         let mut scaler = TimeScaler::now();
         scaler.start_time = SystemTime::now() - Duration::from_secs(300);
         println!("\n300s: {}\n", scaler.scale());
-        assert!(scaler.scale_amount <= 15.25)
+        assert!(scaler.scale_amount <= 15.25);
     }
 
     #[test]

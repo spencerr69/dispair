@@ -1,3 +1,4 @@
+#[allow(clippy::struct_field_names)]
 pub struct Level {
     xp: u128,
     level: i32,
@@ -17,6 +18,7 @@ impl Default for Level {
 impl Level {
     const SCALE_MULT: f64 = 1.5;
 
+    #[must_use]
     pub fn new() -> Self {
         Level {
             xp: 0,
@@ -40,6 +42,7 @@ impl Level {
         }
     }
 
+    #[must_use]
     pub fn get_progress_percentage(&self) -> u16 {
         (self.xp as f64 / self.xp_to_level as f64 * 100.0)
             .floor()

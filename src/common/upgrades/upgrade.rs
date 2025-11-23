@@ -29,7 +29,7 @@ pub struct PlayerStateDiff {
 impl Sub for PlayerState {
     type Output = PlayerStateDiff;
 
-    /// Compute the difference between two player states, producing a PlayerStateDiff that contains the inventory delta.
+    /// Compute the difference between two player states, producing a `PlayerStateDiff` that contains the inventory delta.
     ///
     /// The resulting `PlayerStateDiff`'s `inventory` equals `self.inventory - other.inventory`.
     fn sub(self, other: PlayerState) -> Self::Output {
@@ -41,6 +41,11 @@ impl Sub for PlayerState {
 
 impl PlayerState {
     /// Refreshes the player's stats based on their current upgrades.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if save state is impossible.
+    #[allow(clippy::too_many_lines)]
     pub fn refresh(&mut self) {
         let mut game_stats = GameStats::default();
         let mut player_stats = PlayerStats::default();
@@ -73,7 +78,7 @@ impl PlayerState {
 
         //upgrade 212 damage/mult_up
         if self.upgrade_owned("212") {
-            player_stats.damage_mult += 0.1 * self.amount_owned("212") as f64;
+            player_stats.damage_mult += 0.1 * f64::from(self.amount_owned("212"));
         }
 
         //upgrade 221 health/flat_up
@@ -83,36 +88,37 @@ impl PlayerState {
 
         //upgrade 222 health/mult_up
         if self.upgrade_owned("222") {
-            player_stats.health_mult += 0.1 * self.amount_owned("222") as f64;
+            player_stats.health_mult += 0.1 * f64::from(self.amount_owned("222"));
         }
 
         //upgrade 223 health/exp_mult_up
         if self.upgrade_owned("223") {
-            player_stats.health_mult *= 1.5 * self.amount_owned("223") as f64;
+            player_stats.health_mult *= 1.5 * f64::from(self.amount_owned("223"));
         }
 
         //upgrade 23 attack_rate
         if self.upgrade_owned("23") {
-            game_stats.attack_speed_mult += 0.15 * self.amount_owned("23") as f64;
+            game_stats.attack_speed_mult += 0.15 * f64::from(self.amount_owned("23"));
         }
 
         //upgrade 24 timer_length
         if self.upgrade_owned("24") {
-            game_stats.timer =
-                (game_stats.timer as f64 * (1.5 * self.amount_owned("24") as f64)).ceil() as u64;
+            game_stats.timer = (game_stats.timer as f64
+                * (1.5 * f64::from(self.amount_owned("24"))))
+            .ceil() as u64;
         }
 
         //upgrade 25 movement_speed
         if self.upgrade_owned("25") {
-            player_stats.movement_speed_mult += 0.5 * self.amount_owned("25") as f64
+            player_stats.movement_speed_mult += 0.5 * f64::from(self.amount_owned("25"));
         }
         //upgrade 26 gold_gain
         if self.upgrade_owned("26") {
-            game_stats.gold_mult += 0.5 * self.amount_owned("26") as f64
+            game_stats.gold_mult += 0.5 * f64::from(self.amount_owned("26"));
         }
         //upgrade 27 elemental_honage
         if self.upgrade_owned("27") {
-            weapon_stats.elemental_honage += 0.25 * self.amount_owned("27") as f64
+            weapon_stats.elemental_honage += 0.25 * f64::from(self.amount_owned("27"));
         }
 
         //upgrade 31 MARK
@@ -174,13 +180,13 @@ impl PlayerState {
 
             game_stats.width += growth_amount as usize;
             game_stats.height += growth_amount as usize;
-            game_stats.enemy_spawn_mult += 0.5 * amount_owned as f64
+            game_stats.enemy_spawn_mult += 0.5 * f64::from(amount_owned);
         }
         // upgrade 43 spawn speed
         if self.upgrade_owned("43") {
             let amount_owned = self.amount_owned("43");
 
-            game_stats.enemy_spawn_mult += 0.3 * amount_owned as f64
+            game_stats.enemy_spawn_mult += 0.3 * f64::from(amount_owned);
         }
 
         if self.upgrade_owned("51") {
@@ -188,10 +194,10 @@ impl PlayerState {
             let growth_amount = 50 * amount_owned;
 
             game_stats.width += growth_amount as usize;
-            game_stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
+            game_stats.enemy_spawn_mult += 1.5 * f64::from(amount_owned);
 
-            game_stats.gold_mult += 0.3 * amount_owned as f64;
-            game_stats.enemy_move_mult += 0.05 * amount_owned as f64;
+            game_stats.gold_mult += 0.3 * f64::from(amount_owned);
+            game_stats.enemy_move_mult += 0.05 * f64::from(amount_owned);
         }
 
         if self.upgrade_owned("52") {
@@ -199,9 +205,9 @@ impl PlayerState {
             let growth_amount = 50 * amount_owned;
 
             game_stats.height += growth_amount as usize;
-            game_stats.enemy_spawn_mult += 1.5 * amount_owned as f64;
-            game_stats.gold_mult += 0.3 * amount_owned as f64;
-            game_stats.enemy_move_mult += 0.05 * amount_owned as f64;
+            game_stats.enemy_spawn_mult += 1.5 * f64::from(amount_owned);
+            game_stats.gold_mult += 0.3 * f64::from(amount_owned);
+            game_stats.enemy_move_mult += 0.05 * f64::from(amount_owned);
         }
 
         //debug
@@ -211,12 +217,12 @@ impl PlayerState {
             game_stats.height = 100;
             player_stats.base_health = 10000;
             game_stats.time_offset = Duration::from_secs(60);
-            self.inventory.add_gold(100000);
+            self.inventory.add_gold(100_000);
         }
 
         //cleanups
         player_stats.health =
-            (player_stats.base_health as f64 * player_stats.health_mult).ceil() as i32;
+            (f64::from(player_stats.base_health) * player_stats.health_mult).ceil() as i32;
 
         self.stats = Stats {
             game_stats,
@@ -226,11 +232,13 @@ impl PlayerState {
     }
 
     /// Returns the number of times an upgrade has been purchased.
+    #[must_use]
     pub fn amount_owned(&self, id: &str) -> u32 {
         *self.upgrades.get(id).unwrap_or(&0)
     }
 
     /// Checks if the player owns at least one of a specific upgrade.
+    #[must_use]
     pub fn upgrade_owned(&self, id: &str) -> bool {
         *self.upgrades.get(id).unwrap_or(&0) > 0
     }
@@ -270,11 +278,15 @@ pub struct UpgradeNode {
 
 impl UpgradeNode {
     /// Checks if the upgrade node has any children.
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn has_children(&self) -> bool {
-        self.children.is_some() && !self.children.clone().unwrap().is_empty()
+        self.children.is_some() && self.children.clone().is_some()
+            || self.children.clone().unwrap().is_empty()
     }
 
     /// Returns the display title for the upgrade.
+    #[must_use]
     pub fn get_display_title(&self) -> String {
         if self.children.is_some() {
             " > ".to_string() + self.title.as_str()
@@ -284,16 +296,20 @@ impl UpgradeNode {
     }
 
     /// Calculates the cost of the next purchase of this upgrade.
+    #[must_use]
     pub fn next_cost(&self, amount_owned: u32) -> u32 {
         let mut costscale = 1.2;
         if let Some(over_ride) = self.costscale_override {
             costscale = over_ride;
         }
-
-        if self.cost.is_none() {
-            0
+        if let Some(cost) = self.cost {
+            if self.cost.is_none() {
+                0
+            } else {
+                (f64::from(cost) * (costscale.powf(f64::from(amount_owned)))).ceil() as u32
+            }
         } else {
-            (self.cost.unwrap() as f64 * (costscale.powf(amount_owned as f64))).ceil() as u32
+            0
         }
     }
 }
@@ -302,6 +318,10 @@ impl UpgradeNode {
 pub type UpgradeTree = Vec<UpgradeNode>;
 
 /// Loads the upgrade tree from the `upgrades.json` file.
+///
+/// # Errors
+///
+/// Will error if upgrades.json is invalid.
 pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
     let upgrade_tree: UpgradeTree = serde_json::from_str(include_str!("upgrades.json"))?;
 
@@ -315,16 +335,17 @@ pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
 }
 
 /// Recursively traverses the upgrade tree and creates a map of all possible upgrades, initialized to 0.
+#[must_use]
 pub fn get_current_upgrades(
     upgrade_tree: UpgradeTree,
     mut acc: CurrentUpgrades,
 ) -> CurrentUpgrades {
-    upgrade_tree.into_iter().for_each(|node| {
+    for node in upgrade_tree {
         acc.insert(node.id, 0);
         if let Some(children) = node.children {
             acc = get_current_upgrades(children, acc.clone());
         }
-    });
+    }
 
     acc
 }
@@ -336,14 +357,14 @@ mod tests {
     #[test]
     fn parse_correctly() {
         let upgrade_tree = get_upgrade_tree().unwrap();
-        assert!(upgrade_tree[0].title.len() > 1)
+        assert!(upgrade_tree[0].title.len() > 1);
     }
 
     #[test]
     fn current_upgrades_check() {
         let upgrade_tree = get_upgrade_tree().unwrap();
         let current_upgrades = get_current_upgrades(upgrade_tree, HashMap::new());
-        println!("Current upgrades: {:?}", current_upgrades);
+        println!("Current upgrades: {current_upgrades:?}");
         assert!(!current_upgrades.is_empty());
     }
 }

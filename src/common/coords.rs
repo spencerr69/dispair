@@ -10,6 +10,7 @@ pub struct Position(pub i32, pub i32);
 
 impl Position {
     /// Creates a new `Position`, ensuring that coordinates are not negative.
+    #[must_use]
     pub fn new(x: i32, y: i32) -> Self {
         let new_x = if x < 0 { 0 } else { x };
         let new_y = if y < 0 { 0 } else { y };
@@ -18,11 +19,13 @@ impl Position {
     }
 
     /// Returns the (x, y) coordinates of the position.
+    #[must_use]
     pub fn get(&self) -> (i32, i32) {
         (self.0, self.1)
     }
 
     /// Returns the (x, y) coordinates as `usize`.
+    #[must_use]
     pub fn get_as_usize(&self) -> (usize, usize) {
         (self.0.max(0) as usize, self.1.max(0) as usize)
     }
@@ -34,6 +37,7 @@ impl Position {
     }
 
     /// Calculates the (dx, dy) distance between two positions.
+    #[must_use]
     pub fn get_distance(&self, other: &Position) -> (i32, i32) {
         let (self_x, self_y) = self.get();
         let (other_x, other_y) = other.get();
@@ -41,7 +45,7 @@ impl Position {
     }
 
     /// Checks if the position is within the given area.
-    pub fn is_in_area(&self, area: Rc<RefCell<dyn Area>>) -> bool {
+    pub fn is_in_area(&self, area: &Rc<RefCell<dyn Area>>) -> bool {
         let (x, y) = self.get();
         let (min_x, min_y, max_x, max_y) = area.borrow().get_bounds();
         x >= min_x && x <= max_x && y >= min_y && y <= max_y
@@ -96,11 +100,13 @@ impl SquareArea {
     /// Constructs an Area defined by two corner positions.
     ///
     /// The provided positions become the area's corners; the effective bounds are computed from them when needed.
+    #[must_use]
     pub fn new(corner1: Position, corner2: Position) -> Self {
         SquareArea { corner1, corner2 }
     }
 
     /// Constructs an Area with both corners at the world origin (0, 0).\n
+    #[must_use]
     pub fn origin() -> SquareArea {
         SquareArea {
             corner1: Position(0, 0),
@@ -126,7 +132,7 @@ impl Area for SquareArea {
 
     /// Compute the axis-aligned bounding box that encloses the area's corners.
     ///
-    /// The returned tuple is (min_x, min_y, max_x, max_y).\n
+    /// The returned tuple is `(min_x, min_y, max_x, max_y)`.
     fn get_bounds(&self) -> (i32, i32, i32, i32) {
         let (x1, y1) = self.corner1.get();
         let (x2, y2) = self.corner2.get();
@@ -141,6 +147,7 @@ pub struct ChaosArea {
 }
 
 impl ChaosArea {
+    #[must_use]
     pub fn new(position_list: Vec<Position>) -> Self {
         ChaosArea { position_list }
     }
@@ -204,7 +211,7 @@ mod tests {
             EntityCharacters::Empty,
         ])]);
         position.constrain(&layer);
-        assert_eq!(position.get(), (3, 0))
+        assert_eq!(position.get(), (3, 0));
     }
 
     #[test]

@@ -36,6 +36,7 @@ impl Lightning {
     const BASE_DAMAGE: i32 = 1;
     const BASE_SIZE: i32 = 1;
 
+    #[must_use]
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Lightning {
             base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
@@ -101,11 +102,11 @@ impl Weapon for Lightning {
         let mut entity = EntityCharacters::AttackMist(Style::new().gray());
 
         if let Some(style) = self.get_elemental_style() {
-            *entity.style_mut() = style
+            *entity.style_mut() = style;
         }
 
         DamageArea {
-            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
+            damage_amount: (f64::from(self.get_damage()) * wielder.stats.damage_mult).ceil() as i32,
             area: Rc::new(RefCell::new(area)),
             entity,
             duration: Duration::from_secs_f64(0.1),
@@ -119,7 +120,7 @@ impl Weapon for Lightning {
     }
 
     fn get_damage(&self) -> i32 {
-        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+        (f64::from(self.base_damage) * self.damage_scalar).ceil() as i32
     }
 }
 
@@ -143,7 +144,7 @@ impl Poweruppable for Lightning {
             3 => "Increase bounces by 1, increase base damage by 2".into(),
             4 => "Increase bounces by 1, increase damage scalar by 25%".into(),
             5 => "Double bounces, increase damage scalar by 75%".into(),
-            _ => "".into(),
+            _ => String::new(),
         }
     }
 
@@ -157,7 +158,6 @@ impl Poweruppable for Lightning {
 
         for i in (from + 1)..=to {
             match i {
-                1 => {}
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;

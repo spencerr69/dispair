@@ -1,7 +1,11 @@
 //! This module defines the `Enemy` struct and its related traits and behaviors.
 //! It includes logic for enemy movement, health, attacks, and debuffs.
 use crate::{
-    common::debuffs::{Debuff, DebuffTypes},
+    common::{
+        character::{Character, Damageable, Movable},
+        debuffs::{Debuff, DebuffTypes},
+        roguegame::{EntityCharacters, Layer, can_stand, is_next_to_character},
+    },
     target_types::Duration,
 };
 
@@ -9,10 +13,8 @@ use rand::Rng;
 use ratatui::style::{Style, Stylize};
 
 use crate::common::{
-    character::*,
     coords::{Direction, Position, SquareArea},
     effects::DamageEffect,
-    roguegame::*,
     stats::Proc,
 };
 
@@ -90,7 +92,7 @@ impl Debuffable for Enemy {
                                 stats: proc.debuff.stats.clone(),
                                 complete: false,
                             },
-                        })
+                        });
                     }
                 }
                 _ => {
@@ -187,8 +189,6 @@ impl EnemyBehaviour for Enemy {
 
         self.change_style_with_debuff();
 
-        debug(self);
-
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);
             damage_effects.push(DamageEffect::new(
@@ -218,17 +218,7 @@ impl EnemyBehaviour for Enemy {
     }
 }
 
-pub fn debug(enemy: &Enemy) {
-    let total_complete = enemy
-        .debuffs
-        .iter()
-        .fold(0, |acc, debuff| if debuff.complete { acc + 1 } else { acc });
-
-    if total_complete > 0 {
-        panic!("Enemy has one or more complete debuffs");
-    }
-}
-
+#[must_use]
 pub fn move_to_point_granular(
     self_pos: &Position,
     desired_location: &Position,

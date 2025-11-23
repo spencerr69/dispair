@@ -11,6 +11,7 @@ pub struct CharmAttackSpeed {
 }
 
 impl CharmAttackSpeed {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             stat_boost: 1.25,
@@ -44,6 +45,7 @@ impl Poweruppable for CharmAttackSpeed {
         "Attack Speed Charm".into()
     }
 
+    #[allow(clippy::match_same_arms)]
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
             1 => "Multiply your Attack Speed by 1.25".into(),
@@ -51,10 +53,11 @@ impl Poweruppable for CharmAttackSpeed {
             3 => "Increase Attack Speed Mult by 0.25".into(),
             4 => "Increase Attack Speed Mult by 0.5".into(),
             5 => "Increase Attack Speed Mult by 0.75".into(),
-            _ => "".into(),
+            _ => String::new(),
         }
     }
 
+    #[allow(clippy::match_same_arms)]
     fn upgrade_self(&mut self, powerup: &DynPowerup) {
         let from = powerup.get_current_level();
         let to = powerup.get_new_level();

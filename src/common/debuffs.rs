@@ -1,8 +1,10 @@
 use crate::{
     common::{
         TICK_RATE,
+        character::{Damageable, Movable},
         coords::ChaosArea,
         enemy::{Enemy, move_to_point_granular},
+        roguegame::{EntityCharacters, Layer},
         stats::WeaponStats,
     },
     target_types::Duration,
@@ -15,9 +17,7 @@ use serde::{Deserialize, Serialize};
 use ratatui::style::{Style, Stylize};
 
 use crate::common::{
-    character::*,
     coords::{Area, Position, SquareArea},
-    roguegame::*,
     stats::{DebuffStats, Proc},
     weapons::DamageArea,
 };
@@ -51,10 +51,10 @@ pub enum Elements {
 }
 
 impl Elements {
+    #[must_use]
     pub fn get_honage(&self) -> f64 {
         match self {
-            Elements::Flame(honage) => *honage,
-            Elements::Shock(honage) => *honage,
+            Elements::Flame(honage) | Elements::Shock(honage) => *honage,
         }
     }
 }
@@ -198,7 +198,8 @@ impl OnTickEffect for Debuff {
             }
             DebuffTypes::ShockElectrocute => {
                 if tickcount.is_multiple_of(
-                    (TICK_RATE * self.stats.size.expect("no size on electrocute") as f64) as u64,
+                    (TICK_RATE * f64::from(self.stats.size.expect("no size on electrocute")))
+                        as u64,
                 ) {
                     self.complete = true;
                 }

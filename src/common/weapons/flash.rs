@@ -35,7 +35,8 @@ impl Flash {
     const BASE_SIZE: i32 = 1;
     const BASE_DAMAGE: i32 = 2;
 
-    /// Creates a new `Flash' with stats based on the player's current `Stats`.
+    /// Creates a new `Flash` with stats based on the player's current `Stats`.
+    #[must_use]
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Flash {
             base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
@@ -72,7 +73,6 @@ impl Poweruppable for Flash {
 
         for i in (from + 1)..=to {
             match i {
-                1 => {}
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
@@ -118,15 +118,15 @@ impl Poweruppable for Flash {
             3 => "Increase base damage by 2".into(),
             4 => "Increase damage scalar by 25%".into(),
             5 => "Increase damage scalar by 75%".into(),
-            _ => "".into(),
+            _ => String::new(),
         }
     }
 }
 
 impl Weapon for Flash {
-    /// Creates a DamageArea representing this weapon's attack originating from the wielder's position and facing direction.
+    /// Creates a `DamageArea` representing this weapon's attack originating from the wielder's position and facing direction.
     ///
-    /// The produced DamageArea is positioned immediately in front of the wielder according to their facing, carries this weapon's damage scaled by `wielder.stats.damage_mult` (rounded up to an integer), and includes this weapon's `WeaponStats`.
+    /// The produced `DamageArea` is positioned immediately in front of the wielder according to their facing, carries this weapon's damage scaled by `wielder.stats.damage_mult` (rounded up to an integer), and includes this weapon's `WeaponStats`.
     fn attack(&self, wielder: &Character, _: &[Enemy], layer: &Layer) -> DamageArea {
         let (x, y) = wielder.get_pos().clone().get();
         let direction = wielder.facing.clone();
@@ -157,12 +157,12 @@ impl Weapon for Flash {
         let mut entity = EntityCharacters::AttackBlackout(Style::new().bold().white());
 
         if let Some(style) = self.get_elemental_style() {
-            *entity.style_mut() = style
+            *entity.style_mut() = style;
         }
 
         DamageArea {
             area: Rc::new(RefCell::new(new_area)),
-            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
+            damage_amount: (f64::from(self.get_damage()) * wielder.stats.damage_mult).ceil() as i32,
             entity,
             duration: Duration::from_secs_f32(0.05),
             blink: false,
@@ -176,6 +176,6 @@ impl Weapon for Flash {
 
     /// Returns the damage of the sword, calculated from its base damage and scalar.
     fn get_damage(&self) -> i32 {
-        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+        (f64::from(self.base_damage) * self.damage_scalar).ceil() as i32
     }
 }

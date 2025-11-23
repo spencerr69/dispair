@@ -13,6 +13,7 @@ pub struct CharmOffsetAdd {
 }
 
 impl CharmOffsetAdd {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             stat_boost: Duration::from_secs(60),
@@ -53,7 +54,7 @@ impl Poweruppable for CharmOffsetAdd {
             3 => "Set your Hype Time to 2.5 minutes.".into(),
             4 => "Set your Hype Time to 3.5 minutes.".into(),
             5 => "Set your Hype Time to 5 minutes. Be prepared.".into(),
-            _ => "".into(),
+            _ => String::new(),
         }
     }
 

@@ -11,6 +11,7 @@ pub struct CharmDamageMult {
 }
 
 impl CharmDamageMult {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             stat_boost: 1.25,
@@ -51,7 +52,7 @@ impl Poweruppable for CharmDamageMult {
             3 => "Increase Damage Mult Mult by 0.5".into(),
             4 => "Increase Damage Mult Mult by 0.75".into(),
             5 => "Increase Damage Mult Mult by 2.0".into(),
-            _ => "".into(),
+            _ => String::new(),
         }
     }
 

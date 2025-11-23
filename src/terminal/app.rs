@@ -1,7 +1,9 @@
 //! This module defines the main application structure for the terminal UI.
 //! It handles the main loop, event handling, and switching between different views (menu, game, upgrades).
 
-use crate::common::{FRAME_RATE, TICK_RATE, center_horizontal, center_vertical};
+use crate::common::{
+    FRAME_RATE, TICK_RATE, center_horizontal, center_vertical, roguegame::GameState,
+};
 use std::fs::{File, OpenOptions};
 
 use crate::target_types::{KeyCode, KeyEvent};
@@ -25,9 +27,17 @@ use crate::common::{
 };
 
 /// Saves the player's progress to a JSON file.
+///
+/// # Panics
+///
+/// Panics if cannot find config directory via `dirs::config_dir()`
+///
+/// # Errors
+///
+/// Can throw `serde_json::Error` if it cannot create directory, cannot access save file, or cannot write to save file
 pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error> {
     let path = dirs::config_dir()
-        .unwrap()
+        .expect("Failed to get config directory")
         .join("dispair")
         .join("player_state.json");
 
@@ -48,9 +58,17 @@ pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error
 }
 
 /// Loads the player's progress from a JSON file.
+///
+/// # Panics
+///
+/// Panics if cannot find config directory via `dirs::config_dir()`
+///
+/// # Errors
+///
+/// Can throw `serde_json::Error` if it cannot create directory, cannot access save file, or cannot write to save file
 pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
     let path = dirs::config_dir()
-        .unwrap()
+        .expect("Failed to get config directory")
         .join("dispair")
         .join("player_state.json");
 
@@ -74,6 +92,7 @@ pub struct App {
 
 impl App {
     /// Creates a new `App` instance.
+    #[must_use]
     pub fn new() -> Self {
         let mut out = Self {
             game_view: None,
@@ -91,6 +110,10 @@ impl App {
     }
 
     /// Runs the main application loop.
+    ///
+    /// # Errors
+    ///
+    /// Can throw `color_eyre::Error` if it cannot enter or draw with tui.
     pub async fn run(&mut self) -> color_eyre::Result<()> {
         let mut tui = Tui::new()?
             .frame_rate(self.frame_rate)
@@ -102,7 +125,7 @@ impl App {
             tui.draw(|f| self.ui(f))?;
 
             if let Some(event) = tui.next().await {
-                self.handle_event(event);
+                self.handle_event(&event);
             }
 
             if self.exit {
@@ -114,7 +137,7 @@ impl App {
     }
 
     /// Handles events from the terminal.
-    pub fn handle_event(&mut self, event: Event) {
+    pub fn handle_event(&mut self, event: &Event) {
         match event {
             Event::Tick => {
                 self.on_tick();
@@ -122,7 +145,7 @@ impl App {
             Event::Render => {
                 self.on_frame();
             }
-            Event::Key(key_event) => self.handle_key_event(key_event),
+            Event::Key(key_event) => self.handle_key_event(*key_event),
             _ => {}
         }
     }
@@ -172,7 +195,7 @@ impl App {
 
     fn ui(&mut self, frame: &mut Frame) {
         if let Some(ref mut game) = self.game_view {
-            game.render(frame)
+            game.render(frame);
         } else if let Some(ref mut upgrades_menu) = self.upgrades_view {
             upgrades_menu.render_upgrades(frame);
         } else {
@@ -183,18 +206,21 @@ impl App {
     fn on_tick(&mut self) {
         if let Some(game) = &mut self.game_view {
             game.on_tick();
-            if game.game_over {
-                game.carnage_report = Some(CarnageReport::new(
-                    self.player_state.clone().unwrap(),
-                    game.player_state.clone(),
-                ));
-            }
-            if game.exit {
-                self.player_state = Some(game.player_state.clone());
-                self.player_state.as_mut().unwrap().refresh();
-                self.game_view = None;
-                save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
-                self.start_upgrades();
+            match game.game_state {
+                GameState::GameOver => {
+                    game.carnage_report = Some(CarnageReport::new(
+                        self.player_state.clone().unwrap(),
+                        game.player_state.clone(),
+                    ));
+                }
+                GameState::Exit => {
+                    self.player_state = Some(game.player_state.clone());
+                    self.player_state.as_mut().unwrap().refresh();
+                    self.game_view = None;
+                    save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
+                    self.start_upgrades();
+                }
+                _ => {}
             }
         }
 
@@ -220,7 +246,7 @@ impl App {
 
     fn start_game(&mut self) {
         if let Some(player_state) = &self.player_state {
-            self.game_view = Some(RogueGame::new(player_state.clone()));
+            self.game_view = Some(RogueGame::new(player_state));
         }
     }
 

@@ -21,6 +21,7 @@ pub mod upgrades;
 pub mod weapons;
 
 /// Centers a `Rect` vertically within a given area.
+#[must_use]
 pub fn center_vertical(area: Rect, height: u16) -> Rect {
     let [centered_area] = Layout::vertical([Constraint::Length(height)])
         .flex(ratatui::layout::Flex::Center)
@@ -29,6 +30,7 @@ pub fn center_vertical(area: Rect, height: u16) -> Rect {
 }
 
 /// Centers a `Rect` horizontally within a given area.
+#[must_use]
 pub fn center_horizontal(area: Rect, width: u16) -> Rect {
     let [centered_area] = Layout::horizontal([Constraint::Length(width)])
         .flex(ratatui::layout::Flex::Center)
@@ -37,6 +39,7 @@ pub fn center_horizontal(area: Rect, width: u16) -> Rect {
 }
 
 /// Centers a `Rect` both vertically and horizontally within a given area.
+#[must_use]
 pub fn center(area: Rect, width: u16, height: u16) -> Rect {
     let centered_area = center_vertical(area, height);
     center_horizontal(centered_area, width)

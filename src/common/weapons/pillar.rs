@@ -31,6 +31,7 @@ impl Pillar {
     const BASE_SIZE: i32 = 0;
     const BASE_DAMAGE: i32 = 3;
 
+    #[must_use]
     pub fn new(base_weapon_stats: WeaponStats) -> Self {
         Pillar {
             base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
@@ -58,7 +59,7 @@ impl Weapon for Pillar {
         area.constrain(layer);
 
         DamageArea {
-            damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
+            damage_amount: (f64::from(self.get_damage()) * wielder.stats.damage_mult).ceil() as i32,
             area: Rc::new(RefCell::new(area)),
             entity: EntityCharacters::AttackWeak(Style::new().gray()),
             duration: Duration::from_secs_f64(0.05),
@@ -68,7 +69,7 @@ impl Weapon for Pillar {
     }
 
     fn get_damage(&self) -> i32 {
-        (self.base_damage as f64 * self.damage_scalar).ceil() as i32
+        (f64::from(self.base_damage) * self.damage_scalar).ceil() as i32
     }
 
     fn get_element(&self) -> Option<crate::common::debuffs::Elements> {
@@ -97,7 +98,7 @@ impl Poweruppable for Pillar {
             3 => "Increase base damage by 2".into(),
             4 => "Increase damage scalar by 25%".into(),
             5 => "Increase damage scalar by 75%".into(),
-            _ => "".into(),
+            _ => String::new(),
         }
     }
 
@@ -111,7 +112,6 @@ impl Poweruppable for Pillar {
 
         for i in (from + 1)..=to {
             match i {
-                1 => {}
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;

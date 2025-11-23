@@ -32,6 +32,7 @@ pub struct PowerupPopup {
 }
 
 impl PowerupPopup {
+    #[must_use]
     pub fn new(
         current_weapons: &[WeaponWrapper],
         current_charms: &[CharmWrapper],
@@ -110,13 +111,13 @@ impl PowerupPopup {
             match selected_powerup.get_powerup_type() {
                 PowerupTypes::Weapon => {
                     let mut new_weapons = self.weapons.clone();
-                    new_weapons.iter_mut().for_each(|weapon| {
+                    for weapon in &mut new_weapons {
                         if weapon.get_inner().get_name().to_uppercase()
                             == selected_powerup.get_name().to_uppercase()
                         {
                             weapon.get_inner_mut().upgrade_self(selected_powerup);
                         }
-                    });
+                    }
 
                     if !new_weapons.iter().any(|weapon| {
                         weapon.get_inner().get_name().to_uppercase()
@@ -125,7 +126,7 @@ impl PowerupPopup {
                         WeaponWrapper::from_str(selected_powerup.get_name().to_uppercase().as_str())
                     {
                         new_weapon.populate_inner(self.base_weapon_stats.clone());
-                        new_weapons.push(new_weapon)
+                        new_weapons.push(new_weapon);
                     }
 
                     self.weapons = new_weapons;
@@ -133,13 +134,13 @@ impl PowerupPopup {
 
                 PowerupTypes::Charm => {
                     let mut new_charms = self.charms.clone();
-                    new_charms.iter_mut().for_each(|charm| {
+                    for charm in &mut new_charms {
                         if charm.get_inner().get_name().to_uppercase()
                             == selected_powerup.get_name().to_uppercase()
                         {
                             charm.get_inner_mut().upgrade_self(selected_powerup);
                         }
-                    });
+                    }
 
                     if !new_charms.iter().any(|charm| {
                         charm.get_inner().get_name().to_uppercase()
@@ -148,11 +149,11 @@ impl PowerupPopup {
                         CharmWrapper::from_str(selected_powerup.get_name().to_uppercase().as_str())
                     {
                         new_charm.populate_inner();
-                        new_charms.push(new_charm)
+                        new_charms.push(new_charm);
                     }
                     self.charms = new_charms;
                 }
-            };
+            }
 
             self.finished = true;
         }
@@ -178,7 +179,7 @@ impl PowerupPopup {
 
             let curr_level = choice.get_current_level();
             let new_level = choice.get_new_level();
-            let amount = format!("Level {} -> {}", curr_level, new_level);
+            let amount = format!("Level {curr_level} -> {new_level}");
 
             let powerup_text =
                 String::from_iter(vec![title, "\n".into(), desc, "\n".into(), amount]);

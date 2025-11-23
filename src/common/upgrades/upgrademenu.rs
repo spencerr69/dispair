@@ -31,6 +31,11 @@ pub struct UpgradesMenu {
 
 impl UpgradesMenu {
     /// Creates a new `UpgradesMenu` instance.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if the upgrade tree cannot be retrieved.
+    #[must_use]
     pub fn new(player_state: PlayerState) -> Self {
         let upgrade_tree = get_upgrade_tree().unwrap();
         let mut menu = Self {
@@ -77,6 +82,10 @@ impl UpgradesMenu {
     }
 
     /// Attempts to buy the currently selected upgrade.
+    ///
+    /// # Errors
+    ///
+    /// Will return a `String` error if user doesn't have enough gold or other issues are found
     pub fn buy_upgrade(&mut self) -> Result<(), String> {
         if let Some(current_node) = self.get_selected_node() {
             if current_node.cost.is_some() {
@@ -85,10 +94,10 @@ impl UpgradesMenu {
 
                 if self.player_state.amount_owned(&current_node.id) >= current_node.limit {
                     return Err("Upgrade already owned".to_string());
-                } else if next_cost as u128 > self.player_state.inventory.gold {
+                } else if u128::from(next_cost) > self.player_state.inventory.gold {
                     return Err("Not enough money".to_string());
                 }
-                self.player_state.inventory.gold -= next_cost as u128;
+                self.player_state.inventory.gold -= u128::from(next_cost);
                 let upgrade_count = self.player_state.upgrades.get_mut(&current_node.id);
                 if let Some(count) = upgrade_count {
                     *count += 1;
@@ -115,6 +124,7 @@ impl UpgradesMenu {
     }
 
     /// Navigates back to the previous layer in the upgrade tree.
+    #[allow(clippy::missing_panics_doc)]
     pub fn go_back(&mut self) {
         self.history.pop();
         self.current_layer = self.root_upgrade_tree.clone();
@@ -124,6 +134,7 @@ impl UpgradesMenu {
     }
 
     /// Returns the currently selected `UpgradeNode`.
+    #[must_use]
     pub fn get_selected_node(&self) -> Option<UpgradeNode> {
         let selected_index = self.upgrade_selection.selected()?;
         if self.current_layer.len() > selected_index {
@@ -145,9 +156,10 @@ impl UpgradesMenu {
     }
 
     /// Converts a vector of `UpgradeNode`s to a vector of `ListItem`s for rendering.
+    #[must_use]
     pub fn node_to_list(
-        upgrade_nodes: Vec<UpgradeNode>,
-        player_state: PlayerState,
+        upgrade_nodes: &[UpgradeNode],
+        player_state: &PlayerState,
     ) -> Vec<ListItem<'static>> {
         upgrade_nodes
             .iter()
@@ -157,7 +169,7 @@ impl UpgradesMenu {
                     .iter()
                     .all(|current| player_state.amount_owned(current) > 0);
 
-                if node.limit == 0 && Self::own_children(node.clone(), player_state.clone())
+                if node.limit == 0 && Self::own_children(node.clone(), player_state)
                     || (node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit)
                 {
                     Some(ListItem::from(node.get_display_title().clone().dark_gray()))
@@ -171,7 +183,9 @@ impl UpgradesMenu {
     }
 
     /// Recursively checks if all children of an upgrade node are owned.
-    pub fn own_children(upgrade_node: UpgradeNode, player_state: PlayerState) -> bool {
+    #[allow(clippy::missing_panics_doc)]
+    #[must_use]
+    pub fn own_children(upgrade_node: UpgradeNode, player_state: &PlayerState) -> bool {
         let have_required = upgrade_node
             .requires
             .iter()
@@ -184,7 +198,7 @@ impl UpgradesMenu {
             player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit
         } else {
             for child in upgrade_node.children.unwrap() {
-                if !Self::own_children(child, player_state.clone()) {
+                if !Self::own_children(child, player_state) {
                     return false;
                 }
             }
@@ -200,7 +214,7 @@ impl UpgradesMenu {
         let gold = self.player_state.inventory.gold;
         let current_layer = self.current_layer.clone();
 
-        let text: Vec<ListItem> = Self::node_to_list(current_layer, self.player_state.clone());
+        let text: Vec<ListItem> = Self::node_to_list(&current_layer, &self.player_state);
 
         let horizontal = Layout::horizontal([Constraint::Percentage(70), Constraint::Fill(1)]);
         let [left, right] = horizontal.areas(inner);
@@ -230,7 +244,7 @@ impl UpgradesMenu {
                 current_upgrade.next_cost(self.player_state.amount_owned(&current_upgrade.id))
             ));
         } else if current_upgrade.has_children() {
-            upgrade_cost = Line::from("> enter folder")
+            upgrade_cost = Line::from("> enter folder");
         }
 
         let mut upgrade_amount = Line::from("");

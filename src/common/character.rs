@@ -123,8 +123,9 @@ impl Character {
     ///
     /// A `Character` populated with position, facing, health, stats, entity character,
     /// and weapons derived from the provided `player_state`.
-    pub fn new(player_state: PlayerState) -> Self {
-        let stats = player_state.stats;
+    #[must_use]
+    pub fn new(current_player_state: PlayerState) -> Self {
+        let stats = current_player_state.stats;
         let weapon_stats = stats.weapon_stats.clone();
         let max_health = stats.player_stats.health;
         let player_stats = stats.player_stats;

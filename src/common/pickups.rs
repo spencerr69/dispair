@@ -16,7 +16,7 @@ pub trait Pickupable {
     /// Animates the pickup based on the current game tick.
     fn animate(&mut self, tick: u64);
 
-    /// sets picked_up to true and returns pickupeffect
+    /// sets `picked_up` to true and returns pickupeffect
     fn on_pickup(&mut self) -> PickupEffect;
 
     fn is_picked_up(&self) -> bool;
@@ -41,6 +41,7 @@ pub struct PowerupOrb {
 
 impl PowerupOrb {
     /// Creates a new `PowerupOrb` at the specified position.
+    #[must_use]
     pub fn new(position: Position) -> Self {
         PowerupOrb {
             entity_char: EntityCharacters::Orb(Style::new()),
@@ -76,7 +77,6 @@ impl Pickupable for PowerupOrb {
                     Color::LightGreen => style.fg(Color::LightBlue),
                     Color::LightBlue => style.fg(Color::LightMagenta),
                     Color::LightMagenta => style.fg(Color::LightCyan),
-                    Color::LightCyan => style.fg(Color::LightRed),
                     _ => style.fg(Color::LightRed),
                 },
             };

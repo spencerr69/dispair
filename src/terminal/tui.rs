@@ -68,6 +68,10 @@ pub struct Tui {
 
 impl Tui {
     /// Creates a new `Tui` instance.
+    ///
+    /// # Errors
+    ///
+    /// This will create errors if terminal cannot be set up
     pub fn new() -> Result<Self> {
         let tick_rate = 4.0;
         let frame_rate = 60.0;
@@ -95,36 +99,42 @@ impl Tui {
     }
 
     /// Sets the tick rate of the TUI.
+    #[must_use]
     pub fn tick_rate(mut self, tick_rate: f64) -> Self {
         self.tick_rate = tick_rate;
         self
     }
 
     /// Sets the frame rate of the TUI.
+    #[must_use]
     pub fn frame_rate(mut self, frame_rate: f64) -> Self {
         self.frame_rate = frame_rate;
         self
     }
 
     /// Starts the TUI event loop.
+    ///
+    /// # Panics
+    ///
+    /// Can panic if there is event tx issue
     pub fn start(&mut self) {
         let tick_delay = std::time::Duration::from_secs_f64(1.0 / self.tick_rate);
         let render_delay = std::time::Duration::from_secs_f64(1.0 / self.frame_rate);
         self.cancel();
         self.cancellation_token = CancellationToken::new();
-        let _cancellation_token = self.cancellation_token.clone();
-        let _event_tx = self.event_tx.clone();
+        let cancellation_token = self.cancellation_token.clone();
+        let event_tx = self.event_tx.clone();
         self.task = tokio::spawn(async move {
             let mut reader = crossterm::event::EventStream::new();
             let mut tick_interval = tokio::time::interval(tick_delay);
             let mut render_interval = tokio::time::interval(render_delay);
-            _event_tx.send(Event::Init).unwrap();
+            event_tx.send(Event::Init).unwrap();
             loop {
                 let tick_delay = tick_interval.tick();
                 let render_delay = render_interval.tick();
                 let crossterm_event = reader.next().fuse();
                 tokio::select! {
-                  _ = _cancellation_token.cancelled() => {
+                  () = cancellation_token.cancelled() => {
                     break;
                   }
                   maybe_event = crossterm_event => {
@@ -133,37 +143,37 @@ impl Tui {
                         match evt {
                           CrosstermEvent::Key(key) => {
                             if key.kind == KeyEventKind::Press {
-                              _event_tx.send(Event::Key(key)).unwrap();
+                              event_tx.send(Event::Key(key)).unwrap();
                             }
                           },
                           CrosstermEvent::Mouse(mouse) => {
-                            _event_tx.send(Event::Mouse(mouse)).unwrap();
+                            event_tx.send(Event::Mouse(mouse)).unwrap();
                           },
                           CrosstermEvent::Resize(x, y) => {
-                            _event_tx.send(Event::Resize(x, y)).unwrap();
+                            event_tx.send(Event::Resize(x, y)).unwrap();
                           },
                           CrosstermEvent::FocusLost => {
-                            _event_tx.send(Event::FocusLost).unwrap();
+                            event_tx.send(Event::FocusLost).unwrap();
                           },
                           CrosstermEvent::FocusGained => {
-                            _event_tx.send(Event::FocusGained).unwrap();
+                            event_tx.send(Event::FocusGained).unwrap();
                           },
                           CrosstermEvent::Paste(s) => {
-                            _event_tx.send(Event::Paste(s)).unwrap();
+                            event_tx.send(Event::Paste(s)).unwrap();
                           },
                         }
                       }
                       Some(Err(_)) => {
-                        _event_tx.send(Event::Error).unwrap();
+                        event_tx.send(Event::Error).unwrap();
                       }
                       None => {},
                     }
                   },
                   _ = tick_delay => {
-                      _event_tx.send(Event::Tick).unwrap();
+                      event_tx.send(Event::Tick).unwrap();
                   },
                   _ = render_delay => {
-                      _event_tx.send(Event::Render).unwrap();
+                      event_tx.send(Event::Render).unwrap();
                   },
                 }
             }
@@ -171,7 +181,7 @@ impl Tui {
     }
 
     /// Stops the TUI event loop.
-    pub fn stop(&self) -> Result<()> {
+    pub fn stop(&self) {
         self.cancel();
         let mut counter = 0;
         while !self.task.is_finished() {
@@ -184,10 +194,13 @@ impl Tui {
                 break;
             }
         }
-        Ok(())
     }
 
     /// Enters the alternate screen and enables raw mode.
+    ///
+    /// # Errors
+    ///
+    /// Will error if there are any errors from crossterm
     pub fn enter(&mut self) -> Result<()> {
         crossterm::terminal::enable_raw_mode()?;
         crossterm::execute!(std::io::stderr(), EnterAlternateScreen, cursor::Hide)?;
@@ -202,8 +215,12 @@ impl Tui {
     }
 
     /// Exits the alternate screen and disables raw mode.
+    ///
+    /// # Errors
+    ///
+    /// Will error if there are any errors from crossterm
     pub fn exit(&mut self) -> Result<()> {
-        self.stop()?;
+        self.stop();
         if crossterm::terminal::is_raw_mode_enabled()? {
             self.flush()?;
             if self.paste {
@@ -239,6 +256,10 @@ impl Tui {
 }
 
 /// Restores the terminal to its original state without requiring self.
+///
+/// # Errors
+///
+/// Will error if there are any errors from crossterm
 pub fn restore() -> io::Result<()> {
     crossterm::execute!(std::io::stderr(), LeaveAlternateScreen, cursor::Show)?;
     crossterm::terminal::disable_raw_mode()?;

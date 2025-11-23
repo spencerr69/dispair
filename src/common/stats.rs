@@ -114,7 +114,7 @@ impl Default for GameStats {
 }
 
 impl Default for PlayerStats {
-    /// Constructs a PlayerStats with baseline health, damage, movement, and shove defaults.
+    /// Constructs a `PlayerStats` with baseline health, damage, movement, and shove defaults.
     fn default() -> Self {
         Self {
             base_health: 10,
