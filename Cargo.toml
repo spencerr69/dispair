@@ -33,7 +33,7 @@ web-time = "1.1.0"
 
 
 [profile.dev]
-opt-level = 1
+opt-level = 3
 
 [dependencies]
 strum = {version = "0.27.2", features = ["derive"]}
