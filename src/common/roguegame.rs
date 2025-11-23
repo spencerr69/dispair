@@ -441,13 +441,15 @@ impl RogueGame {
     fn scale_enemies(&mut self) {
         let init_enemy_health = 3.;
         let init_enemy_damage = 1.;
-        let init_enemy_spawn_secs = 0.4 * self.player_state.stats.game_stats.enemy_spawn_mult;
-        let init_enemy_move_secs = 2. * self.player_state.stats.game_stats.enemy_move_mult;
+        let init_enemy_spawn_secs =
+            Self::DEFAULT_SPAWN_P_S * self.player_state.stats.game_stats.enemy_spawn_mult;
+        let init_enemy_move_secs =
+            Self::DEFAULT_MOVE_P_S * self.player_state.stats.game_stats.enemy_move_mult;
         let init_enemy_gold: u128 = 1;
         let init_enemy_xp: u128 = 1;
 
         self.enemy_health =
-            (init_enemy_health * (self.timescaler.scale_amount).max(1.)).ceil() as i32;
+            (init_enemy_health * (self.timescaler.scale_amount * 5.).max(1.)).ceil() as i32;
 
         self.enemy_damage =
             (init_enemy_damage * (self.timescaler.scale_amount / 5.).max(1.)).ceil() as i32;
@@ -455,7 +457,7 @@ impl RogueGame {
             Self::per_sec_to_tick_count(init_enemy_spawn_secs * self.timescaler.scale_amount);
 
         self.enemy_move_ticks = Self::per_sec_to_tick_count(
-            init_enemy_move_secs * (self.timescaler.scale_amount / 3.5).max(1.),
+            init_enemy_move_secs * (self.timescaler.scale_amount / 6.).max(1.),
         );
 
         self.enemy_drops = EnemyDrops {

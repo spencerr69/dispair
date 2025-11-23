@@ -49,9 +49,9 @@ impl Poweruppable for CharmOffsetAdd {
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
             1 => "Set your Hype Time to 1 minutes.".into(),
-            2 => "Set your Hype Time to 2 minutes.".into(),
-            3 => "Set your Hype Time to 3 minutes.".into(),
-            4 => "Set your Hype Time to 4 minutes.".into(),
+            2 => "Set your Hype Time to 1.5 minutes.".into(),
+            3 => "Set your Hype Time to 2.5 minutes.".into(),
+            4 => "Set your Hype Time to 3.5 minutes.".into(),
             5 => "Set your Hype Time to 5 minutes. Be prepared.".into(),
             _ => "".into(),
         }
@@ -69,9 +69,9 @@ impl Poweruppable for CharmOffsetAdd {
             match i {
                 1 => self.stat_boost = Duration::from_secs(60),
                 2 => self.stat_boost = Duration::from_secs((1.5 * 60.) as u64),
-                3 => self.stat_boost = Duration::from_secs(2 * 60),
-                4 => self.stat_boost = Duration::from_secs((2.5 * 60.) as u64),
-                5 => self.stat_boost = Duration::from_secs(3 * 60),
+                3 => self.stat_boost = Duration::from_secs((2.5 * 60.) as u64),
+                4 => self.stat_boost = Duration::from_secs((3.5 * 60.) as u64),
+                5 => self.stat_boost = Duration::from_secs(5 * 60),
                 _ => {}
             }
         }

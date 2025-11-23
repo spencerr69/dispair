@@ -176,6 +176,12 @@ impl PlayerState {
             game_stats.height += growth_amount as usize;
             game_stats.enemy_spawn_mult += 0.5 * amount_owned as f64
         }
+        // upgrade 43 spawn speed
+        if self.upgrade_owned("43") {
+            let amount_owned = self.amount_owned("43");
+
+            game_stats.enemy_spawn_mult += 0.3 * amount_owned as f64
+        }
 
         if self.upgrade_owned("51") {
             let amount_owned = self.amount_owned("51");

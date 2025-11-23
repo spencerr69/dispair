@@ -114,7 +114,7 @@ impl Poweruppable for Flash {
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
             1 => "FLASH will create a brief damaging field directly in front of you.".into(),
-            2 => "Increase size by 1, increase base damage by 1".into(),
+            2 => "Increase size by 1, increase base damage by 1. Imbue FLASH with Flame element, burning enemies when hit.".into(),
             3 => "Increase base damage by 2".into(),
             4 => "Increase damage scalar by 25%".into(),
             5 => "Increase damage scalar by 75%".into(),

@@ -145,7 +145,7 @@ impl OnTickEffect for Debuff {
                 None
             }
             DebuffTypes::FlameIgnite => {
-                if !tickcount.is_multiple_of(3) || self.complete {
+                if !tickcount.is_multiple_of(6) || self.complete {
                     return None;
                 }
 
@@ -166,7 +166,7 @@ impl OnTickEffect for Debuff {
                     self.complete = true;
 
                     let proc = Proc {
-                        chance: 100,
+                        chance: 80,
                         debuff: Debuff {
                             debuff_type: DebuffTypes::FlameBurn,
                             stats: self.stats.clone(),
@@ -176,6 +176,10 @@ impl OnTickEffect for Debuff {
 
                     let mut procs = HashMap::new();
                     procs.insert("burn".into(), proc);
+
+                    enemy
+                        .debuffs
+                        .retain(|d| d.debuff_type != DebuffTypes::FlameBurn);
 
                     Some(DamageArea {
                         damage_amount: self.stats.damage.expect("no damage?") * 10,

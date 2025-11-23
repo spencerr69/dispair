@@ -80,7 +80,7 @@ impl Debuffable for Enemy {
         if roll <= proc.chance {
             match proc.debuff.debuff_type {
                 DebuffTypes::FlameBurn => {
-                    if self.count_debuff(&proc.debuff) < 1 {
+                    if self.count_debuff(&proc.debuff) < 2 {
                         self.debuffs.push(proc.debuff.clone());
                     } else {
                         self.try_proc(&Proc {

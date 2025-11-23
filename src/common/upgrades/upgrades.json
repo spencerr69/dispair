@@ -285,6 +285,18 @@
                 ],
                 "children": null,
                 "costscale_override": 2
+            },
+            {
+                "title": "GREED::\\spawn_speed",
+                "description": "increase enemy spawn speed by +30%",
+                "id": "43",
+                "cost": 5000,
+                "limit": 5,
+                "requires": [
+                    "A"
+                ],
+                "children": null,
+                "costscale_override": 2
             }
         ]
     },

@@ -139,7 +139,7 @@ impl Poweruppable for Lightning {
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
             1 => "LIGHTNING will seek the nearest enemy and damage them.".into(),
-            2 => "Increase bounces by 1, increase base damage by 1".into(),
+            2 => "Increase bounces by 1, increase base damage by 1. Imbue LIGHTNING with Shock element, giving a chance to charge enemies on hit.".into(),
             3 => "Increase bounces by 1, increase base damage by 2".into(),
             4 => "Increase bounces by 1, increase damage scalar by 25%".into(),
             5 => "Double bounces, increase damage scalar by 75%".into(),
@@ -166,7 +166,7 @@ impl Poweruppable for Lightning {
                     self.stats.procs.insert(
                         "charge".into(),
                         Proc {
-                            chance: (10. * honage).ceil().min(100.) as u32,
+                            chance: (40. * honage).ceil().min(100.) as u32,
                             debuff: Debuff {
                                 debuff_type: DebuffTypes::ShockCharge,
                                 complete: false,
