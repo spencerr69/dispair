@@ -166,7 +166,7 @@ impl Poweruppable for Lightning {
                     self.stats.procs.insert(
                         "charge".into(),
                         Proc {
-                            chance: (40. * honage).ceil().min(100.) as u32,
+                            chance: (20. * honage).ceil().min(100.) as u32,
                             debuff: Debuff {
                                 debuff_type: DebuffTypes::ShockCharge,
                                 complete: false,

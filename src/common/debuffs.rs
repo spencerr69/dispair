@@ -169,7 +169,10 @@ impl OnTickEffect for Debuff {
                         chance: 80,
                         debuff: Debuff {
                             debuff_type: DebuffTypes::FlameBurn,
-                            stats: self.stats.clone(),
+                            stats: DebuffStats {
+                                damage: Some(self.stats.damage.unwrap_or(1) * 3),
+                                ..self.stats.clone()
+                            },
                             complete: false,
                         },
                     };
@@ -279,6 +282,8 @@ impl OnDamageEffect for Debuff {
                     }
                 }
 
+                positions.retain(|pos| pos != &begin_pos);
+
                 let mut area = ChaosArea::new(positions);
 
                 let proc = Proc {
@@ -316,7 +321,7 @@ impl OnDamageEffect for Debuff {
                 });
 
                 enemy.got_hit = (false, 0);
-                // self.complete = true;
+                self.complete = true;
 
                 out
             }
