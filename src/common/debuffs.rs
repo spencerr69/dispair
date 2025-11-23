@@ -1,5 +1,6 @@
 use crate::{
     common::{
+        TICK_RATE,
         coords::ChaosArea,
         enemy::{Enemy, move_to_point_granular},
         stats::WeaponStats,
@@ -192,7 +193,9 @@ impl OnTickEffect for Debuff {
                 }
             }
             DebuffTypes::ShockElectrocute => {
-                if tickcount.is_multiple_of(10) {
+                if tickcount.is_multiple_of(
+                    (TICK_RATE * self.stats.size.expect("no size on electrocute") as f64) as u64,
+                ) {
                     self.complete = true;
                 }
                 None
@@ -278,7 +281,7 @@ impl OnDamageEffect for Debuff {
                     debuff: Debuff {
                         debuff_type: DebuffTypes::ShockElectrocute,
                         stats: DebuffStats {
-                            size: None,
+                            size: self.stats.size,
                             damage: None,
                             on_death_effect: false,
                             on_damage_effect: false,
@@ -295,11 +298,7 @@ impl OnDamageEffect for Debuff {
 
                 area.constrain(layer);
 
-                enemy.got_hit = (false, 0);
-
-                self.complete = true;
-
-                Some(DamageArea {
+                let out = Some(DamageArea {
                     damage_amount: enemy.got_hit.1,
                     area: Rc::new(RefCell::new(area)),
                     entity: EntityCharacters::AttackMist(Style::new().light_yellow()),
@@ -309,7 +308,12 @@ impl OnDamageEffect for Debuff {
                         procs,
                         ..Default::default()
                     }),
-                })
+                });
+
+                enemy.got_hit = (false, 0);
+                // self.complete = true;
+
+                out
             }
             _ => None,
         }

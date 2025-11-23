@@ -273,39 +273,46 @@ impl RogueGame {
             .into_iter()
             .filter_map(|mut e| {
                 if !e.debuffs.get_on_tick_effects().is_empty() {
-                    e.debuffs
+                    e.debuffs = e
+                        .debuffs
                         .clone()
-                        .iter_mut()
-                        .map(|d| d.on_tick(&mut e, &self.layer_base, self.tickcount % 60))
-                        .for_each(|maybe_damage_area| {
-                            if let Some(damage_area) = maybe_damage_area {
+                        .into_iter()
+                        .map(|mut d| {
+                            if let Some(damage_area) =
+                                d.on_tick(&mut e, &self.layer_base, self.tickcount)
+                            {
                                 damage_areas.push(damage_area);
                             }
+                            d
                         })
+                        .collect();
                 }
 
                 if !e.debuffs.get_on_damage_effects().is_empty() {
-                    e.debuffs
+                    e.debuffs = e
+                        .debuffs
                         .clone()
-                        .iter_mut()
-                        .map(|d| d.on_damage(&mut e, &self.layer_base, &self.enemies))
-                        .for_each(|maybe_damage_area| {
-                            if let Some(damage_area) = maybe_damage_area {
+                        .into_iter()
+                        .map(|mut d| {
+                            if let Some(damage_area) =
+                                d.on_damage(&mut e, &self.layer_base, &self.enemies)
+                            {
                                 damage_areas.push(damage_area);
                             }
-                        });
+                            d
+                        })
+                        .collect();
                 }
+
+                e.debuffs.retain(|d| !d.complete);
 
                 if !e.is_alive() {
                     if !e.debuffs.get_on_death_effects().is_empty() {
-                        e.debuffs
-                            .iter()
-                            .map(|d| d.on_death(e.clone(), &self.layer_base))
-                            .for_each(|maybe_damage_area| {
-                                if let Some(damage_area) = maybe_damage_area {
-                                    damage_areas.push(damage_area);
-                                }
-                            });
+                        e.debuffs.iter().for_each(|d| {
+                            if let Some(damage_area) = d.on_death(e.clone(), &self.layer_base) {
+                                damage_areas.push(damage_area);
+                            }
+                        });
                     }
 
                     self.consume_drops(e.get_drops());
