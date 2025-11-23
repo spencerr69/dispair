@@ -1,6 +1,5 @@
 use crate::{
     common::{
-        TICK_RATE,
         coords::ChaosArea,
         enemy::{Enemy, move_to_point_granular},
         stats::WeaponStats,
@@ -279,9 +278,12 @@ impl OnDamageEffect for Debuff {
                     debuff: Debuff {
                         debuff_type: DebuffTypes::ShockElectrocute,
                         stats: DebuffStats {
+                            size: None,
+                            damage: None,
+                            on_death_effect: false,
                             on_damage_effect: false,
                             on_tick_effect: true,
-                            ..self.stats.clone()
+                            misc_value: None,
                         },
                         complete: false,
                     },

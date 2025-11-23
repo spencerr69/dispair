@@ -272,7 +272,6 @@ impl RogueGame {
             .clone()
             .into_iter()
             .filter_map(|mut e| {
-                e.debuffs.retain(|debuff| !debuff.complete);
                 if !e.debuffs.get_on_tick_effects().is_empty() {
                     e.debuffs
                         .clone()
