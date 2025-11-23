@@ -6,7 +6,7 @@ use crate::{
         TICK_RATE, center,
         character::{Character, Damageable, Movable},
         coords::{Area, Direction, Position, SquareArea},
-        debuffs::{GetDebuffTypes, OnDeathEffect, OnTickEffect},
+        debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect},
         effects::DamageEffect,
         enemy::*,
         level::Level,
@@ -277,12 +277,24 @@ impl RogueGame {
                     e.debuffs
                         .clone()
                         .iter_mut()
-                        .map(|d| d.on_tick(&mut e, &self.layer_base, self.tickcount))
+                        .map(|d| d.on_tick(&mut e, &self.layer_base, self.tickcount % 60))
                         .for_each(|maybe_damage_area| {
                             if let Some(damage_area) = maybe_damage_area {
                                 damage_areas.push(damage_area);
                             }
                         })
+                }
+
+                if !e.debuffs.get_on_damage_effects().is_empty() {
+                    e.debuffs
+                        .clone()
+                        .iter_mut()
+                        .map(|d| d.on_damage(&mut e, &self.layer_base, &self.enemies))
+                        .for_each(|maybe_damage_area| {
+                            if let Some(damage_area) = maybe_damage_area {
+                                damage_areas.push(damage_area);
+                            }
+                        });
                 }
 
                 if !e.is_alive() {

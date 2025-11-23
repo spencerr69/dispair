@@ -91,6 +91,7 @@ impl Poweruppable for Flash {
                                     misc_value: None,
                                     on_death_effect: false,
                                     on_tick_effect: true,
+                                    on_damage_effect: false,
                                 },
                             },
                         },

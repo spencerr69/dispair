@@ -130,6 +130,7 @@ impl PlayerState {
                             misc_value: None,
                             on_death_effect: true,
                             on_tick_effect: false,
+                            on_damage_effect: false,
                         },
                         complete: false,
                         debuff_type: DebuffTypes::MarkedForExplosion,
@@ -204,6 +205,7 @@ impl PlayerState {
             game_stats.height = 100;
             player_stats.base_health = 10000;
             game_stats.time_offset = Duration::from_secs(60);
+            self.inventory.add_gold(100000);
         }
 
         //cleanups

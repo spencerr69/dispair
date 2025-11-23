@@ -87,6 +87,7 @@ pub struct DebuffStats {
     pub misc_value: Option<u32>,
     pub on_death_effect: bool,
     pub on_tick_effect: bool,
+    pub on_damage_effect: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

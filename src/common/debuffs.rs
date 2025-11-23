@@ -1,5 +1,10 @@
 use crate::{
-    common::{enemy::Enemy, stats::WeaponStats},
+    common::{
+        TICK_RATE,
+        coords::ChaosArea,
+        enemy::{Enemy, move_to_point_granular},
+        stats::WeaponStats,
+    },
     target_types::Duration,
 };
 
@@ -22,6 +27,7 @@ pub type Debuffs = Vec<Debuff>;
 pub trait GetDebuffTypes {
     fn get_on_death_effects(&self) -> Vec<&Debuff>;
     fn get_on_tick_effects(&self) -> Vec<&Debuff>;
+    fn get_on_damage_effects(&self) -> Vec<&Debuff>;
 }
 
 impl GetDebuffTypes for Debuffs {
@@ -32,17 +38,23 @@ impl GetDebuffTypes for Debuffs {
     fn get_on_tick_effects(&self) -> Vec<&Debuff> {
         self.iter().filter(|d| d.stats.on_tick_effect).collect()
     }
+
+    fn get_on_damage_effects(&self) -> Vec<&Debuff> {
+        self.iter().filter(|d| d.stats.on_damage_effect).collect()
+    }
 }
 
 #[derive(Serialize, Clone, Deserialize, Debug, Copy, PartialEq)]
 pub enum Elements {
     Flame(f64),
+    Shock(f64),
 }
 
 impl Elements {
     pub fn get_honage(&self) -> f64 {
         match self {
             Elements::Flame(honage) => *honage,
+            Elements::Shock(honage) => *honage,
         }
     }
 }
@@ -53,6 +65,8 @@ pub enum DebuffTypes {
     MarkedForExplosion,
     FlameBurn,
     FlameIgnite,
+    ShockCharge,
+    ShockElectrocute,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -114,6 +128,10 @@ pub trait OnTickEffect {
 
 impl OnTickEffect for Debuff {
     fn on_tick(&mut self, enemy: &mut Enemy, layer: &Layer, tickcount: u64) -> Option<DamageArea> {
+        if self.complete {
+            return None;
+        }
+
         match self.debuff_type {
             DebuffTypes::FlameBurn => {
                 let ticks = crate::common::TICK_RATE as u64;
@@ -173,6 +191,123 @@ impl OnTickEffect for Debuff {
                 } else {
                     None
                 }
+            }
+            DebuffTypes::ShockElectrocute => {
+                if tickcount.is_multiple_of(10) {
+                    self.complete = true;
+                }
+                None
+            }
+            _ => None,
+        }
+    }
+}
+
+pub trait OnDamageEffect {
+    fn on_damage(
+        &mut self,
+        enemy: &mut Enemy,
+        layer: &Layer,
+        enemies: &[Enemy],
+    ) -> Option<DamageArea>;
+}
+
+impl OnDamageEffect for Debuff {
+    fn on_damage(
+        &mut self,
+        enemy: &mut Enemy,
+        layer: &Layer,
+        enemies: &[Enemy],
+    ) -> Option<DamageArea> {
+        if !enemy.got_hit.0 || self.complete {
+            return None;
+        }
+
+        match self.debuff_type {
+            DebuffTypes::ShockCharge => {
+                let begin_pos = enemy.get_pos().clone();
+
+                let mut positions = Vec::new();
+
+                let mut enemies = Vec::from(enemies);
+
+                let size = self.stats.size.unwrap_or(1);
+
+                for _ in 0..size {
+                    let closest = enemies.iter().reduce(|acc, enemy| {
+                        let (dist_x, dist_y) = enemy.get_pos().get_distance(&begin_pos);
+                        let enemy_total_dist = dist_x.abs() + dist_y.abs();
+
+                        let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(&begin_pos);
+                        let acc_total_dist = acc_dist_x.abs() + acc_dist_y.abs();
+
+                        if enemy_total_dist < acc_total_dist && enemy_total_dist > 2
+                            || acc_total_dist <= 2
+                        {
+                            enemy
+                        } else {
+                            acc
+                        }
+                    });
+
+                    let mut current_pos = begin_pos.clone();
+
+                    if let Some(closest) = closest {
+                        let desired_pos = closest.get_pos().clone();
+
+                        while current_pos != desired_pos {
+                            positions.push(current_pos.clone());
+                            (current_pos, _) =
+                                move_to_point_granular(&current_pos, &desired_pos, false);
+                        }
+
+                        (current_pos, _) =
+                            move_to_point_granular(&current_pos, &desired_pos, false);
+                        positions.push(current_pos.clone());
+
+                        enemies = enemies
+                            .iter()
+                            .filter_map(|e| if e != closest { Some(e.clone()) } else { None })
+                            .collect();
+                    }
+                }
+
+                let mut area = ChaosArea::new(positions);
+
+                let proc = Proc {
+                    chance: 100,
+                    debuff: Debuff {
+                        debuff_type: DebuffTypes::ShockElectrocute,
+                        stats: DebuffStats {
+                            on_damage_effect: false,
+                            on_tick_effect: true,
+                            ..self.stats.clone()
+                        },
+                        complete: false,
+                    },
+                };
+
+                let mut procs = HashMap::new();
+
+                procs.insert("electrocute".into(), proc);
+
+                area.constrain(layer);
+
+                enemy.got_hit = (false, 0);
+
+                self.complete = true;
+
+                Some(DamageArea {
+                    damage_amount: enemy.got_hit.1,
+                    area: Rc::new(RefCell::new(area)),
+                    entity: EntityCharacters::AttackMist(Style::new().light_yellow()),
+                    duration: Duration::from_secs_f64(0.01),
+                    blink: false,
+                    weapon_stats: Some(WeaponStats {
+                        procs,
+                        ..Default::default()
+                    }),
+                })
             }
             _ => None,
         }

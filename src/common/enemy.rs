@@ -58,6 +58,8 @@ pub struct Enemy {
     drops: EnemyDrops,
 
     pub debuffs: Vec<Debuff>,
+
+    pub got_hit: (bool, i32),
 }
 
 /// A trait for entities that can have debuffs applied to them.
@@ -156,6 +158,8 @@ impl EnemyBehaviour for Enemy {
             drops,
 
             debuffs: Vec::new(),
+
+            got_hit: (false, 0),
         }
     }
 
@@ -169,6 +173,13 @@ impl EnemyBehaviour for Enemy {
         layer: &Layer,
         damage_effects: &mut Vec<DamageEffect>,
     ) -> Option<(Position, Direction)> {
+        self.debuffs = self
+            .debuffs
+            .iter()
+            .filter(|debuff| !debuff.complete)
+            .cloned()
+            .collect();
+
         self.prev_position = self.position.clone();
 
         self.change_style_with_debuff();
@@ -181,6 +192,14 @@ impl EnemyBehaviour for Enemy {
                 Duration::from_secs_f64(0.2),
                 true,
             ));
+        }
+
+        if self
+            .debuffs
+            .iter()
+            .any(|debuff| !debuff.complete && debuff.debuff_type == DebuffTypes::ShockElectrocute)
+        {
+            return None;
         }
 
         let (desired_pos, desired_facing) =
@@ -274,10 +293,13 @@ impl Damageable for Enemy {
     }
 
     fn take_damage(&mut self, damage: i32) {
-        let normal_style = Style::default();
-        let hurt_style = Style::default().gray().italic();
+        let current_style = *self.entitychar.style_mut();
+
+        let normal_style = current_style;
+        let hurt_style = current_style.italic();
 
         self.health -= damage;
+        self.got_hit = (true, damage);
 
         if self.health >= self.max_health / 2 {
             self.entitychar

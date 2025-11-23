@@ -119,6 +119,7 @@ pub trait Weapon {
     fn get_elemental_style(&self) -> Option<Style> {
         self.get_element().map(|element| match element {
             Elements::Flame(_) => Some(Style::new().red()),
+            Elements::Shock(_) => Some(Style::new().light_yellow()),
         })?
     }
 }

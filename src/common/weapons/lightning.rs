@@ -1,7 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    common::{character::Movable, coords::Area},
+    common::{
+        character::Movable,
+        coords::Area,
+        debuffs::{Debuff, DebuffTypes, Elements},
+        stats::{DebuffStats, Proc},
+    },
     target_types::Duration,
 };
 
@@ -24,6 +29,7 @@ pub struct Lightning {
     base_damage: i32,
     damage_scalar: f64,
     stats: WeaponStats,
+    element: Option<Elements>,
 }
 
 impl Lightning {
@@ -38,6 +44,7 @@ impl Lightning {
                 size: Self::BASE_SIZE + base_weapon_stats.size,
                 ..base_weapon_stats
             },
+            element: None,
         }
     }
 }
@@ -91,10 +98,16 @@ impl Weapon for Lightning {
         let mut area = ChaosArea::new(positions);
         area.constrain(layer);
 
+        let mut entity = EntityCharacters::AttackMist(Style::new().gray());
+
+        if let Some(style) = self.get_elemental_style() {
+            *entity.style_mut() = style
+        }
+
         DamageArea {
             damage_amount: (self.get_damage() as f64 * wielder.stats.damage_mult).ceil() as i32,
             area: Rc::new(RefCell::new(area)),
-            entity: EntityCharacters::AttackMist(Style::new().white()),
+            entity,
             duration: Duration::from_secs_f64(0.1),
             blink: false,
             weapon_stats: Some(self.stats.clone()),
@@ -148,6 +161,26 @@ impl Poweruppable for Lightning {
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
+                    self.element = Some(Elements::Shock(self.stats.elemental_honage));
+                    let honage = self.element.expect("something crazy happened").get_honage();
+                    self.stats.procs.insert(
+                        "charge".into(),
+                        Proc {
+                            chance: (10. * honage).ceil().min(100.) as u32,
+                            debuff: Debuff {
+                                debuff_type: DebuffTypes::ShockCharge,
+                                complete: false,
+                                stats: DebuffStats {
+                                    size: Some((3. * honage).ceil() as i32),
+                                    damage: Some((1. * honage).ceil() as i32),
+                                    misc_value: None,
+                                    on_death_effect: false,
+                                    on_tick_effect: false,
+                                    on_damage_effect: true,
+                                },
+                            },
+                        },
+                    );
                 }
                 3 => {
                     self.stats.size += 1;
