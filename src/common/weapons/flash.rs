@@ -2,25 +2,22 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     common::{
+        character::Character,
         character::Movable,
         coords::Area,
+        coords::{Direction, Position, SquareArea},
         debuffs::{Debuff, DebuffTypes, Elements},
+        enemy::Enemy,
+        powerup::{DynPowerup, PowerupTypes, Poweruppable},
+        roguegame::{EntityCharacters, Layer},
+        stats::WeaponStats,
         stats::{DebuffStats, Proc},
+        weapons::{DamageArea, Weapon},
     },
     target_types::Duration,
 };
 
 use ratatui::style::{Style, Stylize};
-
-use crate::common::{
-    character::Character,
-    coords::{Direction, Position, SquareArea},
-    enemy::Enemy,
-    powerup::{DynPowerup, PowerupTypes, Poweruppable},
-    roguegame::{EntityCharacters, Layer},
-    stats::WeaponStats,
-    weapons::{DamageArea, Weapon},
-};
 
 /// A struct representing a FLASH weapon.
 #[derive(Clone)]
