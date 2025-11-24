@@ -44,9 +44,11 @@ impl CharmWrapper {
     #[must_use]
     pub fn get_inner(&self) -> &dyn Charm {
         match self {
-            CharmWrapper::DamageMult(damage_mult) => damage_mult.as_ref().unwrap(),
-            CharmWrapper::OffsetAdd(offset_add) => offset_add.as_ref().unwrap(),
-            CharmWrapper::AttackSpeed(attack_speed) => attack_speed.as_ref().unwrap(),
+            CharmWrapper::DamageMult(damage_mult) => damage_mult.as_ref().expect("No inner charm."),
+            CharmWrapper::OffsetAdd(offset_add) => offset_add.as_ref().expect("No inner charm."),
+            CharmWrapper::AttackSpeed(attack_speed) => {
+                attack_speed.as_ref().expect("No inner charm.")
+            }
         }
     }
     /// Get a mutable reference to the inner weapon.
@@ -56,9 +58,11 @@ impl CharmWrapper {
     /// Will panic if there is no inner weapon.
     pub fn get_inner_mut(&mut self) -> &mut dyn Charm {
         match self {
-            CharmWrapper::DamageMult(damage_mult) => damage_mult.as_mut().unwrap(),
-            CharmWrapper::OffsetAdd(offset_add) => offset_add.as_mut().unwrap(),
-            CharmWrapper::AttackSpeed(attack_speed) => attack_speed.as_mut().unwrap(),
+            CharmWrapper::DamageMult(damage_mult) => damage_mult.as_mut().expect("No inner charm."),
+            CharmWrapper::OffsetAdd(offset_add) => offset_add.as_mut().expect("No inner charm."),
+            CharmWrapper::AttackSpeed(attack_speed) => {
+                attack_speed.as_mut().expect("No inner charm.")
+            }
         }
     }
 

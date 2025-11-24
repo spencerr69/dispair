@@ -52,9 +52,9 @@ impl WeaponWrapper {
     #[must_use]
     pub fn get_inner(&self) -> &dyn PoweruppableWeapon {
         match self {
-            WeaponWrapper::Flash(flash) => flash.as_ref().unwrap(),
-            WeaponWrapper::Pillar(pillar) => pillar.as_ref().unwrap(),
-            WeaponWrapper::Lightning(lightning) => lightning.as_ref().unwrap(),
+            WeaponWrapper::Flash(flash) => flash.as_ref().expect("No inner weapon."),
+            WeaponWrapper::Pillar(pillar) => pillar.as_ref().expect("No inner weapon."),
+            WeaponWrapper::Lightning(lightning) => lightning.as_ref().expect("No inner weapon."),
         }
     }
 
@@ -65,9 +65,9 @@ impl WeaponWrapper {
     /// Will panic if there is no inner weapon.
     pub fn get_inner_mut(&mut self) -> &mut dyn PoweruppableWeapon {
         match self {
-            WeaponWrapper::Flash(flash) => flash.as_mut().unwrap(),
-            WeaponWrapper::Pillar(pillar) => pillar.as_mut().unwrap(),
-            WeaponWrapper::Lightning(lightning) => lightning.as_mut().unwrap(),
+            WeaponWrapper::Flash(flash) => flash.as_mut().expect("No inner weapon."),
+            WeaponWrapper::Pillar(pillar) => pillar.as_mut().expect("No inner weapon."),
+            WeaponWrapper::Lightning(lightning) => lightning.as_mut().expect("No inner weapon."),
         }
     }
 
@@ -101,7 +101,7 @@ impl DamageArea {
             if enemy.get_pos().is_in_area(&self.area) {
                 enemy.take_damage(self.damage_amount);
 
-                // if was hit by a weapon do the following
+                // if was hit by a weapon, do the following
                 if let Some(stats) = &self.weapon_stats
                     && !stats.procs.is_empty()
                 {

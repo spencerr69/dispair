@@ -172,12 +172,6 @@ impl RogueGame {
 
         game.init_character();
 
-        // game.character.charms.iter_mut().for_each(|charm_wrapper| {
-        //     let charm = charm_wrapper.get_inner_mut();
-        //     let upgrade = charm.get_next_upgrade(1).unwrap();
-        //     charm.upgrade_self(&upgrade);
-        // });
-
         game.update_stats_with_charms();
         game.update_stats();
 
@@ -764,7 +758,7 @@ pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer)
     let mut x2 = x1 + view_width;
     let mut y2 = y1 + view_height;
 
-    // Clamp to left edge
+    // Clamp to the left edge
     if x1 < 0 {
         x1 = 0;
         x2 = view_width;
@@ -922,7 +916,7 @@ impl EntityCharacters {
             | EntityCharacters::AttackBlackout(style)
             | EntityCharacters::AttackMist(style)
             | EntityCharacters::AttackWeak(style) => style,
-            _ => panic!("Cannot get style_mut for non-styled entity"),
+            _ => panic!("Cannot get style_mut for a non-styled entity"),
         }
     }
 
