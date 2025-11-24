@@ -86,7 +86,7 @@ impl PowerupPopup {
         }
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+    pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Char('d') | KeyCode::Right => self.selection_state.select_next_column(),
             KeyCode::Char('a') | KeyCode::Left => self.selection_state.select_previous_column(),

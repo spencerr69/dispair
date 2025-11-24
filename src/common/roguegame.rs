@@ -499,7 +499,7 @@ impl RogueGame {
         self.timescaler.scale()
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+    pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
         if self.carnage_report.is_some() {
             if key_event.code == KeyCode::Esc {
                 self.game_state = GameState::Exit;

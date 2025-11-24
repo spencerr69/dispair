@@ -53,7 +53,7 @@ impl UpgradesMenu {
     }
 
     /// Handles key events for the upgrade menu.
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+    pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Char('w') | KeyCode::Up => self.prev_selection(),
             KeyCode::Char('s') | KeyCode::Down => self.next_selection(),

@@ -62,5 +62,5 @@ fn main() -> std::io::Result<()> {
 
     let app = App::new();
 
-    App::run(Rc::new(RefCell::new(app)))
+    App::run(&Rc::new(RefCell::new(app)))
 }

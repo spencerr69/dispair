@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::target_types::Instant;
+use crate::{common::roguegame::GameState, target_types::Instant};
 use serde::de::Error;
 
 use ratzilla::{
@@ -32,6 +32,10 @@ use crate::common::{
 };
 
 /// Saves the player's progress to local storage.
+///
+/// # Errors
+///
+/// Errors if cannot save to localstorage
 pub fn save_progress(player_state: &PlayerState) -> Result<(), JsValue> {
     let window = web_sys::window();
 
@@ -56,10 +60,14 @@ pub fn save_progress(player_state: &PlayerState) -> Result<(), JsValue> {
 }
 
 /// Loads the player's progress from local storage.
+///
+/// # Errors
+///
+/// Errors if cannot save to localstorage
 pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
     let window = web_sys::window();
 
-    let mut value = "".to_string();
+    let mut value = String::new();
 
     if let Some(window) = window {
         let local_storage = window
@@ -70,7 +78,7 @@ pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
             let out = storage
                 .get_item("player_state")
                 .map_err(|_| serde_json::Error::custom("local storage no exist"))?;
-            value = out.unwrap_or("".into());
+            value = out.unwrap_or(String::new());
         }
     }
 
@@ -92,6 +100,7 @@ pub struct App {
 
 impl App {
     /// Creates a new `App` instance.
+    #[must_use]
     pub fn new() -> Self {
         let mut out = Self {
             game_view: None,
@@ -109,7 +118,11 @@ impl App {
     }
 
     /// Runs the main application loop.
-    pub fn run(this: Rc<RefCell<Self>>) -> io::Result<()> {
+    ///
+    /// # Errors
+    ///
+    /// Errors if any issues getting ratzilla/ratatui backend
+    pub fn run(this: &Rc<RefCell<Self>>) -> io::Result<()> {
         let backend = DomBackend::new()?;
         let terminal = Terminal::new(backend)?;
 
@@ -123,7 +136,7 @@ impl App {
                 let maybe_reference = self_ref_key.try_borrow_mut();
 
                 if let Ok(mut reference) = maybe_reference {
-                    reference.handle_key_event(key_event);
+                    reference.handle_key_event(&key_event);
                 }
             }
         });
@@ -148,7 +161,7 @@ impl App {
     }
 
     /// Handles key events.
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+    pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
         if let Some(game) = &mut self.game_view {
             game.handle_key_event(key_event);
         } else if let Some(upgrades_menu) = &mut self.upgrades_view {
@@ -193,7 +206,7 @@ impl App {
     /// Renders the UI for the current view.
     fn ui(&mut self, frame: &mut Frame) {
         if let Some(ref mut game) = self.game_view {
-            game.render(frame)
+            game.render(frame);
         } else if let Some(ref mut upgrades_menu) = self.upgrades_view {
             upgrades_menu.render_upgrades(frame);
         } else {
@@ -205,23 +218,26 @@ impl App {
     fn on_tick(&mut self) {
         if let Some(game) = &mut self.game_view {
             game.on_tick();
-            if game.game_over {
-                game.carnage_report = Some(CarnageReport::new(
-                    self.player_state.clone().unwrap(),
-                    game.player_state.clone(),
-                ));
-            }
-            if game.exit {
-                self.player_state = Some(game.player_state.clone());
-                self.player_state.as_mut().unwrap().refresh();
-                save_progress(&self.player_state.clone().unwrap())
-                    .map_err(|_| {
-                        web_sys::console::log_1(&JsValue::from_str("couldn't save"));
-                        JsValue::from_str("couldn't save")
-                    })
-                    .unwrap_or(());
-                self.game_view = None;
-                self.start_upgrades();
+            match game.game_state {
+                GameState::GameOver => {
+                    game.carnage_report = Some(CarnageReport::new(
+                        self.player_state.clone().unwrap(),
+                        game.player_state.clone(),
+                    ));
+                }
+                GameState::Exit => {
+                    self.player_state = Some(game.player_state.clone());
+                    self.player_state.as_mut().unwrap().refresh();
+                    save_progress(&self.player_state.clone().unwrap())
+                        .map_err(|_| {
+                            web_sys::console::log_1(&JsValue::from_str("couldn't save"));
+                            JsValue::from_str("couldn't save")
+                        })
+                        .unwrap_or(());
+                    self.game_view = None;
+                    self.start_upgrades();
+                }
+                _ => {}
             }
         }
 
@@ -261,7 +277,7 @@ impl App {
     /// Starts the game view.
     fn start_game(&mut self) {
         if let Some(player_state) = &self.player_state {
-            self.game_view = Some(RogueGame::new(player_state.clone()));
+            self.game_view = Some(RogueGame::new(player_state));
         }
     }
 
@@ -296,7 +312,7 @@ impl App {
         frame.render_widget(block, frame.area());
 
         frame.render_widget(title, title_area);
-        frame.render_stateful_widget(options, options_area, &mut self.current_selection)
+        frame.render_stateful_widget(options, options_area, &mut self.current_selection);
     }
 }
 

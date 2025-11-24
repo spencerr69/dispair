@@ -145,13 +145,13 @@ impl App {
             Event::Render => {
                 self.on_frame();
             }
-            Event::Key(key_event) => self.handle_key_event(*key_event),
+            Event::Key(key_event) => self.handle_key_event(key_event),
             _ => {}
         }
     }
 
     /// Handles key press events.
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+    pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
         if !key_event.is_press() {
             return;
         }
