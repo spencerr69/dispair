@@ -183,13 +183,13 @@ impl Character {
 }
 
 impl Movable for Character {
-    fn get_facing(&self) -> Direction {
-        self.facing.clone()
-    }
-
     fn set_pos(&mut self, new_pos: Position) {
         self.prev_position = self.position.clone();
         self.position = new_pos;
+    }
+
+    fn get_pos(&self) -> &Position {
+        &self.position
     }
 
     /// Attempts to move the character to `new_pos` and update its facing; movement is throttled by the character's movement speed multiplier and `last_moved` is updated when the move occurs.
@@ -207,24 +207,20 @@ impl Movable for Character {
         }
     }
 
-    fn get_pos(&self) -> &Position {
-        &self.position
+    fn get_prev_pos(&self) -> &Position {
+        &self.prev_position
     }
 
     fn get_entity_char(&self) -> EntityCharacters {
         self.entitychar.clone()
     }
 
-    fn get_prev_pos(&self) -> &Position {
-        &self.prev_position
+    fn get_facing(&self) -> Direction {
+        self.facing.clone()
     }
 }
 
 impl Damageable for Character {
-    fn die(&mut self) {
-        self.is_alive = false;
-    }
-
     fn get_health(&self) -> &i32 {
         &self.health
     }
@@ -246,6 +242,10 @@ impl Damageable for Character {
         if self.health <= 0 {
             self.die();
         }
+    }
+
+    fn die(&mut self) {
+        self.is_alive = false;
     }
 
     fn is_alive(&self) -> bool {

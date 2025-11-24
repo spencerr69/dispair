@@ -33,16 +33,12 @@ impl Charm for CharmDamageMult {
 }
 
 impl Poweruppable for CharmDamageMult {
-    fn get_powerup_type(&self) -> PowerupTypes {
-        PowerupTypes::Charm
-    }
-
-    fn get_level(&self) -> i32 {
-        self.level
-    }
-
     fn get_name(&self) -> String {
         "Damage Multiplier Charm".into()
+    }
+
+    fn get_powerup_type(&self) -> PowerupTypes {
+        PowerupTypes::Charm
     }
 
     fn upgrade_desc(&self, level: i32) -> String {
@@ -74,5 +70,9 @@ impl Poweruppable for CharmDamageMult {
                 _ => {}
             }
         }
+    }
+
+    fn get_level(&self) -> i32 {
+        self.level
     }
 }

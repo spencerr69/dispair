@@ -33,16 +33,12 @@ impl Charm for CharmAttackSpeed {
 }
 
 impl Poweruppable for CharmAttackSpeed {
-    fn get_powerup_type(&self) -> PowerupTypes {
-        PowerupTypes::Charm
-    }
-
-    fn get_level(&self) -> i32 {
-        self.level
-    }
-
     fn get_name(&self) -> String {
         "Attack Speed Charm".into()
+    }
+
+    fn get_powerup_type(&self) -> PowerupTypes {
+        PowerupTypes::Charm
     }
 
     #[allow(clippy::match_same_arms)]
@@ -76,5 +72,9 @@ impl Poweruppable for CharmAttackSpeed {
                 _ => {}
             }
         }
+    }
+
+    fn get_level(&self) -> i32 {
+        self.level
     }
 }

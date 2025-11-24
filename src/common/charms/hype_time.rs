@@ -35,16 +35,12 @@ impl Charm for CharmOffsetAdd {
 }
 
 impl Poweruppable for CharmOffsetAdd {
-    fn get_powerup_type(&self) -> PowerupTypes {
-        PowerupTypes::Charm
-    }
-
-    fn get_level(&self) -> i32 {
-        self.level
-    }
-
     fn get_name(&self) -> String {
         "Hype Time Charm".into()
+    }
+
+    fn get_powerup_type(&self) -> PowerupTypes {
+        PowerupTypes::Charm
     }
 
     fn upgrade_desc(&self, level: i32) -> String {
@@ -76,5 +72,9 @@ impl Poweruppable for CharmOffsetAdd {
                 _ => {}
             }
         }
+    }
+
+    fn get_level(&self) -> i32 {
+        self.level
     }
 }

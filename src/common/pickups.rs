@@ -53,10 +53,6 @@ impl PowerupOrb {
 }
 
 impl Pickupable for PowerupOrb {
-    fn is_picked_up(&self) -> bool {
-        self.picked_up
-    }
-
     fn get_pos(&self) -> &Position {
         &self.position
     }
@@ -86,5 +82,9 @@ impl Pickupable for PowerupOrb {
     fn on_pickup(&mut self) -> PickupEffect {
         self.picked_up = true;
         self.pickup_effect.clone()
+    }
+
+    fn is_picked_up(&self) -> bool {
+        self.picked_up
     }
 }

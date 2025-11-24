@@ -30,7 +30,7 @@ use crate::common::{
 ///
 /// # Panics
 ///
-/// Panics if cannot find config directory via `dirs::config_dir()`
+/// Panics if it cannot find config directory via `dirs::config_dir()`
 ///
 /// # Errors
 ///
@@ -61,7 +61,7 @@ pub fn save_progress(player_state: &PlayerState) -> Result<(), serde_json::Error
 ///
 /// # Panics
 ///
-/// Panics if cannot find config directory via `dirs::config_dir()`
+/// Panics if it cannot find config directory via `dirs::config_dir()`
 ///
 /// # Errors
 ///

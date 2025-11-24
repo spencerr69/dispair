@@ -134,7 +134,7 @@ impl OnTickEffect for Debuff {
 
         match self.debuff_type {
             DebuffTypes::FlameBurn => {
-                let ticks = crate::common::TICK_RATE as u64;
+                let ticks = TICK_RATE as u64;
                 if !tickcount.is_multiple_of(ticks) {
                     return None;
                 }
@@ -185,7 +185,7 @@ impl OnTickEffect for Debuff {
                         .retain(|d| d.debuff_type != DebuffTypes::FlameBurn);
 
                     Some(DamageArea {
-                        damage_amount: self.stats.damage.expect("no damage?") * 10,
+                        damage_amount: self.stats.damage.expect("No damage?") * 10,
                         area: Rc::new(RefCell::new(area)),
                         entity: EntityCharacters::AttackMist(Style::new().red()),
                         duration: Duration::from_secs_f64(0.05),
@@ -201,7 +201,7 @@ impl OnTickEffect for Debuff {
             }
             DebuffTypes::ShockElectrocute => {
                 if tickcount.is_multiple_of(
-                    (TICK_RATE * f64::from(self.stats.size.expect("no size on electrocute")))
+                    (TICK_RATE * f64::from(self.stats.size.expect("No size on electrocute")))
                         as u64,
                 ) {
                     self.complete = true;

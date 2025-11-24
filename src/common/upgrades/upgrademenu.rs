@@ -220,7 +220,7 @@ impl UpgradesMenu {
         let [left, right] = horizontal.areas(inner);
 
         let title = Line::from(" dispair ".bold());
-        let gold_amount = Line::from(vec![" gold: ".into(), gold.to_string().into()]);
+        let gold_amount = Line::from(vec![" Gold: ".into(), gold.to_string().into()]);
         let instructions = Line::from(vec![
             " <W|UP> Up | <S|DOWN> Down | <SPACE> Start Game | <Esc> Back ".into(),
         ]);

@@ -8,7 +8,7 @@ pub trait Poweruppable {
         5
     }
 
-    fn get_next_upgrade(&self, levels_up: i32) -> Option<super::powerup::DynPowerup> {
+    fn get_next_upgrade(&self, levels_up: i32) -> Option<DynPowerup> {
         if self.get_level() >= self.get_max_level() {
             None
         } else {
@@ -111,14 +111,6 @@ impl PowerupUpgrade {
 }
 
 impl Powerup for PowerupUpgrade {
-    fn get_powerup_type(&self) -> PowerupTypes {
-        self.powerup_type
-    }
-
-    fn get_current_level(&self) -> i32 {
-        self.curr_level
-    }
-
     fn get_name(&self) -> &str {
         self.name.as_str()
     }
@@ -127,7 +119,15 @@ impl Powerup for PowerupUpgrade {
         self.desc.as_str()
     }
 
+    fn get_powerup_type(&self) -> PowerupTypes {
+        self.powerup_type
+    }
+
     fn get_new_level(&self) -> i32 {
         self.new_level
+    }
+
+    fn get_current_level(&self) -> i32 {
+        self.curr_level
     }
 }

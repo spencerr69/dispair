@@ -116,18 +116,13 @@ impl SquareArea {
 }
 
 impl Area for SquareArea {
-    fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
-        let (x1, y1, x2, y2) = self.get_bounds();
-        Box::new((x1..=x2).flat_map(move |x| (y1..=y2).map(move |y| Position(x, y))))
-    }
-
     fn get_positions(&self) -> Vec<Position> {
         self.pos_iter().collect()
     }
 
-    fn constrain(&mut self, layer: &Layer) {
-        self.corner1.constrain(layer);
-        self.corner2.constrain(layer);
+    fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
+        let (x1, y1, x2, y2) = self.get_bounds();
+        Box::new((x1..=x2).flat_map(move |x| (y1..=y2).map(move |y| Position(x, y))))
     }
 
     /// Compute the axis-aligned bounding box that encloses the area's corners.
@@ -138,6 +133,11 @@ impl Area for SquareArea {
         let (x2, y2) = self.corner2.get();
 
         (x1.min(x2), y1.min(y2), x1.max(x2), y1.max(y2))
+    }
+
+    fn constrain(&mut self, layer: &Layer) {
+        self.corner1.constrain(layer);
+        self.corner2.constrain(layer);
     }
 }
 
@@ -154,12 +154,12 @@ impl ChaosArea {
 }
 
 impl Area for ChaosArea {
-    fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
-        Box::new(self.position_list.clone().into_iter())
-    }
-
     fn get_positions(&self) -> Vec<Position> {
         self.position_list.clone()
+    }
+
+    fn pos_iter(&self) -> Box<dyn Iterator<Item = Position>> {
+        Box::new(self.position_list.clone().into_iter())
     }
 
     fn get_bounds(&self) -> (i32, i32, i32, i32) {

@@ -258,16 +258,13 @@ pub fn move_to_point_granular(
 }
 
 impl Movable for Enemy {
-    fn get_facing(&self) -> Direction {
-        self.facing.clone()
+    fn set_pos(&mut self, new_pos: Position) {
+        self.prev_position = self.position.clone();
+        self.position = new_pos;
     }
 
     fn get_pos(&self) -> &Position {
         &self.position
-    }
-
-    fn get_prev_pos(&self) -> &Position {
-        &self.prev_position
     }
 
     fn move_to(&mut self, new_pos: Position, facing: Direction) {
@@ -275,27 +272,22 @@ impl Movable for Enemy {
         self.set_pos(new_pos);
     }
 
-    fn set_pos(&mut self, new_pos: Position) {
-        self.prev_position = self.position.clone();
-        self.position = new_pos;
+    fn get_prev_pos(&self) -> &Position {
+        &self.prev_position
     }
 
     fn get_entity_char(&self) -> EntityCharacters {
         self.entitychar.clone()
     }
+
+    fn get_facing(&self) -> Direction {
+        self.facing.clone()
+    }
 }
 
 impl Damageable for Enemy {
-    fn die(&mut self) {
-        self.is_alive = false;
-    }
-
     fn get_health(&self) -> &i32 {
         &self.health
-    }
-
-    fn is_alive(&self) -> bool {
-        self.is_alive
     }
 
     fn take_damage(&mut self, damage: i32) {
@@ -317,5 +309,13 @@ impl Damageable for Enemy {
         if self.health <= 0 {
             self.die();
         }
+    }
+
+    fn die(&mut self) {
+        self.is_alive = false;
+    }
+
+    fn is_alive(&self) -> bool {
+        self.is_alive
     }
 }

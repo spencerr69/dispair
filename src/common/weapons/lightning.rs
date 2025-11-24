@@ -115,26 +115,22 @@ impl Weapon for Lightning {
         }
     }
 
-    fn get_element(&self) -> Option<crate::common::debuffs::Elements> {
-        None
-    }
-
     fn get_damage(&self) -> i32 {
         (f64::from(self.base_damage) * self.damage_scalar).ceil() as i32
+    }
+
+    fn get_element(&self) -> Option<Elements> {
+        None
     }
 }
 
 impl Poweruppable for Lightning {
-    fn get_powerup_type(&self) -> PowerupTypes {
-        PowerupTypes::Weapon
-    }
-
     fn get_name(&self) -> String {
         "LIGHTNING".into()
     }
 
-    fn get_level(&self) -> i32 {
-        self.stats.level
+    fn get_powerup_type(&self) -> PowerupTypes {
+        PowerupTypes::Weapon
     }
 
     fn upgrade_desc(&self, level: i32) -> String {
@@ -162,7 +158,7 @@ impl Poweruppable for Lightning {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
                     self.element = Some(Elements::Shock(self.stats.elemental_honage));
-                    let honage = self.element.expect("something crazy happened").get_honage();
+                    let honage = self.element.expect("Something crazy happened").get_honage();
                     self.stats.procs.insert(
                         "charge".into(),
                         Proc {
@@ -197,5 +193,9 @@ impl Poweruppable for Lightning {
                 _ => {}
             }
         }
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
     }
 }

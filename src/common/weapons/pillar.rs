@@ -78,16 +78,12 @@ impl Weapon for Pillar {
 }
 
 impl Poweruppable for Pillar {
-    fn get_powerup_type(&self) -> PowerupTypes {
-        PowerupTypes::Weapon
-    }
-
     fn get_name(&self) -> String {
         "PILLAR".into()
     }
 
-    fn get_level(&self) -> i32 {
-        self.stats.level
+    fn get_powerup_type(&self) -> PowerupTypes {
+        PowerupTypes::Weapon
     }
 
     fn upgrade_desc(&self, level: i32) -> String {
@@ -128,5 +124,9 @@ impl Poweruppable for Pillar {
                 _ => {}
             }
         }
+    }
+
+    fn get_level(&self) -> i32 {
+        self.stats.level
     }
 }

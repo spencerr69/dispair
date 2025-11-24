@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::new();
 
     app.run().await?;
-    if let Err(err) = crate::terminal::tui::restore() {
+    if let Err(err) = terminal::tui::restore() {
         eprintln!(
             "failed to restore terminal. Run `reset` or restart your terminal to recover: {err}"
         );

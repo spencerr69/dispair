@@ -51,16 +51,23 @@ impl Flash {
 }
 
 impl Poweruppable for Flash {
-    fn get_powerup_type(&self) -> PowerupTypes {
-        PowerupTypes::Weapon
-    }
-
     fn get_name(&self) -> String {
         "FLASH".into()
     }
 
-    fn get_level(&self) -> i32 {
-        self.stats.level
+    fn get_powerup_type(&self) -> PowerupTypes {
+        PowerupTypes::Weapon
+    }
+
+    fn upgrade_desc(&self, level: i32) -> String {
+        match level {
+            1 => "FLASH will create a brief damaging field directly in front of you.".into(),
+            2 => "Increase size by 1, increase base damage by 1. Imbue FLASH with Flame element, burning enemies when hit.".into(),
+            3 => "Increase base damage by 2".into(),
+            4 => "Increase damage scalar by 25%".into(),
+            5 => "Increase damage scalar by 75%".into(),
+            _ => String::new(),
+        }
     }
 
     fn upgrade_self(&mut self, powerup: &DynPowerup) {
@@ -77,7 +84,7 @@ impl Poweruppable for Flash {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
                     self.element = Some(Elements::Flame(self.stats.elemental_honage));
-                    let honage = self.element.expect("something crazy happened").get_honage();
+                    let honage = self.element.expect("Something crazy happened").get_honage();
                     self.stats.procs.insert(
                         "burn".into(),
                         Proc {
@@ -111,15 +118,8 @@ impl Poweruppable for Flash {
         }
     }
 
-    fn upgrade_desc(&self, level: i32) -> String {
-        match level {
-            1 => "FLASH will create a brief damaging field directly in front of you.".into(),
-            2 => "Increase size by 1, increase base damage by 1. Imbue FLASH with Flame element, burning enemies when hit.".into(),
-            3 => "Increase base damage by 2".into(),
-            4 => "Increase damage scalar by 25%".into(),
-            5 => "Increase damage scalar by 75%".into(),
-            _ => String::new(),
-        }
+    fn get_level(&self) -> i32 {
+        self.stats.level
     }
 }
 
@@ -170,12 +170,12 @@ impl Weapon for Flash {
         }
     }
 
-    fn get_element(&self) -> Option<Elements> {
-        self.element
-    }
-
     /// Returns the damage of the sword, calculated from its base damage and scalar.
     fn get_damage(&self) -> i32 {
         (f64::from(self.base_damage) * self.damage_scalar).ceil() as i32
+    }
+
+    fn get_element(&self) -> Option<Elements> {
+        self.element
     }
 }

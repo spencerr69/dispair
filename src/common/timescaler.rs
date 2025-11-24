@@ -41,7 +41,7 @@ impl TimeScaler {
 
     /// Calculates the new scaling factor based on the elapsed time.
     pub fn scale(&mut self) -> f64 {
-        self.scale_amount = (1.007_f64).powf(self.time_in_secs() as f64) * 2. - 1.;
+        self.scale_amount = 1.007_f64.powf(self.time_in_secs() as f64) * 2. - 1.;
         self.scale_amount
     }
 }
@@ -61,7 +61,7 @@ mod tests {
     fn scale_at_0s() {
         let mut scaler = TimeScaler::now();
         println!("\n0s: {}\n", scaler.scale());
-        assert!(scaler.scale_amount == 1.0);
+        assert_eq!(scaler.scale_amount, 1.0);
     }
 
     #[test]
