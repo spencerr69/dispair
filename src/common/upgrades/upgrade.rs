@@ -281,8 +281,7 @@ impl UpgradeNode {
     #[must_use]
     #[allow(clippy::missing_panics_doc)]
     pub fn has_children(&self) -> bool {
-        self.children.is_some() && self.children.clone().is_some()
-            || self.children.clone().unwrap().is_empty()
+        self.children.is_some() && !(self.children.clone().unwrap().is_empty())
     }
 
     /// Returns the display title for the upgrade.
