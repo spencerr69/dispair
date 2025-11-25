@@ -12,6 +12,7 @@ use crate::{
 use ratatui::style::{Style, Stylize};
 
 use crate::common::character::Renderable;
+use crate::common::enemy::get_closest_enemies;
 use crate::common::{
     character::Character,
     coords::ChaosArea,
@@ -59,20 +60,7 @@ impl Weapon for Lightning {
         let mut enemies = Vec::from(enemies);
 
         for _ in 0..self.stats.size {
-            let closest = enemies.iter().reduce(|acc, enemy| {
-                let (dist_x, dist_y) = enemy.get_pos().get_distance(&begin_pos);
-                let enemy_total_dist = dist_x.abs() + dist_y.abs();
-
-                let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(&begin_pos);
-                let acc_total_dist = acc_dist_x.abs() + acc_dist_y.abs();
-
-                if enemy_total_dist < acc_total_dist && enemy_total_dist > 2 || acc_total_dist <= 2
-                {
-                    enemy
-                } else {
-                    acc
-                }
-            });
+            let closest = get_closest_enemies(&enemies, &begin_pos);
 
             let mut current_pos = begin_pos.clone();
 

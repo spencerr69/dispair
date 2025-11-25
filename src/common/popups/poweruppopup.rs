@@ -112,9 +112,9 @@ impl PowerupPopup {
                 PowerupTypes::Weapon => {
                     let mut new_weapons = self.weapons.clone();
                     for weapon in &mut new_weapons {
-                        if weapon.get_inner().get_name().to_uppercase()
-                            == selected_powerup.get_name().to_uppercase()
-                        {
+                        let weapon_upper = weapon.get_inner().get_name().to_uppercase();
+                        let powerup_upper = selected_powerup.get_name().to_uppercase();
+                        if weapon_upper == powerup_upper {
                             weapon.get_inner_mut().upgrade_self(selected_powerup);
                         }
                     }
@@ -135,9 +135,9 @@ impl PowerupPopup {
                 PowerupTypes::Charm => {
                     let mut new_charms = self.charms.clone();
                     for charm in &mut new_charms {
-                        if charm.get_inner().get_name().to_uppercase()
-                            == selected_powerup.get_name().to_uppercase()
-                        {
+                        let charm_upper = charm.get_inner().get_name().to_uppercase();
+                        let powerup_upper = selected_powerup.get_name().to_uppercase();
+                        if charm_upper == powerup_upper {
                             charm.get_inner_mut().upgrade_self(selected_powerup);
                         }
                     }

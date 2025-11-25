@@ -85,7 +85,7 @@ impl UpgradesMenu {
     ///
     /// # Errors
     ///
-    /// Will return a `String` error if user doesn't have enough gold or other issues are found
+    /// Will return a `String` error if the user doesn't have enough gold or other issues are found
     pub fn buy_upgrade(&mut self) -> Result<(), String> {
         if let Some(current_node) = self.get_selected_node() {
             if current_node.cost.is_some() {
@@ -106,7 +106,7 @@ impl UpgradesMenu {
                 }
                 Ok(())
             } else {
-                Err("Upgrade is not purchaseable".to_string())
+                Err("Upgrade is not purchasable".to_string())
             }
         } else {
             Err("No upgrade selected".to_string())

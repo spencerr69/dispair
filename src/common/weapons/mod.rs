@@ -11,7 +11,7 @@ use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::character::Renderable;
 use crate::common::{
-    character::{Character, Damageable, Movable},
+    character::{Character, Damageable},
     coords::Area,
     enemy::{Debuffable, Enemy},
     powerup::PoweruppableWeapon,
@@ -123,7 +123,7 @@ pub trait Weapon {
     fn attack(&self, wielder: &Character, enemies: &[Enemy], layer: &Layer) -> DamageArea;
 
     /// Calculates and returns the base damage of the weapon.
-    ///Damage should be rounded up to nearest int.
+    ///Damage should be rounded up to the nearest int.
     fn get_damage(&self) -> i32;
 
     fn get_element(&self) -> Option<Elements>;

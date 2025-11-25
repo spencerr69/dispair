@@ -539,6 +539,18 @@ impl RogueGame {
 
     #[must_use]
     pub fn flatten_to_span(&self, area: Option<SquareArea>) -> Vec<Vec<Span<'static>>> {
+        fn callback_creator<T: Renderable>(
+            enum_2d: &mut Vec<(usize, Vec<(usize, Span)>)>,
+        ) -> impl FnMut(&T) {
+            |entity: &T| {
+                if let Some(entity_pos) =
+                    RogueGame::get_mut_item_in_2d_enum_vec(enum_2d, entity.get_pos())
+                {
+                    *entity_pos = entity.get_entity_char().to_styled();
+                }
+            }
+        }
+
         let (x1, y1, x2, y2);
         if let Some(inner_area) = area {
             (x1, y1, x2, y2) = inner_area.get_bounds();
@@ -576,22 +588,9 @@ impl RogueGame {
             })
             .collect();
 
-        fn callback_creator<T: Renderable>(
-            enum_2d: &mut Vec<(usize, Vec<(usize, Span)>)>,
-        ) -> impl FnMut(&T) {
-            let callback = |entity: &T| {
-                if let Some(entity_pos) =
-                    RogueGame::get_mut_item_in_2d_enum_vec(enum_2d, entity.get_pos())
-                {
-                    *entity_pos = entity.get_entity_char().to_styled();
-                }
-            };
-            callback
-        }
-
         self.pickups
             .iter()
-            .map(|wrapper| wrapper.get_inner())
+            .map(PickupTypes::get_inner)
             .for_each(callback_creator(&mut enum_2d));
 
         self.enemies.iter().for_each(callback_creator(&mut enum_2d));

@@ -113,6 +113,20 @@ impl SquareArea {
             corner2: Position(0, 0),
         }
     }
+
+    #[must_use]
+    pub fn get_square_around_position(position: &Position, size: i32) -> SquareArea {
+        SquareArea {
+            corner1: Position(
+                position.0.saturating_sub(size),
+                position.1.saturating_sub(size),
+            ),
+            corner2: Position(
+                position.0.saturating_add(size),
+                position.1.saturating_add(size),
+            ),
+        }
+    }
 }
 
 impl Area for SquareArea {

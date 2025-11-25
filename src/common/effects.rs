@@ -73,10 +73,12 @@ impl DamageEffect {
 
     /// Advance the effect's timing and update which area and entity should be rendered.
     ///
-    /// While the effect is pending (start time is in the future) this sets `active_area` to the origin
-    /// and `active_entity` to `Empty`. Once the start time has been reached `active_area` and
+    /// While the effect is pending (start time is in the future), this sets `active_area` to the
+    /// origin
+    /// and `active_entity` to `Empty`. Once the start time has been reached, `active_area` and
     /// `active_entity` are set from the underlying `damage_area`. If the elapsed time since start
-    /// is greater than or equal to the damage area's duration the effect is marked `complete`. If the
+    /// is greater than or equal to the damage area's duration, the effect is marked `complete`.
+    /// If the
     /// damage area is configured to blink, `active_entity` toggles between the damage entity and
     /// `Empty` while the effect is active.
     pub fn update(&mut self) {
@@ -105,8 +107,9 @@ impl DamageEffect {
     /// Produce an iterator over the currently active area that pairs each position with the active entity.
     ///
     /// The returned iterator yields `(Position, EntityCharacters)` for every position in `self.active_area`.
-    /// The positions and the active entity are captured by value at the time of the call so the iterator
-    /// can be used independently of subsequent mutations to the `DamageEffect`.
+    /// Value captures the positions and the active entity at the time of the call, so the
+    /// iterator
+    /// can be used independently of later mutations to the `DamageEffect`.
     #[must_use]
     pub fn get_instructions(&self) -> Box<dyn Iterator<Item = (Position, EntityCharacters)>> {
         let active_entity = self.active_entity.clone();

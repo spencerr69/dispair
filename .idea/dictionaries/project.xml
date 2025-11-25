@@ -1,13 +1,25 @@
 <component name="ProjectDictionaryState">
   <dictionary name="project">
     <words>
+      <w>carnagereport</w>
+      <w>costscale</w>
+      <w>debuffable</w>
+      <w>entitychar</w>
+      <w>honage</w>
       <w>idgaf</w>
+      <w>mult</w>
+      <w>pickupeffect</w>
       <w>powerup</w>
+      <w>poweruppable</w>
+      <w>poweruppopup</w>
+      <w>procs</w>
       <w>ratatui</w>
       <w>ratzilla</w>
       <w>renderspeed</w>
+      <w>roguegame</w>
       <w>tickcount</w>
       <w>timescaler</w>
+      <w>upgrademenu</w>
     </words>
   </dictionary>
 </component>

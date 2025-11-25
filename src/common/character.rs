@@ -117,7 +117,7 @@ pub struct Character {
 impl Character {
     /// Creates a new Character initialized from the given player state.
     ///
-    /// The new character starts at position (0,0), facing up, with health and stats
+    /// The new character starts at `Position(0,0)`, facing up, with health and stats
     /// taken from `player_state.stats.player_stats`. The character's weapon loadout
     /// is initialized from `player_state.stats.weapon_stats`.
     ///

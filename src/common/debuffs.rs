@@ -17,8 +17,9 @@ use serde::{Deserialize, Serialize};
 use ratatui::style::{Style, Stylize};
 
 use crate::common::character::Renderable;
+use crate::common::enemy::get_closest_enemies;
 use crate::common::{
-    coords::{Area, Position, SquareArea},
+    coords::{Area, SquareArea},
     stats::{DebuffStats, Proc},
     weapons::DamageArea,
 };
@@ -87,22 +88,11 @@ pub trait OnDeathEffect {
 
 impl OnDeathEffect for Debuff {
     /// Produces an optional area-of-effect damage specification to emit when this debuff triggers on an enemy's death.
-    ///
-    /// If the debuff is `MarkedForExplosion` and `stats.size` is `Some(size)`, returns a `DamageArea` describing a square area centered on the enemy with radius `size`, using `stats.damage` (or `0` if absent) as the damage amount, an `AttackMist` visual styled dark gray, a duration of 0.15 seconds, `blink = false`, and no `weapon_stats`. If `stats.size` is `None`, returns `None`.
     fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea> {
         match self.debuff_type {
             DebuffTypes::MarkedForExplosion => {
                 if let Some(size) = self.stats.size {
-                    let mut area = SquareArea {
-                        corner1: Position(
-                            enemy.position.0.saturating_sub(size),
-                            enemy.position.1.saturating_sub(size),
-                        ),
-                        corner2: Position(
-                            enemy.position.0.saturating_add(size),
-                            enemy.position.1.saturating_add(size),
-                        ),
-                    };
+                    let mut area = SquareArea::get_square_around_position(&enemy.position, size);
 
                     area.constrain(layer);
 
@@ -151,16 +141,7 @@ impl OnTickEffect for Debuff {
                 }
 
                 if let Some(size) = self.stats.size {
-                    let mut area = SquareArea {
-                        corner1: Position(
-                            enemy.position.0.saturating_sub(size),
-                            enemy.position.1.saturating_sub(size),
-                        ),
-                        corner2: Position(
-                            enemy.position.0.saturating_add(size),
-                            enemy.position.1.saturating_add(size),
-                        ),
-                    };
+                    let mut area = SquareArea::get_square_around_position(&enemy.position, size);
 
                     area.constrain(layer);
 
@@ -245,21 +226,7 @@ impl OnDamageEffect for Debuff {
                 let size = self.stats.size.unwrap_or(1);
 
                 for _ in 0..size {
-                    let closest = enemies.iter().reduce(|acc, enemy| {
-                        let (dist_x, dist_y) = enemy.get_pos().get_distance(&begin_pos);
-                        let enemy_total_dist = dist_x.abs() + dist_y.abs();
-
-                        let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(&begin_pos);
-                        let acc_total_dist = acc_dist_x.abs() + acc_dist_y.abs();
-
-                        if enemy_total_dist < acc_total_dist && enemy_total_dist > 2
-                            || acc_total_dist <= 2
-                        {
-                            enemy
-                        } else {
-                            acc
-                        }
-                    });
+                    let closest = get_closest_enemies(&enemies, &begin_pos);
 
                     let mut current_pos = begin_pos.clone();
 

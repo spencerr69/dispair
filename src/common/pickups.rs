@@ -22,12 +22,14 @@ pub enum PickupTypes {
 }
 
 impl PickupTypes {
+    #[must_use]
     pub fn get_inner(&self) -> &impl Pickupable {
         match self {
             PickupTypes::PowerupOrb(orb) => orb,
         }
     }
 
+    #[must_use]
     pub fn get_inner_mut(&mut self) -> &mut impl Pickupable {
         match self {
             PickupTypes::PowerupOrb(orb) => orb,

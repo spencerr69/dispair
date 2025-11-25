@@ -92,7 +92,7 @@ pub struct DebuffStats {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Proc {
-    /// Chance is a int between 0-100.
+    /// Chance is an int between 0-100.
     pub chance: u32,
     pub debuff: Debuff,
 }
@@ -129,7 +129,7 @@ impl Default for PlayerStats {
 }
 
 impl Default for WeaponStats {
-    /// Creates a default `WeaponStats` with zero damage boost, zero size, and no procs.
+    /// Creates a default `WeaponStats` with no damage boost, no size, and no procs.
     fn default() -> Self {
         Self {
             damage_flat_boost: 0,

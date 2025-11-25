@@ -259,12 +259,12 @@ pub fn move_to_point_granular(
 }
 
 impl Renderable for Enemy {
-    fn get_entity_char(&self) -> &EntityCharacters {
-        &self.entitychar
-    }
-
     fn get_pos(&self) -> &Position {
         &self.position
+    }
+
+    fn get_entity_char(&self) -> &EntityCharacters {
+        &self.entitychar
     }
 }
 
@@ -321,4 +321,24 @@ impl Damageable for Enemy {
     fn is_alive(&self) -> bool {
         self.is_alive
     }
+}
+
+#[must_use]
+pub fn get_closest_enemies<'a>(
+    enemies: &'a [Enemy],
+    current_position: &Position,
+) -> Option<&'a Enemy> {
+    enemies.iter().reduce(|acc, enemy| {
+        let (dist_x, dist_y) = enemy.get_pos().get_distance(current_position);
+        let enemy_total_dist = dist_x.abs() + dist_y.abs();
+
+        let (acc_dist_x, acc_dist_y) = acc.get_pos().get_distance(current_position);
+        let acc_total_dist = acc_dist_x.abs() + acc_dist_y.abs();
+
+        if enemy_total_dist < acc_total_dist && enemy_total_dist > 2 || acc_total_dist <= 2 {
+            enemy
+        } else {
+            acc
+        }
+    })
 }
