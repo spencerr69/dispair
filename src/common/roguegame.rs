@@ -3,8 +3,7 @@
 
 use crate::{
     common::{
-        TICK_RATE, center,
-        character::{Character, Damageable, Movable},
+        center, character::{Character, Damageable, Movable},
         coords::{Area, Direction, Position, SquareArea},
         debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect},
         effects::DamageEffect,
@@ -15,20 +14,22 @@ use crate::{
         timescaler::TimeScaler,
         upgrades::upgrade::PlayerState,
         weapons::DamageArea,
+        TICK_RATE,
     },
     target_types::{Duration, Instant, KeyCode, KeyEvent},
 };
+use std::borrow::Borrow;
 
 use crate::common::character::Renderable;
 use crate::common::pickups::PickupTypes;
 use rand::Rng;
 use ratatui::{
-    Frame,
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
     symbols::border,
     text::{Line, Span, Text},
     widgets::{Block, Gauge, Paragraph},
+    Frame,
 };
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
@@ -539,14 +540,16 @@ impl RogueGame {
 
     #[must_use]
     pub fn flatten_to_span(&self, area: Option<SquareArea>) -> Vec<Vec<Span<'static>>> {
-        fn callback_creator<T: Renderable>(
+        fn callback_creator<F: Borrow<T>, T: Renderable>(
             enum_2d: &mut Vec<(usize, Vec<(usize, Span)>)>,
-        ) -> impl FnMut(&T) {
-            |entity: &T| {
-                if let Some(entity_pos) =
-                    RogueGame::get_mut_item_in_2d_enum_vec(enum_2d, entity.get_pos())
-                {
-                    *entity_pos = entity.get_entity_char().to_styled();
+            layer: &Layer,
+        ) -> impl FnMut(F) {
+            |entity: F| {
+                let mut pos = entity.borrow().get_pos().clone();
+                pos.constrain(layer);
+
+                if let Some(entity_pos) = RogueGame::get_mut_item_in_2d_enum_vec(enum_2d, &pos) {
+                    *entity_pos = entity.borrow().get_entity_char().to_styled();
                 }
             }
         }
@@ -590,22 +593,24 @@ impl RogueGame {
 
         self.pickups
             .iter()
-            .map(PickupTypes::get_inner)
-            .for_each(callback_creator(&mut enum_2d));
+            .for_each(callback_creator::<_, PickupTypes>(
+                &mut enum_2d,
+                &self.layer_base,
+            ));
 
-        self.enemies.iter().for_each(callback_creator(&mut enum_2d));
+        self.enemies
+            .iter()
+            .for_each(callback_creator::<_, Enemy>(&mut enum_2d, &self.layer_base));
 
         self.active_damage_effects.iter().for_each(|effect| {
-            effect.get_instructions().for_each(|(mut pos, entity)| {
-                pos.constrain(&self.layer_base);
-                if let Some(effect_pos) = Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, &pos) {
-                    *effect_pos = entity.to_styled();
-                }
-            });
+            effect
+                .get_instructions()
+                .for_each(callback_creator(&mut enum_2d, &self.layer_base));
         });
 
         {
-            let mut character_callback = callback_creator(&mut enum_2d);
+            let mut character_callback =
+                callback_creator::<_, Character>(&mut enum_2d, &self.layer_base);
             character_callback(&self.character);
         }
 

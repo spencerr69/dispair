@@ -5,6 +5,7 @@ use crate::target_types::{Duration, Instant};
 
 use std::{cell::RefCell, rc::Rc};
 
+use crate::common::character::Renderable;
 use crate::common::{
     coords::{Area, Position, SquareArea},
     roguegame::EntityCharacters,
@@ -111,15 +112,25 @@ impl DamageEffect {
     /// iterator
     /// can be used independently of later mutations to the `DamageEffect`.
     #[must_use]
-    pub fn get_instructions(&self) -> Box<dyn Iterator<Item = (Position, EntityCharacters)>> {
+    pub fn get_instructions(&self) -> impl Iterator<Item = RenderPosition> {
         let active_entity = self.active_entity.clone();
 
-        Box::new(
-            self.active_area
-                .clone()
-                .borrow()
-                .pos_iter()
-                .map(move |pos| (pos, active_entity.clone())),
-        )
+        self.active_area
+            .clone()
+            .borrow()
+            .pos_iter()
+            .map(move |pos| RenderPosition(pos, active_entity.clone()))
+    }
+}
+
+pub struct RenderPosition(Position, EntityCharacters);
+
+impl Renderable for RenderPosition {
+    fn get_pos(&self) -> &Position {
+        &self.0
+    }
+
+    fn get_entity_char(&self) -> &EntityCharacters {
+        &self.1
     }
 }

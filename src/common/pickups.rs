@@ -37,6 +37,16 @@ impl PickupTypes {
     }
 }
 
+impl Renderable for PickupTypes {
+    fn get_pos(&self) -> &Position {
+        self.get_inner().get_pos()
+    }
+
+    fn get_entity_char(&self) -> &EntityCharacters {
+        self.get_inner().get_entity_char()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum PickupEffect {
     PowerupOrb,

@@ -1,8 +1,7 @@
 //! This module defines coordinate-related structs and enums, such as `Position`, `Area`, and `Direction`.
 //! It provides functionality for working with positions and areas within the game world.
+use crate::common::roguegame::{EntityCharacters, Layer};
 use std::{cell::RefCell, rc::Rc};
-
-use crate::common::roguegame::Layer;
 
 /// Represents a 2D position with x and y coordinates.
 #[derive(Clone, Default, Debug, PartialEq, Eq, Ord, PartialOrd)]
