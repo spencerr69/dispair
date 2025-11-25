@@ -3,16 +3,11 @@
 
 use ratatui::style::{Color, Style};
 
+use crate::common::character::Renderable;
 use crate::common::{coords::Position, roguegame::EntityCharacters};
 
 /// A trait for entities that can be picked up by the player.
-pub trait Pickupable {
-    /// Gets the position of the pickup.
-    fn get_pos(&self) -> &Position;
-
-    /// Gets the visual representation of the pickup.
-    fn get_entity_char(&self) -> &EntityCharacters;
-
+pub trait Pickupable: Renderable {
     /// Animates the pickup based on the current game tick.
     fn animate(&mut self, tick: u64);
 
@@ -20,6 +15,24 @@ pub trait Pickupable {
     fn on_pickup(&mut self) -> PickupEffect;
 
     fn is_picked_up(&self) -> bool;
+}
+
+pub enum PickupTypes {
+    PowerupOrb(PowerupOrb),
+}
+
+impl PickupTypes {
+    pub fn get_inner(&self) -> &impl Pickupable {
+        match self {
+            PickupTypes::PowerupOrb(orb) => orb,
+        }
+    }
+
+    pub fn get_inner_mut(&mut self) -> &mut impl Pickupable {
+        match self {
+            PickupTypes::PowerupOrb(orb) => orb,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -52,7 +65,7 @@ impl PowerupOrb {
     }
 }
 
-impl Pickupable for PowerupOrb {
+impl Renderable for PowerupOrb {
     fn get_pos(&self) -> &Position {
         &self.position
     }
@@ -60,7 +73,9 @@ impl Pickupable for PowerupOrb {
     fn get_entity_char(&self) -> &EntityCharacters {
         &self.entity_char
     }
+}
 
+impl Pickupable for PowerupOrb {
     /// Animates the orb by cycling through colors every 5 ticks.
     fn animate(&mut self, tick: u64) {
         if !tick.is_multiple_of(5) {

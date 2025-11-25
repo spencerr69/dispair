@@ -2,7 +2,6 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     common::{
-        character::Movable,
         coords::{Area, Position, SquareArea},
         powerup::PowerupTypes,
     },
@@ -11,6 +10,7 @@ use crate::{
 
 use ratatui::style::{Style, Stylize};
 
+use crate::common::character::Renderable;
 use crate::common::{
     character::Character,
     enemy::Enemy,
@@ -19,6 +19,7 @@ use crate::common::{
     stats::WeaponStats,
     weapons::{DamageArea, Weapon},
 };
+
 /// A struct representing a Pillar weapon, which attacks in a vertical column.
 #[derive(Clone)]
 pub struct Pillar {

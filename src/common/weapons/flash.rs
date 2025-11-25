@@ -3,7 +3,6 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{
     common::{
         character::Character,
-        character::Movable,
         coords::Area,
         coords::{Direction, Position, SquareArea},
         debuffs::{Debuff, DebuffTypes, Elements},
@@ -17,6 +16,7 @@ use crate::{
     target_types::Duration,
 };
 
+use crate::common::character::Renderable;
 use ratatui::style::{Style, Stylize};
 
 /// A struct representing a FLASH weapon.

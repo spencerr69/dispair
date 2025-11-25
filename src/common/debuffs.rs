@@ -1,7 +1,7 @@
 use crate::{
     common::{
         TICK_RATE,
-        character::{Damageable, Movable},
+        character::Damageable,
         coords::ChaosArea,
         enemy::{Enemy, move_to_point_granular},
         roguegame::{EntityCharacters, Layer},
@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use ratatui::style::{Style, Stylize};
 
+use crate::common::character::Renderable;
 use crate::common::{
     coords::{Area, Position, SquareArea},
     stats::{DebuffStats, Proc},

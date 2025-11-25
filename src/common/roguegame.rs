@@ -19,6 +19,8 @@ use crate::{
     target_types::{Duration, Instant, KeyCode, KeyEvent},
 };
 
+use crate::common::character::Renderable;
+use crate::common::pickups::PickupTypes;
 use rand::Rng;
 use ratatui::{
     Frame,
@@ -75,7 +77,7 @@ pub struct RogueGame {
 
     active_damage_effects: Vec<DamageEffect>,
 
-    pickups: Vec<Box<dyn Pickupable>>,
+    pickups: Vec<PickupTypes>,
 
     pub level: Level,
 
@@ -193,7 +195,8 @@ impl RogueGame {
         if !self.player_state.upgrade_owned("A") {
             let position = get_rand_position_on_layer(&self.layer_base);
 
-            self.pickups.push(Box::new(PowerupOrb::new(position)));
+            self.pickups
+                .push(PickupTypes::PowerupOrb(PowerupOrb::new(position)));
         }
     }
 
@@ -237,8 +240,8 @@ impl RogueGame {
                 let char_pos = self.get_character_pos().clone();
 
                 self.pickups.iter_mut().for_each(|pickup| {
-                    if pickup.get_pos() == &char_pos {
-                        let effect = pickup.on_pickup();
+                    if pickup.get_inner().get_pos() == &char_pos {
+                        let effect = pickup.get_inner_mut().on_pickup();
 
                         match effect {
                             PickupEffect::PowerupOrb => {
@@ -260,7 +263,8 @@ impl RogueGame {
                     }
                 });
 
-                self.pickups.retain(|pickup| !pickup.is_picked_up());
+                self.pickups
+                    .retain(|pickup| !pickup.get_inner().is_picked_up());
 
                 if self.start_popup {
                     self.generate_popup();
@@ -395,7 +399,7 @@ impl RogueGame {
 
                 self.pickups
                     .iter_mut()
-                    .for_each(|pickup| pickup.animate(self.tickcount % 1000));
+                    .for_each(|pickup| pickup.get_inner_mut().animate(self.tickcount % 1000));
             }
         }
     }
@@ -572,21 +576,25 @@ impl RogueGame {
             })
             .collect();
 
-        self.pickups.iter().for_each(|pickup| {
-            if let Some(pickup_pos) =
-                Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, pickup.get_pos())
-            {
-                *pickup_pos = pickup.get_entity_char().to_styled();
-            }
-        });
+        fn callback_creator<T: Renderable>(
+            enum_2d: &mut Vec<(usize, Vec<(usize, Span)>)>,
+        ) -> impl FnMut(&T) {
+            let callback = |entity: &T| {
+                if let Some(entity_pos) =
+                    RogueGame::get_mut_item_in_2d_enum_vec(enum_2d, entity.get_pos())
+                {
+                    *entity_pos = entity.get_entity_char().to_styled();
+                }
+            };
+            callback
+        }
 
-        self.enemies.iter().for_each(|enemy| {
-            if let Some(enemy_place) =
-                Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, enemy.get_pos())
-            {
-                *enemy_place = enemy.get_entity_char().to_styled();
-            }
-        });
+        self.pickups
+            .iter()
+            .map(|wrapper| wrapper.get_inner())
+            .for_each(callback_creator(&mut enum_2d));
+
+        self.enemies.iter().for_each(callback_creator(&mut enum_2d));
 
         self.active_damage_effects.iter().for_each(|effect| {
             effect.get_instructions().for_each(|(mut pos, entity)| {
@@ -597,10 +605,9 @@ impl RogueGame {
             });
         });
 
-        if let Some(character_place) =
-            Self::get_mut_item_in_2d_enum_vec(&mut enum_2d, self.character.get_pos())
         {
-            *character_place = self.character.get_entity_char().to_styled();
+            let mut character_callback = callback_creator(&mut enum_2d);
+            character_callback(&self.character);
         }
 
         enum_2d
@@ -903,7 +910,7 @@ impl EntityCharacters {
         *self = new_entity;
     }
 
-    /// Get mutable reference to inner style, if it exists.
+    /// Get mutable reference to inner style if it exists.
     ///
     /// # Panics
     ///
@@ -959,7 +966,7 @@ mod tests {
     }
 
     #[test]
-    fn updatedrenderspeed() {
+    fn updated_renderspeed() {
         let mut player_state = PlayerState::default();
 
         player_state.stats.game_stats.width = 1000;

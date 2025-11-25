@@ -9,6 +9,7 @@ use std::{cell::RefCell, rc::Rc};
 use ratatui::style::{Style, Stylize};
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
+use crate::common::character::Renderable;
 use crate::common::{
     character::{Character, Damageable, Movable},
     coords::Area,

@@ -12,6 +12,7 @@ use crate::{
 use rand::Rng;
 use ratatui::style::{Style, Stylize};
 
+use crate::common::character::Renderable;
 use crate::common::{
     coords::{Direction, Position, SquareArea},
     effects::DamageEffect,
@@ -257,14 +258,20 @@ pub fn move_to_point_granular(
     (desired_pos, desired_facing)
 }
 
-impl Movable for Enemy {
-    fn set_pos(&mut self, new_pos: Position) {
-        self.prev_position = self.position.clone();
-        self.position = new_pos;
+impl Renderable for Enemy {
+    fn get_entity_char(&self) -> &EntityCharacters {
+        &self.entitychar
     }
 
     fn get_pos(&self) -> &Position {
         &self.position
+    }
+}
+
+impl Movable for Enemy {
+    fn set_pos(&mut self, new_pos: Position) {
+        self.prev_position = self.position.clone();
+        self.position = new_pos;
     }
 
     fn move_to(&mut self, new_pos: Position, facing: Direction) {
@@ -274,10 +281,6 @@ impl Movable for Enemy {
 
     fn get_prev_pos(&self) -> &Position {
         &self.prev_position
-    }
-
-    fn get_entity_char(&self) -> EntityCharacters {
-        self.entitychar.clone()
     }
 
     fn get_facing(&self) -> Direction {

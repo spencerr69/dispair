@@ -2,7 +2,6 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     common::{
-        character::Movable,
         coords::Area,
         debuffs::{Debuff, DebuffTypes, Elements},
         stats::{DebuffStats, Proc},
@@ -12,6 +11,7 @@ use crate::{
 
 use ratatui::style::{Style, Stylize};
 
+use crate::common::character::Renderable;
 use crate::common::{
     character::Character,
     coords::ChaosArea,

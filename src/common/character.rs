@@ -21,12 +21,19 @@ use web_time::{Duration, Instant};
 
 use crate::common::roguegame::EntityCharacters;
 
+pub trait Renderable {
+    /// Get the current `Position` of the entity
+    fn get_pos(&self) -> &Position;
+
+    ///Get the `EntityCharacters` to render the entity
+    fn get_entity_char(&self) -> &EntityCharacters;
+}
+
 /// A trait for entities that can move within the game world.
-pub trait Movable {
+pub trait Movable: Renderable {
     /// Sets the new position of the entity.
     fn set_pos(&mut self, new_pos: Position);
-    /// Gets the current position of the entity.
-    fn get_pos(&self) -> &Position;
+
     /// Moves the entity to a new position with a specified facing direction.
     fn move_to(&mut self, new_pos: Position, facing: Direction);
     /// Moves the entity to a new position safely, ensuring it stays within the layer boundaries.
@@ -39,8 +46,7 @@ pub trait Movable {
     }
     /// Gets the previous position of the entity.
     fn get_prev_pos(&self) -> &Position;
-    /// Gets the character representation of the entity.
-    fn get_entity_char(&self) -> EntityCharacters;
+
     /// Gets the current facing direction of the entity.
     fn get_facing(&self) -> Direction;
 
@@ -182,14 +188,20 @@ impl Character {
     }
 }
 
+impl Renderable for Character {
+    fn get_pos(&self) -> &Position {
+        &self.position
+    }
+
+    fn get_entity_char(&self) -> &EntityCharacters {
+        &self.entitychar
+    }
+}
+
 impl Movable for Character {
     fn set_pos(&mut self, new_pos: Position) {
         self.prev_position = self.position.clone();
         self.position = new_pos;
-    }
-
-    fn get_pos(&self) -> &Position {
-        &self.position
     }
 
     /// Attempts to move the character to `new_pos` and update its facing; movement is throttled by the character's movement speed multiplier and `last_moved` is updated when the move occurs.
@@ -209,10 +221,6 @@ impl Movable for Character {
 
     fn get_prev_pos(&self) -> &Position {
         &self.prev_position
-    }
-
-    fn get_entity_char(&self) -> EntityCharacters {
-        self.entitychar.clone()
     }
 
     fn get_facing(&self) -> Direction {
