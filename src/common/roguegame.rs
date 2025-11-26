@@ -3,7 +3,8 @@
 
 use crate::{
     common::{
-        center, character::{Character, Damageable, Movable},
+        TICK_RATE, center,
+        character::{Character, Damageable, Movable},
         coords::{Area, Direction, Position, SquareArea},
         debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect},
         effects::DamageEffect,
@@ -14,7 +15,6 @@ use crate::{
         timescaler::TimeScaler,
         upgrades::upgrade::PlayerState,
         weapons::DamageArea,
-        TICK_RATE,
     },
     target_types::{Duration, Instant, KeyCode, KeyEvent},
 };
@@ -24,12 +24,12 @@ use crate::common::character::Renderable;
 use crate::common::pickups::PickupTypes;
 use rand::Rng;
 use ratatui::{
+    Frame,
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
     symbols::border,
     text::{Line, Span, Text},
     widgets::{Block, Gauge, Paragraph},
-    Frame,
 };
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
@@ -186,7 +186,6 @@ impl RogueGame {
     }
 
     #[must_use]
-    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     pub fn per_sec_to_tick_count(per_sec: f64) -> u64 {
         let per_tick = TICK_RATE / per_sec;
         per_tick.ceil() as u64
@@ -201,23 +200,8 @@ impl RogueGame {
         }
     }
 
-    #[allow(clippy::too_many_lines)]
     pub fn on_tick(&mut self) {
-        if let Some(powerup_popup) = self.powerup_popup.take() {
-            if powerup_popup.finished {
-                self.game_state = GameState::Play;
-                self.character.weapons = powerup_popup.weapons;
-                self.character.charms = powerup_popup.charms;
-                self.reset_stats();
-                self.update_stats_with_charms();
-                self.update_stats();
-                self.character.stats = self.player_state.stats.player_stats.clone();
-
-                self.player_state.upgrades.insert("A".to_string(), 1);
-            } else {
-                self.powerup_popup = Some(powerup_popup);
-            }
-        }
+        self.handle_popup();
 
         match self.game_state {
             GameState::Paused | GameState::GameOver | GameState::Exit => {}
@@ -238,150 +222,20 @@ impl RogueGame {
                     self.start_popup = true;
                 }
 
-                let char_pos = self.get_character_pos().clone();
-
-                self.pickups.iter_mut().for_each(|pickup| {
-                    if pickup.get_inner().get_pos() == &char_pos {
-                        let effect = pickup.get_inner_mut().on_pickup();
-
-                        match effect {
-                            PickupEffect::PowerupOrb => {
-                                let area = SquareArea::new(
-                                    Position(0, 0),
-                                    Position(self.width as i32, self.height as i32),
-                                );
-
-                                self.active_damage_effects.push(DamageEffect::new(
-                                    area,
-                                    EntityCharacters::AttackWeak(Style::new().red()),
-                                    Duration::from_secs_f64(0.5),
-                                    false,
-                                ));
-
-                                self.start_popup = true;
-                            }
-                        }
-                    }
-                });
-
-                self.pickups
-                    .retain(|pickup| !pickup.get_inner().is_picked_up());
-
                 if self.start_popup {
                     self.generate_popup();
                 }
 
-                let mut damage_areas: Vec<DamageArea> = Vec::new();
+                self.handle_pickups();
 
-                self.enemies = self
-                    .enemies
-                    .clone()
-                    .into_iter()
-                    .filter_map(|mut e| {
-                        if !e.debuffs.get_on_tick_effects().is_empty() {
-                            e.debuffs = e
-                                .debuffs
-                                .clone()
-                                .into_iter()
-                                .map(|mut d| {
-                                    if let Some(damage_area) =
-                                        d.on_tick(&mut e, &self.layer_base, self.tickcount)
-                                    {
-                                        damage_areas.push(damage_area);
-                                    }
-                                    d
-                                })
-                                .collect();
-                        }
-
-                        if !e.debuffs.get_on_damage_effects().is_empty() {
-                            e.debuffs = e
-                                .debuffs
-                                .clone()
-                                .into_iter()
-                                .map(|mut d| {
-                                    if let Some(damage_area) =
-                                        d.on_damage(&mut e, &self.layer_base, &self.enemies)
-                                    {
-                                        damage_areas.push(damage_area);
-                                    }
-                                    d
-                                })
-                                .collect();
-                        }
-
-                        e.debuffs.retain(|d| !d.complete);
-
-                        if e.is_alive() {
-                            Some(e)
-                        } else {
-                            if !e.debuffs.get_on_death_effects().is_empty() {
-                                e.debuffs.iter().for_each(|d| {
-                                    if let Some(damage_area) =
-                                        d.on_death(e.clone(), &self.layer_base)
-                                    {
-                                        damage_areas.push(damage_area);
-                                    }
-                                });
-                            }
-
-                            self.consume_drops(&e.get_drops());
-
-                            None
-                        }
-                    })
-                    .collect();
-
-                for damage_area in damage_areas {
-                    damage_area.deal_damage(&mut self.enemies);
-
-                    let damage_effect = DamageEffect::from(damage_area);
-
-                    self.active_damage_effects.push(damage_effect);
-                }
+                self.process_debuffs();
 
                 if self.tickcount.is_multiple_of(self.enemy_spawn_ticks) {
                     self.spawn_enemy();
                 }
 
                 if self.tickcount.is_multiple_of(self.enemy_move_ticks) {
-                    self.enemies = self
-                        .enemies
-                        .clone()
-                        .into_iter()
-                        .map(|mut enemy| {
-                            if let Some((desired_pos, desired_facing)) = enemy.update(
-                                &mut self.character,
-                                &self.layer_base,
-                                &mut self.active_damage_effects,
-                            ) && self.can_stand(&desired_pos)
-                            {
-                                enemy.move_to(desired_pos, desired_facing);
-                            }
-
-                            if self.character.stats.shove_amount > 0
-                                && is_next_to_character(
-                                    self.character.get_pos(),
-                                    enemy.get_prev_pos(),
-                                )
-                            {
-                                if self.character.stats.shove_damage > 0 {
-                                    enemy.take_damage(
-                                        (f64::from(self.character.stats.shove_damage)
-                                            * self.character.stats.damage_mult)
-                                            .ceil() as i32,
-                                    );
-                                }
-
-                                enemy.move_back(
-                                    self.character.stats.shove_amount as i32,
-                                    &self.layer_base,
-                                );
-                            }
-                            enemy
-                        })
-                        .collect();
-                    // self.change_low_health_enemies_questionable();
+                    self.update_enemies();
                 }
 
                 if self.tickcount.is_multiple_of(TICK_RATE.floor() as u64) {
@@ -401,6 +255,157 @@ impl RogueGame {
                 self.pickups
                     .iter_mut()
                     .for_each(|pickup| pickup.get_inner_mut().animate(self.tickcount % 1000));
+            }
+        }
+    }
+
+    fn update_enemies(&mut self) {
+        self.enemies = self
+            .enemies
+            .clone()
+            .into_iter()
+            .map(|mut enemy| {
+                if let Some((desired_pos, desired_facing)) = enemy.update(
+                    &mut self.character,
+                    &self.layer_base,
+                    &mut self.active_damage_effects,
+                ) && self.can_stand(&desired_pos)
+                {
+                    enemy.move_to(desired_pos, desired_facing);
+                }
+
+                if self.character.stats.shove_amount > 0
+                    && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
+                {
+                    if self.character.stats.shove_damage > 0 {
+                        enemy.take_damage(
+                            (f64::from(self.character.stats.shove_damage)
+                                * self.character.stats.damage_mult)
+                                .ceil() as i32,
+                        );
+                    }
+
+                    enemy.move_back(self.character.stats.shove_amount as i32, &self.layer_base);
+                }
+                enemy
+            })
+            .collect();
+    }
+
+    fn process_debuffs(&mut self) {
+        let mut damage_areas: Vec<DamageArea> = Vec::new();
+
+        self.enemies = self
+            .enemies
+            .clone()
+            .into_iter()
+            .filter_map(|mut e| {
+                if !e.debuffs.get_on_tick_effects().is_empty() {
+                    e.debuffs = e
+                        .debuffs
+                        .clone()
+                        .into_iter()
+                        .map(|mut d| {
+                            if let Some(damage_area) =
+                                d.on_tick(&mut e, &self.layer_base, self.tickcount)
+                            {
+                                damage_areas.push(damage_area);
+                            }
+                            d
+                        })
+                        .collect();
+                }
+
+                if !e.debuffs.get_on_damage_effects().is_empty() {
+                    e.debuffs = e
+                        .debuffs
+                        .clone()
+                        .into_iter()
+                        .map(|mut d| {
+                            if let Some(damage_area) =
+                                d.on_damage(&mut e, &self.layer_base, &self.enemies)
+                            {
+                                damage_areas.push(damage_area);
+                            }
+                            d
+                        })
+                        .collect();
+                }
+
+                e.debuffs.retain(|d| !d.complete);
+
+                if e.is_alive() {
+                    Some(e)
+                } else {
+                    if !e.debuffs.get_on_death_effects().is_empty() {
+                        e.debuffs.iter().for_each(|d| {
+                            if let Some(damage_area) = d.on_death(e.clone(), &self.layer_base) {
+                                damage_areas.push(damage_area);
+                            }
+                        });
+                    }
+
+                    self.consume_drops(&e.get_drops());
+
+                    None
+                }
+            })
+            .collect();
+
+        for damage_area in damage_areas {
+            damage_area.deal_damage(&mut self.enemies);
+
+            let damage_effect = DamageEffect::from(damage_area);
+
+            self.active_damage_effects.push(damage_effect);
+        }
+    }
+
+    fn handle_pickups(&mut self) {
+        let char_pos = self.get_character_pos().clone();
+
+        self.pickups.iter_mut().for_each(|pickup| {
+            if pickup.get_inner().get_pos() == &char_pos {
+                let effect = pickup.get_inner_mut().on_pickup();
+
+                match effect {
+                    PickupEffect::PowerupOrb => {
+                        let area = SquareArea::new(
+                            Position(0, 0),
+                            Position(self.width as i32, self.height as i32),
+                        );
+
+                        self.active_damage_effects.push(DamageEffect::new(
+                            area,
+                            EntityCharacters::AttackWeak(Style::new().red()),
+                            Duration::from_secs_f64(0.5),
+                            false,
+                        ));
+
+                        self.start_popup = true;
+                    }
+                }
+            }
+        });
+
+        self.pickups
+            .retain(|pickup| !pickup.get_inner().is_picked_up());
+    }
+
+    fn handle_popup(&mut self) {
+        if let Some(powerup_popup) = self.powerup_popup.take() {
+            if powerup_popup.finished {
+                self.game_state = GameState::Play;
+                self.character.weapons = powerup_popup.weapons;
+                self.character.charms = powerup_popup.charms;
+                self.reset_stats();
+                self.update_stats_with_charms();
+                self.update_stats();
+                self.character.stats = self.player_state.stats.player_stats.clone();
+
+                self.player_state.upgrades.insert("A".to_string(), 1);
+            } else {
+                self.powerup_popup = Some(powerup_popup);
             }
         }
     }
