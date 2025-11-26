@@ -6,6 +6,7 @@ use crate::{
         debuffs::{Debuff, DebuffTypes, Elements},
         stats::{DebuffStats, Proc},
     },
+    new_weapon,
     target_types::Duration,
 };
 
@@ -25,31 +26,7 @@ use crate::common::{
     weapons::{DamageArea, Weapon},
 };
 
-#[derive(Clone)]
-pub struct Lightning {
-    base_damage: i32,
-    damage_scalar: f64,
-    stats: WeaponStats,
-    element: Option<Elements>,
-}
-
-impl Lightning {
-    const BASE_DAMAGE: i32 = 1;
-    const BASE_SIZE: i32 = 1;
-
-    #[must_use]
-    pub fn new(base_weapon_stats: WeaponStats) -> Self {
-        Lightning {
-            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
-            damage_scalar: 1.,
-            stats: WeaponStats {
-                size: Self::BASE_SIZE + base_weapon_stats.size,
-                ..base_weapon_stats
-            },
-            element: None,
-        }
-    }
-}
+new_weapon!(Lightning, 1, 1);
 
 impl Weapon for Lightning {
     fn attack(&self, wielder: &Character, enemies: &[Enemy], layer: &Layer) -> DamageArea {
