@@ -13,39 +13,14 @@ use crate::{
         stats::{DebuffStats, Proc},
         weapons::{DamageArea, Weapon},
     },
+    new_weapon,
     target_types::Duration,
 };
 
 use crate::common::character::Renderable;
 use ratatui::style::{Style, Stylize};
 
-/// A struct representing a FLASH weapon.
-#[derive(Clone)]
-pub struct Flash {
-    base_damage: i32,
-    damage_scalar: f64,
-    stats: WeaponStats,
-    element: Option<Elements>,
-}
-
-impl Flash {
-    const BASE_SIZE: i32 = 1;
-    const BASE_DAMAGE: i32 = 2;
-
-    /// Creates a new `Flash` with stats based on the player's current `Stats`.
-    #[must_use]
-    pub fn new(base_weapon_stats: WeaponStats) -> Self {
-        Flash {
-            base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
-            damage_scalar: 1.,
-            stats: WeaponStats {
-                size: Self::BASE_SIZE + base_weapon_stats.size,
-                ..base_weapon_stats
-            },
-            element: None,
-        }
-    }
-}
+new_weapon!(Flash, 2, 1);
 
 impl Poweruppable for Flash {
     fn get_name(&self) -> String {

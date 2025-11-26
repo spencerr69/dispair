@@ -1,39 +1,29 @@
-use std::{cell::RefCell, rc::Rc};
+use crate::common::character::{Character, Renderable};
+use crate::common::coords::{Area, Position, SquareArea};
+use crate::common::enemy::Enemy;
+use crate::common::powerup::{DynPowerup, PowerupTypes, Poweruppable};
+use crate::common::roguegame::{EntityCharacters, Layer};
+use crate::common::weapons::Elements;
+use crate::common::weapons::{DamageArea, Weapon, WeaponStats};
+use crate::new_weapon;
+use crate::target_types::Duration;
+use ratatui::prelude::Style;
+use ratatui::style::Stylize;
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::{
-    common::{
-        coords::{Area, Position, SquareArea},
-        debuffs::Elements,
-        powerup::PowerupTypes,
-    },
-    new_weapon,
-    target_types::Duration,
-};
+new_weapon!(Row, 3, 0);
 
-use ratatui::style::{Style, Stylize};
-
-use crate::common::character::Renderable;
-use crate::common::{
-    character::Character,
-    enemy::Enemy,
-    powerup::{DynPowerup, Poweruppable},
-    roguegame::{EntityCharacters, Layer},
-    stats::WeaponStats,
-    weapons::{DamageArea, Weapon},
-};
-
-new_weapon!(Pillar, 3, 0);
-
-impl Weapon for Pillar {
+impl Weapon for Row {
     fn attack(&self, wielder: &Character, _: &[Enemy], layer: &Layer) -> DamageArea {
-        let (x, _) = wielder.get_pos().clone().get();
+        let (_, y) = wielder.get_pos().clone().get();
 
         //size should be half the size for balancing
         let size = self.stats.size / 2;
 
         let mut area = SquareArea {
-            corner1: Position(x - size, i32::MAX),
-            corner2: Position(x + size, 0),
+            corner1: Position(0, y + size),
+            corner2: Position(i32::MAX, y - size),
         };
 
         area.constrain(layer);
@@ -57,9 +47,9 @@ impl Weapon for Pillar {
     }
 }
 
-impl Poweruppable for Pillar {
+impl Poweruppable for Row {
     fn get_name(&self) -> String {
-        "PILLAR".into()
+        "ROW".into()
     }
 
     fn get_powerup_type(&self) -> PowerupTypes {
@@ -68,10 +58,9 @@ impl Poweruppable for Pillar {
 
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
-            1 => "PILLAR will create a damaging beam which affects an entire column of the map"
-                .into(),
-            2 => "Increase size by 1, increase base damage by 1".into(),
-            3 => "Increase base damage by 2".into(),
+            1 => "ROW will create a damaging beam which affects an entire row of the map.".into(),
+            2 => "Increase size by 1, increase base damage by 1.".into(),
+            3 => "Increase damage by 2.".into(),
             4 => "Increase damage scalar by 25%".into(),
             5 => "Increase damage scalar by 75%".into(),
             _ => String::new(),

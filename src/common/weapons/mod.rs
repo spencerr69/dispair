@@ -10,6 +10,7 @@ use ratatui::style::{Style, Stylize};
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::character::Renderable;
+use crate::common::weapons::row::Row;
 use crate::common::{
     character::{Character, Damageable},
     coords::Area,
@@ -23,6 +24,42 @@ use crate::common::{
 pub mod flash;
 pub mod lightning;
 pub mod pillar;
+pub mod row;
+
+#[macro_export]
+macro_rules! new_weapon {
+    ($weapon_name: ident, $base_damage:expr, $base_size:expr ) => {
+        #[derive(Clone)]
+        pub struct $weapon_name {
+            base_damage: i32,
+            damage_scalar: f64,
+            stats: WeaponStats,
+            element: Option<Elements>,
+        }
+
+        impl $weapon_name {
+            const BASE_DAMAGE: i32 = $base_damage;
+            const BASE_SIZE: i32 = $base_size;
+
+            #[doc = concat!("Creates a new `", stringify!($weapon_name), "` with stats based on \
+            the \
+            player's \
+            current `Stats`.")]
+            #[must_use]
+            pub fn new(base_weapon_stats: WeaponStats) -> Self {
+                Self {
+                    base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
+                    damage_scalar: 1.,
+                    stats: WeaponStats {
+                        size: Self::BASE_SIZE + base_weapon_stats.size,
+                        ..base_weapon_stats
+                    },
+                    element: None,
+                }
+            }
+        }
+    };
+}
 
 #[derive(Clone, EnumIter, IntoStaticStr, EnumString)]
 pub enum WeaponWrapper {
@@ -34,6 +71,9 @@ pub enum WeaponWrapper {
 
     #[strum(serialize = "Lightning", serialize = "LIGHTNING")]
     Lightning(Option<Lightning>),
+
+    #[strum(serialize = "Row", serialize = "ROW")]
+    Row(Option<Row>),
 }
 
 impl PartialEq for WeaponWrapper {
@@ -56,6 +96,7 @@ impl WeaponWrapper {
             WeaponWrapper::Flash(flash) => flash.as_ref().expect("No inner weapon."),
             WeaponWrapper::Pillar(pillar) => pillar.as_ref().expect("No inner weapon."),
             WeaponWrapper::Lightning(lightning) => lightning.as_ref().expect("No inner weapon."),
+            WeaponWrapper::Row(row) => row.as_ref().expect("No inner weapon."),
         }
     }
 
@@ -69,6 +110,7 @@ impl WeaponWrapper {
             WeaponWrapper::Flash(flash) => flash.as_mut().expect("No inner weapon."),
             WeaponWrapper::Pillar(pillar) => pillar.as_mut().expect("No inner weapon."),
             WeaponWrapper::Lightning(lightning) => lightning.as_mut().expect("No inner weapon."),
+            WeaponWrapper::Row(row) => row.as_mut().expect("No inner weapon."),
         }
     }
 
@@ -77,6 +119,7 @@ impl WeaponWrapper {
             WeaponWrapper::Flash(flash) => *flash = Some(Flash::new(weapon_stats)),
             WeaponWrapper::Pillar(pillar) => *pillar = Some(Pillar::new(weapon_stats)),
             WeaponWrapper::Lightning(lightning) => *lightning = Some(Lightning::new(weapon_stats)),
+            WeaponWrapper::Row(row) => *row = Some(Row::new(weapon_stats)),
         }
     }
 }
