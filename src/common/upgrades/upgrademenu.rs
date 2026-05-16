@@ -1,6 +1,9 @@
 //! This module provides the UI and logic for the upgrade menu.
 //! It allows the player to navigate and purchase upgrades for their character.
+use crate::common::upgrades::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
 use crate::target_types::{KeyCode, KeyEvent};
+use ratatui::text::{Span, Text};
+use ratatui::widgets::BorderType;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},
@@ -10,14 +13,20 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
 
-use crate::common::upgrades::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
-
 /// An enum representing the possible destinations when closing the upgrade menu.
 #[derive(Clone)]
 pub enum Goto {
     Game,
     Menu,
 }
+
+#[derive(Clone)]
+pub struct MenuCrumb {
+    pub index: usize,
+    pub title: String,
+}
+
+pub type MenuHistory = Vec<MenuCrumb>;
 
 /// A struct that manages the state and rendering of the upgrades menu.
 pub struct UpgradesMenu {
@@ -26,7 +35,7 @@ pub struct UpgradesMenu {
     pub upgrade_selection: ListState,
     pub close: Option<Goto>,
     pub current_layer: UpgradeTree,
-    pub history: Vec<usize>,
+    history: MenuHistory,
 }
 
 impl UpgradesMenu {
@@ -128,8 +137,8 @@ impl UpgradesMenu {
     pub fn go_back(&mut self) {
         self.history.pop();
         self.current_layer = self.root_upgrade_tree.clone();
-        for index in self.history.clone() {
-            self.current_layer = self.current_layer[index].children.clone().unwrap();
+        for crumb in self.history.clone() {
+            self.current_layer = self.current_layer[crumb.index].children.clone().unwrap();
         }
     }
 
@@ -148,8 +157,12 @@ impl UpgradesMenu {
     pub fn navigate_into_upgrade(&mut self) -> Option<()> {
         let selected_index = self.upgrade_selection.selected()?;
         if let Some(ref children) = self.current_layer[selected_index].children {
+            let menu_crumb = MenuCrumb {
+                title: self.current_layer[selected_index].get_raw_title().clone(),
+                index: selected_index,
+            };
+            self.history.push(menu_crumb);
             self.current_layer = children.clone();
-            self.history.push(selected_index);
             return Some(());
         }
         None
@@ -182,6 +195,19 @@ impl UpgradesMenu {
             .collect()
     }
 
+    #[must_use]
+    pub fn breadcrumbs_to_text(breadcrumbs: &'_ MenuHistory) -> Line<'_> {
+        let mut history = vec![Span::raw("upgrades").dark_gray()];
+        for crumb in breadcrumbs {
+            history.push(Span::raw(" > ").dark_gray());
+            history.push(Span::raw(&crumb.title).dark_gray());
+        }
+        if let Some(current_crumb) = history.last_mut() {
+            *current_crumb = current_crumb.clone().bold().white();
+        }
+        Line::from(history)
+    }
+
     /// Recursively checks if all children of an upgrade node are owned.
     #[allow(clippy::missing_panics_doc)]
     #[must_use]
@@ -191,54 +217,67 @@ impl UpgradesMenu {
             .iter()
             .all(|current| player_state.amount_owned(current) > 0);
 
-        if upgrade_node.children.is_none() {
-            if !have_required {
-                return true;
-            }
-            player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit
-        } else {
-            for child in upgrade_node.children.unwrap() {
+        if let Some(children) = upgrade_node.children {
+            for child in children {
                 if !Self::own_children(child, player_state) {
                     return false;
                 }
             }
             true
+        } else {
+            if !have_required {
+                return true;
+            }
+            player_state.amount_owned(&upgrade_node.id) >= upgrade_node.limit
         }
     }
 
     /// Renders the upgrades menu to the frame.
     pub fn render_upgrades(&mut self, frame: &mut Frame) {
-        let mut block = Block::bordered().border_set(border::THICK);
-        let inner = block.inner(frame.area());
+        let mut window = Block::bordered().border_set(border::THICK);
+        let inner = window.inner(frame.area());
 
         let gold = self.player_state.inventory.gold;
         let current_layer = self.current_layer.clone();
 
-        let text: Vec<ListItem> = Self::node_to_list(&current_layer, &self.player_state);
+        let list_text: Vec<ListItem> = Self::node_to_list(&current_layer, &self.player_state);
 
         let horizontal = Layout::horizontal([Constraint::Percentage(70), Constraint::Fill(1)]);
         let [left, right] = horizontal.areas(inner);
 
-        let title = Line::from(" dispair ".bold());
+        let title = Line::from(" dispair.upgrade ".bold());
         let gold_amount = Line::from(vec![" Gold: ".into(), gold.to_string().into()]);
         let instructions = Line::from(vec![
             " <W|UP> Up | <S|DOWN> Down | <SPACE> Start Game | <Esc> Back ".into(),
         ]);
-        block = block
+        window = window
             .title(title.left_aligned())
             .title_bottom(instructions.left_aligned());
 
-        let list = List::new(text)
+        let breadcrumbs_border = Block::bordered().border_type(BorderType::Rounded);
+
+        let [list_rect, breadcrumb_rect] =
+            Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]).areas(left);
+
+        let breadcrumbs_inner = breadcrumbs_border.inner(breadcrumb_rect);
+
+        let breadcrumbs = Self::breadcrumbs_to_text(&self.history);
+
+        let list = List::new(list_text)
             .highlight_style(Style::new().bold())
             .highlight_symbol(">");
 
         let current_upgrade = self.get_selected_node().unwrap_or_default();
 
         let upgrade_block = Block::bordered().border_set(border::ROUNDED);
-        let upgrade_title = Line::from(current_upgrade.clone().title);
-        let upgrade_desc = Line::from(current_upgrade.clone().description);
+        let upgrade_title = Line::from(current_upgrade.clone().get_raw_title());
+        let upgrade_desc = Text::from(current_upgrade.clone().description);
         let mut upgrade_cost = Line::from("");
-        if current_upgrade.cost.is_some() {
+        if current_upgrade.limit > 0
+            && self.player_state.amount_owned(&current_upgrade.id) >= current_upgrade.limit
+        {
+            upgrade_cost = Line::from("owned");
+        } else if current_upgrade.cost.is_some() {
             upgrade_cost = Line::from(format!(
                 "${}",
                 current_upgrade.next_cost(self.player_state.amount_owned(&current_upgrade.id))
@@ -256,23 +295,26 @@ impl UpgradesMenu {
             ));
         }
 
-        let upgrade_paragraph = Paragraph::new(vec![
-            upgrade_title,
-            "".into(),
-            upgrade_desc,
-            "".into(),
-            upgrade_cost,
-            "".into(),
-            upgrade_amount,
-        ])
-        .block(upgrade_block.title_bottom(gold_amount.centered()))
-        .centered()
-        .wrap(Wrap { trim: false });
+        let mut upgrade_lines = Vec::new();
+        upgrade_lines.push(upgrade_title);
+        upgrade_lines.push("".into());
+        upgrade_lines.append(&mut upgrade_desc.lines.clone());
+        upgrade_lines.push("".into());
+        upgrade_lines.push(upgrade_cost);
+        upgrade_lines.push("".into());
+        upgrade_lines.push(upgrade_amount);
 
-        frame.render_widget(block, frame.area());
+        let upgrade_paragraph = Paragraph::new(upgrade_lines)
+            .block(upgrade_block.title_bottom(gold_amount.centered()))
+            .centered()
+            .wrap(Wrap { trim: false });
+
+        frame.render_widget(window, frame.area());
 
         frame.render_widget(upgrade_paragraph, right);
 
-        frame.render_stateful_widget(list, left, &mut self.upgrade_selection);
+        frame.render_stateful_widget(list, list_rect, &mut self.upgrade_selection);
+        frame.render_widget(breadcrumbs_border, breadcrumb_rect);
+        frame.render_widget(breadcrumbs, breadcrumbs_inner);
     }
 }

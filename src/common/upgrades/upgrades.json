@@ -1,346 +1,346 @@
 [
-    {
-        "title": "debug",
-        "description": "debug",
-        "id": "9999",
-        "cost": 0,
+  {
+    "title": "debug",
+    "description": "debug",
+    "id": "9999",
+    "cost": 0,
+    "limit": 1,
+    "requires": [],
+    "children": null,
+    "costscale_override": null
+  },
+  {
+    "title": "PRESERVE",
+    "description": "\\------/",
+    "id": "1",
+    "cost": null,
+    "limit": 0,
+    "requires": [],
+    "children": [
+      {
+        "title": "PRESERVE::\\conform",
+        "description": "don't be so obvious.\nmost hostiles no longer perceive you as a threat",
+        "children": null,
+        "id": "11",
+        "cost": 1,
         "limit": 1,
+        "requires": []
+      },
+      {
+        "title": "PRESERVE::\\grow",
+        "description": "don't be so weak.\nadd 1 size.",
+        "children": null,
+        "id": "12",
+        "cost": 5,
+        "limit": 1,
+        "requires": [
+          "11"
+        ]
+      },
+      {
+        "title": "PRESERVE::\\become",
+        "description": "you open your eyes in a [LOCATION].\nthe world is ahead of you.\ngrow map and unlock new upgrades.",
+        "children": null,
+        "id": "13",
+        "cost": 15,
+        "limit": 1,
+        "requires": [
+          "12"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "STATS",
+    "description": "\\---/",
+    "id": "2",
+    "cost": null,
+    "limit": 0,
+    "requires": [
+      "13"
+    ],
+    "children": [
+      {
+        "title": "STATS::\\damage",
+        "description": "\\------------/",
+        "id": "21",
+        "cost": null,
+        "limit": 0,
+        "requires": [],
+        "children": [
+          {
+            "title": "STATS::\\damage::\\flat_up",
+            "description": "increase all METHOD damage by +1",
+            "id": "211",
+            "cost": 10,
+            "limit": 3,
+            "requires": [],
+            "children": null
+          },
+          {
+            "title": "STATS::\\damage::\\mult_up",
+            "description": "increase all damage by +10%",
+            "id": "212",
+            "cost": 20,
+            "limit": 3,
+            "requires": [],
+            "children": null
+          }
+        ]
+      },
+      {
+        "title": "STATS::\\health",
+        "description": "\\------------/",
+        "id": "22",
+        "cost": null,
+        "limit": 0,
+        "requires": [],
+        "children": [
+          {
+            "title": "STATS::\\health::\\flat_up",
+            "description": "increase base health by +1",
+            "id": "221",
+            "cost": 10,
+            "limit": 3,
+            "requires": [],
+            "children": null
+          },
+          {
+            "title": "STATS::\\health::\\mult_up",
+            "description": "increase health by +10%",
+            "id": "222",
+            "cost": 20,
+            "limit": 3,
+            "requires": [],
+            "children": null
+          },
+          {
+            "title": "STATS::\\health::\\exp_mult_up",
+            "description": "increase health by 1.5x",
+            "id": "223",
+            "cost": 1000,
+            "limit": 3,
+            "requires": [
+              "A"
+            ],
+            "children": null,
+            "costscale_override": 2.0
+          }
+        ]
+      },
+      {
+        "title": "STATS::\\attack_rate",
+        "description": "increase attack rate by +15%",
+        "id": "23",
+        "cost": 10,
+        "limit": 3,
+        "requires": [],
+        "children": null
+      },
+      {
+        "title": "STATS::\\timer_length",
+        "description": "increase timer length by x50%",
+        "id": "24",
+        "cost": 50,
+        "limit": 3,
         "requires": [],
         "children": null,
-        "costscale_override": null
-    },
-    {
-        "title": "PRESERVE",
-        "description": "\\------/",
-        "id": "1",
+        "costscale_override": 2.0
+      },
+      {
+        "title": "STATS::\\movement_speed",
+        "description": "increase movement speed by +50%",
+        "id": "25",
+        "cost": 70,
+        "limit": 3,
+        "requires": [
+          "42"
+        ],
+        "children": null
+      },
+      {
+        "title": "STATS::\\gold_gain",
+        "description": "increase gold gain by +50%",
+        "id": "26",
+        "cost": 200,
+        "limit": 3,
+        "requires": [
+          "42"
+        ],
+        "children": null
+      },
+      {
+        "title": "STATS::\\elemental_honage",
+        "description": "increase elemental honage by 25%",
+        "id": "27",
+        "cost": 3000,
+        "limit": 4,
+        "requires": [
+          "A"
+        ],
+        "children": null
+      }
+    ]
+  },
+  {
+    "title": "EFFECT",
+    "description": "\\----/",
+    "id": "3",
+    "cost": null,
+    "limit": 0,
+    "requires": [
+      "13"
+    ],
+    "children": [
+      {
+        "title": "EFFECT::\\mark",
+        "description": "mark enemies to explode",
+        "id": "31",
         "cost": null,
         "limit": 0,
         "requires": [],
         "children": [
-            {
-                "title": "PRESERVE::\\conform",
-                "description": "don't be so obvious.\nmost hostiles no longer perceive you as a threat",
-                "children": null,
-                "id": "11",
-                "cost": 1,
-                "limit": 1,
-                "requires": []
-            },
-            {
-                "title": "PRESERVE::\\grow",
-                "description": "don't be so weak.\nadd 1 size.",
-                "children": null,
-                "id": "12",
-                "cost": 5,
-                "limit": 1,
-                "requires": [
-                    "11"
-                ]
-            },
-            {
-                "title": "PRESERVE::\\become",
-                "description": "you open your eyes in a [LOCATION]. the world is ahead of you.\ngrow map and unlock new upgrades.",
-                "children": null,
-                "id": "13",
-                "cost": 15,
-                "limit": 1,
-                "requires": [
-                    "12"
-                ]
-            }
+          {
+            "title": "EFFECT::\\mark::\\mark_chance",
+            "description": "+2% chance to mark enemies to explode on death",
+            "id": "311",
+            "cost": 20,
+            "limit": 10,
+            "requires": [],
+            "children": null
+          },
+          {
+            "title": "EFFECT::\\mark::\\explosion_size",
+            "description": "+1 size to explosion",
+            "id": "312",
+            "cost": 50,
+            "limit": 2,
+            "requires": [
+              "311"
+            ],
+            "children": null,
+            "costscale_override": 1.5
+          }
         ]
-    },
-    {
-        "title": "STATS",
-        "description": "\\---/",
-        "id": "2",
+      },
+      {
+        "title": "EFFECT::\\shove",
+        "description": "shove enemies back",
+        "id": "32",
         "cost": null,
         "limit": 0,
-        "requires": [
-            "13"
-        ],
+        "requires": [],
         "children": [
-            {
-                "title": "STATS::\\damage",
-                "description": "\\------------/",
-                "id": "21",
-                "cost": null,
-                "limit": 0,
-                "requires": [],
-                "children": [
-                    {
-                        "title": "STATS::\\damage::\\flat_up",
-                        "description": "increase all METHOD damage by +1",
-                        "id": "211",
-                        "cost": 10,
-                        "limit": 3,
-                        "requires": [],
-                        "children": null
-                    },
-                    {
-                        "title": "STATS::\\damage::\\mult_up",
-                        "description": "increase all damage by +10%",
-                        "id": "212",
-                        "cost": 20,
-                        "limit": 3,
-                        "requires": [],
-                        "children": null
-                    }
-                ]
-            },
-            {
-                "title": "STATS::\\health",
-                "description": "\\------------/",
-                "id": "22",
-                "cost": null,
-                "limit": 0,
-                "requires": [],
-                "children": [
-                    {
-                        "title": "STATS::\\health::\\flat_up",
-                        "description": "increase base health by +1",
-                        "id": "221",
-                        "cost": 10,
-                        "limit": 3,
-                        "requires": [],
-                        "children": null
-                    },
-                    {
-                        "title": "STATS::\\health::\\mult_up",
-                        "description": "increase health by +10%",
-                        "id": "222",
-                        "cost": 20,
-                        "limit": 3,
-                        "requires": [],
-                        "children": null
-                    },
-                    {
-                        "title": "STATS::\\health::\\exp_mult_up",
-                        "description": "increase health by 1.5x",
-                        "id": "223",
-                        "cost": 1000,
-                        "limit": 3,
-                        "requires": [
-                            "A"
-                        ],
-                        "children": null,
-                        "costscale_override": 2.0
-                    }
-                ]
-            },
-            {
-                "title": "STATS::\\attack_rate",
-                "description": "increase attack rate by +15%",
-                "id": "23",
-                "cost": 10,
-                "limit": 3,
-                "requires": [],
-                "children": null
-            },
-            {
-                "title": "STATS::\\timer_length",
-                "description": "increase timer length by x50%",
-                "id": "24",
-                "cost": 50,
-                "limit": 3,
-                "requires": [],
-                "children": null,
-                "costscale_override": 2.0
-            },
-            {
-                "title": "STATS::\\movement_speed",
-                "description": "increase movement speed by +50%",
-                "id": "25",
-                "cost": 70,
-                "limit": 3,
-                "requires": [
-                    "42"
-                ],
-                "children": null
-            },
-            {
-                "title": "STATS::\\gold_gain",
-                "description": "increase gold gain by +50%",
-                "id": "26",
-                "cost": 200,
-                "limit": 3,
-                "requires": [
-                    "42"
-                ],
-                "children": null
-            },
-            {
-                "title": "STATS::\\elemental_honage",
-                "description": "increase elemental honage by 25%",
-                "id": "27",
-                "cost": 3000,
-                "limit": 4,
-                "requires": [
-                    "A"
-                ],
-                "children": null
-            }
+          {
+            "title": "EFFECT::\\shove::\\num_steps",
+            "description": "shove enemies back +1 step when they hit you",
+            "id": "321",
+            "cost": 50,
+            "limit": 3,
+            "costscale_override": 2,
+            "requires": [],
+            "children": null
+          },
+          {
+            "title": "EFFECT::\\shove::\\damage",
+            "description": "deal +1 damage when shoving enemies",
+            "id": "322",
+            "cost": 100,
+            "limit": 3,
+            "requires": [],
+            "children": null
+          }
         ]
-    },
-    {
-        "title": "EFFECT",
-        "description": "\\----/",
-        "id": "3",
-        "cost": null,
-        "limit": 0,
+      }
+    ]
+  },
+  {
+    "title": "GREED",
+    "description": "\\---/",
+    "id": "4",
+    "cost": null,
+    "limit": 0,
+    "requires": [
+      "311"
+    ],
+    "children": [
+      {
+        "title": "GREED::\\hype",
+        "description": "your arrival is being awaited. +30s to timescale $$how do i explain this lol",
+        "id": "41",
+        "cost": 80,
+        "limit": 3,
+        "requires": [],
+        "children": null,
+        "costscale_override": 1.77
+      },
+      {
+        "title": "GREED::\\context_growth",
+        "description": "increase map size by +2 width and +2 height. warning: enemies will spawn quicker",
+        "id": "42",
+        "cost": 300,
+        "limit": 3,
         "requires": [
-            "13"
+          "41"
         ],
-        "children": [
-            {
-                "title": "EFFECT::\\mark",
-                "description": "mark enemies to explode",
-                "id": "31",
-                "cost": null,
-                "limit": 0,
-                "requires": [],
-                "children": [
-                    {
-                        "title": "EFFECT::\\mark::\\mark_chance",
-                        "description": "+2% chance to mark enemies to explode on death",
-                        "id": "311",
-                        "cost": 20,
-                        "limit": 10,
-                        "requires": [],
-                        "children": null
-                    },
-                    {
-                        "title": "EFFECT::\\mark::\\explosion_size",
-                        "description": "+1 size to explosion",
-                        "id": "312",
-                        "cost": 50,
-                        "limit": 2,
-                        "requires": [
-                            "311"
-                        ],
-                        "children": null,
-                        "costscale_override": 1.5
-                    }
-                ]
-            },
-            {
-                "title": "EFFECT::\\shove",
-                "description": "shove enemies back",
-                "id": "32",
-                "cost": null,
-                "limit": 0,
-                "requires": [],
-                "children": [
-                    {
-                        "title": "EFFECT::\\shove::\\num_steps",
-                        "description": "shove enemies back +1 step when they hit you",
-                        "id": "321",
-                        "cost": 50,
-                        "limit": 3,
-                        "costscale_override": 2,
-                        "requires": [],
-                        "children": null
-                    },
-                    {
-                        "title": "EFFECT::\\shove::\\damage",
-                        "description": "deal +1 damage when shoving enemies",
-                        "id": "322",
-                        "cost": 100,
-                        "limit": 3,
-                        "requires": [],
-                        "children": null
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "title": "GREED",
-        "description": "\\---/",
-        "id": "4",
-        "cost": null,
-        "limit": 0,
+        "children": null,
+        "costscale_override": 2
+      },
+      {
+        "title": "GREED::\\spawn_speed",
+        "description": "increase enemy spawn speed by +30%",
+        "id": "43",
+        "cost": 5000,
+        "limit": 5,
         "requires": [
-            "311"
+          "A"
         ],
-        "children": [
-            {
-                "title": "GREED::\\hype",
-                "description": "your arrival is being awaited. +30s to timescale $$how do i explain this lol",
-                "id": "41",
-                "cost": 80,
-                "limit": 3,
-                "requires": [],
-                "children": null,
-                "costscale_override": 1.77
-            },
-            {
-                "title": "GREED::\\context_growth",
-                "description": "increase map size by +2 width and +2 height. warning: enemies will spawn quicker",
-                "id": "42",
-                "cost": 300,
-                "limit": 3,
-                "requires": [
-                    "41"
-                ],
-                "children": null,
-                "costscale_override": 2
-            },
-            {
-                "title": "GREED::\\spawn_speed",
-                "description": "increase enemy spawn speed by +30%",
-                "id": "43",
-                "cost": 5000,
-                "limit": 5,
-                "requires": [
-                    "A"
-                ],
-                "children": null,
-                "costscale_override": 2
-            }
-        ]
-    },
-    {
-        "title": "SIGHT",
-        "description": "\\---/",
-        "id": "5",
-        "cost": null,
-        "limit": 0,
+        "children": null,
+        "costscale_override": 2
+      }
+    ]
+  },
+  {
+    "title": "SIGHT",
+    "description": "\\---/",
+    "id": "5",
+    "cost": null,
+    "limit": 0,
+    "requires": [
+      "42"
+    ],
+    "children": [
+      {
+        "title": "SIGHT::\\hypervision_H",
+        "description": "increase map width by +50. (((and enemy speed up and gold up)))",
+        "id": "51",
+        "cost": 375,
+        "limit": 3,
+        "requires": [],
+        "children": null,
+        "costscale_override": 1.25
+      },
+      {
+        "title": "SIGHT::\\hypervision_V",
+        "description": "increase map height by +50. (((and enemy speed up and gold up)))",
+        "id": "52",
+        "cost": 375,
+        "limit": 3,
+        "requires": [],
+        "children": null,
+        "costscale_override": 1.25
+      },
+      {
+        "title": "SIGHT::\\look_deeper",
+        "description": "look below.",
+        "id": "53",
+        "cost": 2000,
+        "limit": 1,
         "requires": [
-            "42"
-        ],
-        "children": [
-            {
-                "title": "SIGHT::\\hypervision_H",
-                "description": "increase map width by +50. (((and enemy speed up and gold up)))",
-                "id": "51",
-                "cost": 375,
-                "limit": 3,
-                "requires": [],
-                "children": null,
-                "costscale_override": 1.25
-            },
-            {
-                "title": "SIGHT::\\hypervision_V",
-                "description": "increase map height by +50. (((and enemy speed up and gold up)))",
-                "id": "52",
-                "cost": 375,
-                "limit": 3,
-                "requires": [],
-                "children": null,
-                "costscale_override": 1.25
-            },
-            {
-                "title": "SIGHT::\\look_deeper",
-                "description": "look below.",
-                "id": "53",
-                "cost": 2000,
-                "limit": 1,
-                "requires": [
-                    "52",
-                    "51"
-                ]
-            }
+          "52",
+          "51"
         ]
-    }
+      }
+    ]
+  }
 ]

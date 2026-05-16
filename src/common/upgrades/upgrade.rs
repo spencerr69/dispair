@@ -294,6 +294,18 @@ impl UpgradeNode {
         }
     }
 
+    pub fn get_raw_title(&self) -> String {
+        let mut title = self.title.clone().to_lowercase();
+        if self.title.contains("\\") {
+            title = title
+                .rsplit_once("\\")
+                .expect("Something changed somehow")
+                .1
+                .to_string();
+        }
+        title
+    }
+
     /// Calculates the cost of the next purchase of this upgrade.
     #[must_use]
     pub fn next_cost(&self, amount_owned: u32) -> u32 {
