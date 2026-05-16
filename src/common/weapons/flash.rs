@@ -34,10 +34,10 @@ impl Poweruppable for Flash {
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
             1 => "FLASH will create a brief damaging field directly in front of you.".into(),
-            2 => "Increase size by 1, increase base damage by 1. Imbue FLASH with Flame element, burning enemies when hit.".into(),
+            2 => "Increase size by 1, increase base damage by 1.".into(),
             3 => "Increase base damage by 2".into(),
             4 => "Increase damage scalar by 25%".into(),
-            5 => "Increase damage scalar by 75%".into(),
+            5 => "Increase damage scalar by 75%. Imbue FLASH with Flame element, burning enemies when hit.".into(),
             _ => String::new(),
         }
     }
@@ -55,6 +55,15 @@ impl Poweruppable for Flash {
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.damage_scalar += 0.75;
                     self.element = Some(Elements::Flame(self.stats.elemental_honage));
                     let honage = self.element.expect("Something crazy happened").get_honage();
                     self.stats.procs.insert(
@@ -75,15 +84,6 @@ impl Poweruppable for Flash {
                             },
                         },
                     );
-                }
-                3 => {
-                    self.stats.damage_flat_boost += 2;
-                }
-                4 => {
-                    self.damage_scalar += 0.25;
-                }
-                5 => {
-                    self.damage_scalar += 0.75;
                 }
                 _ => {}
             }

@@ -101,10 +101,11 @@ impl Poweruppable for Lightning {
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
             1 => "LIGHTNING will seek the nearest enemy and damage them.".into(),
-            2 => "Increase bounces by 1, increase base damage by 1. Imbue LIGHTNING with Shock element, giving a chance to charge enemies on hit.".into(),
+            2 => "Increase bounces by 1, increase base damage by 1. ".into(),
             3 => "Increase bounces by 1, increase base damage by 2".into(),
             4 => "Increase bounces by 1, increase damage scalar by 25%".into(),
-            5 => "Double bounces, increase damage scalar by 75%".into(),
+            5 => "Double bounces, increase damage scalar by 75%. Imbue LIGHTNING with Shock element, giving a chance \
+            to charge enemies on hit.".into(),
             _ => String::new(),
         }
     }
@@ -122,6 +123,19 @@ impl Poweruppable for Lightning {
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
+                }
+                3 => {
+                    self.stats.size += 1;
+                    self.stats.damage_flat_boost += 2;
+                }
+                4 => {
+                    self.stats.size += 1;
+                    self.damage_scalar += 0.25;
+                }
+                5 => {
+                    self.stats.size *= 2;
+                    self.damage_scalar += 0.75;
+
                     self.element = Some(Elements::Shock(self.stats.elemental_honage));
                     let honage = self.element.expect("Something crazy happened").get_honage();
                     self.stats.procs.insert(
@@ -142,18 +156,6 @@ impl Poweruppable for Lightning {
                             },
                         },
                     );
-                }
-                3 => {
-                    self.stats.size += 1;
-                    self.stats.damage_flat_boost += 2;
-                }
-                4 => {
-                    self.stats.size += 1;
-                    self.damage_scalar += 0.25;
-                }
-                5 => {
-                    self.stats.size *= 2;
-                    self.damage_scalar += 0.75;
                 }
                 _ => {}
             }

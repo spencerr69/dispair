@@ -74,6 +74,7 @@ impl Poweruppable for Pillar {
             3 => "Increase base damage by 2".into(),
             4 => "Increase damage scalar by 25%".into(),
             5 => "Increase damage scalar by 75%".into(),
+            //TODO: add element
             _ => String::new(),
         }
     }

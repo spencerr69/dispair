@@ -458,7 +458,7 @@ impl RogueGame {
     }
 
     fn scale_enemies(&mut self) {
-        let init_enemy_health = 3.;
+        let init_enemy_health = 1.;
         let init_enemy_damage = 1.;
         let init_enemy_spawn_secs =
             Self::DEFAULT_SPAWN_P_S * self.player_state.stats.game_stats.enemy_spawn_mult;
