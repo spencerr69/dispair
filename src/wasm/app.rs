@@ -91,7 +91,6 @@ pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
 pub struct App {
     game_view: Option<RogueGame>,
     upgrades_view: Option<UpgradesMenu>,
-    exit: bool,
     player_state: Option<PlayerState>,
     current_selection: ListState,
     last_frame: Instant,
@@ -105,7 +104,6 @@ impl App {
         let mut out = Self {
             game_view: None,
             upgrades_view: None,
-            exit: false,
             player_state: None,
             current_selection: ListState::default(),
             last_frame: Instant::now(),
@@ -171,7 +169,6 @@ impl App {
                 KeyCode::Char('s') | KeyCode::Down => self.select_next(),
                 KeyCode::Char('w') | KeyCode::Up => self.select_prev(),
                 KeyCode::Enter => self.confirm_curr(),
-                KeyCode::Esc => self.exit = true,
                 _ => {}
             }
         }
@@ -198,7 +195,6 @@ impl App {
                 self.player_state = Some(PlayerState::default());
                 self.start_upgrades();
             }
-            Some(2) => self.exit = true,
             _ => {}
         }
     }
@@ -301,13 +297,9 @@ impl App {
 
         let options_area = center_vertical(center_horizontal(bottom, 12), 3);
 
-        let options = List::new(vec![
-            ListItem::from("Continue"),
-            ListItem::from("New Game"),
-            ListItem::from("Quit"),
-        ])
-        .highlight_symbol("> ")
-        .highlight_style(Style::new().bold());
+        let options = List::new(vec![ListItem::from("Continue"), ListItem::from("New Game")])
+            .highlight_symbol("> ")
+            .highlight_style(Style::new().bold());
 
         frame.render_widget(block, frame.area());
 

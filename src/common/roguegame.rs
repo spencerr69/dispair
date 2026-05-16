@@ -690,7 +690,7 @@ impl RogueGame {
             || y < 0
             || y >= self.height as i32
             || position == self.get_character_pos()
-            || self.get_enemy_positions().contains(position)
+        // || self.get_enemy_positions().contains(position)
         {
             return false;
         }
