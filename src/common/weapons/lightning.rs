@@ -71,7 +71,9 @@ impl Weapon for Lightning {
         }
 
         DamageArea {
-            damage_amount: (f64::from(self.get_damage()) * wielder.stats.damage_mult).ceil() as i32,
+            damage_amount: (f64::from(self.get_damage())
+                * wielder.stats.borrow().stats.player_stats.damage_mult)
+                .ceil() as i32,
             area: Rc::new(RefCell::new(area)),
             entity,
             duration: Duration::from_secs_f64(0.1),

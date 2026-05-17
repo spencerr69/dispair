@@ -1,7 +1,11 @@
 //! This module implements the core game logic for the roguelike.
 //! It manages game state, character movement, enemy behavior, and rendering.
 
+use crate::common::character::Renderable;
+use crate::common::pickups::PickupTypes;
+use crate::common::{Goto, Viewable};
 use crate::{
+    common,
     common::{
         TICK_RATE, center,
         character::{Character, Damageable, Movable},
@@ -18,11 +22,6 @@ use crate::{
     },
     prelude::{Duration, Instant, KeyCode, KeyEvent},
 };
-use std::borrow::Borrow;
-
-use crate::common::character::Renderable;
-use crate::common::pickups::PickupTypes;
-use crate::common::{Goto, Viewable};
 use rand::Rng;
 use ratatui::{
     Frame,
@@ -32,6 +31,8 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, Gauge, Paragraph},
 };
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub type Layer = Vec<Vec<EntityCharacters>>;
 
@@ -45,7 +46,7 @@ pub enum GameState {
 /// Represents the main game state and logic.
 pub struct RogueGame {
     /// The player's current state, including stats and inventory.
-    pub player_state: PlayerState,
+    pub player_state: Rc<RefCell<PlayerState>>,
     init_state: PlayerState,
 
     /// The carnage report, which is displayed at the end of a level.
@@ -103,9 +104,11 @@ impl RogueGame {
     const DEFAULT_MOVE_P_S: f64 = 2.;
 
     #[must_use]
-    pub fn new(player_state: &PlayerState) -> Self {
-        let width = player_state.stats.game_stats.width;
-        let height = player_state.stats.game_stats.height;
+    pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
+        let init_player_state = player_state.as_ref().borrow().clone();
+
+        let width = init_player_state.stats.game_stats.width;
+        let height = init_player_state.stats.game_stats.height;
 
         let mut base: Layer = Vec::new();
 
@@ -126,14 +129,14 @@ impl RogueGame {
         let attack_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
         let enemy_move_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
         let enemy_spawn_ticks = Self::per_sec_to_tick_count(
-            Self::DEFAULT_SPAWN_P_S * player_state.stats.game_stats.enemy_spawn_mult,
+            Self::DEFAULT_SPAWN_P_S * init_player_state.stats.game_stats.enemy_spawn_mult,
         );
 
         let start_time = Instant::now();
-        let timer = Duration::from_secs(player_state.stats.game_stats.timer);
+        let timer = Duration::from_secs(init_player_state.stats.game_stats.timer);
 
         let mut timescaler = TimeScaler::now();
-        timescaler.offset_start_time(player_state.stats.game_stats.time_offset);
+        timescaler.offset_start_time(init_player_state.stats.game_stats.time_offset);
 
         let level = Level::new();
 
@@ -141,7 +144,7 @@ impl RogueGame {
             goto: Goto::Game,
 
             player_state: player_state.clone(),
-            init_state: player_state.clone(),
+            init_state: init_player_state,
             character: Character::new(player_state.clone()),
             layer_base: base.clone(),
             flat_layer: base,
@@ -185,7 +188,7 @@ impl RogueGame {
         game.update_stats_with_charms();
         game.update_stats();
 
-        if game.player_state.upgrade_owned("53") {
+        if game.player_state.borrow().upgrade_owned("53") {
             game.spawn_orb();
         }
 
@@ -199,7 +202,7 @@ impl RogueGame {
     }
 
     pub fn spawn_orb(&mut self) {
-        if !self.player_state.upgrade_owned("A") {
+        if !self.player_state.borrow().upgrade_owned("A") {
             let position = get_rand_position_on_layer(&self.layer_base);
 
             self.pickups
@@ -215,7 +218,7 @@ impl RogueGame {
             GameState::GameOver => {
                 self.carnage_report = Some(CarnageReport::new(
                     self.init_state.clone(),
-                    self.player_state.clone(),
+                    self.player_state.borrow().clone(),
                 ));
             }
             GameState::Play => {
@@ -287,18 +290,19 @@ impl RogueGame {
                     enemy.move_to(desired_pos, desired_facing);
                 }
 
-                if self.character.stats.shove_amount > 0
+                let character_stats = &self.player_state.borrow().stats.player_stats;
+
+                if character_stats.shove_amount > 0
                     && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
                 {
-                    if self.character.stats.shove_damage > 0 {
+                    if character_stats.shove_damage > 0 {
                         enemy.take_damage(
-                            (f64::from(self.character.stats.shove_damage)
-                                * self.character.stats.damage_mult)
+                            (f64::from(character_stats.shove_damage) * character_stats.damage_mult)
                                 .ceil() as i32,
                         );
                     }
 
-                    enemy.move_back(self.character.stats.shove_amount as i32, &self.layer_base);
+                    enemy.move_back(character_stats.shove_amount as i32, &self.layer_base);
                 }
                 enemy
             })
@@ -414,9 +418,11 @@ impl RogueGame {
                 self.reset_stats();
                 self.update_stats_with_charms();
                 self.update_stats();
-                self.character.stats = self.player_state.stats.player_stats.clone();
 
-                self.player_state.upgrades.insert("A".to_string(), 1);
+                self.player_state
+                    .borrow_mut()
+                    .upgrades
+                    .insert("A".to_string(), 1);
             } else {
                 self.powerup_popup = Some(powerup_popup);
             }
@@ -424,8 +430,10 @@ impl RogueGame {
     }
 
     pub fn consume_drops(&mut self, drops: &EnemyDrops) {
-        self.player_state.inventory.gold +=
-            (drops.gold as f64 * self.player_state.stats.game_stats.gold_mult) as u128;
+        let mut player_state = self.player_state.borrow_mut();
+
+        player_state.inventory.gold +=
+            (drops.gold as f64 * player_state.stats.game_stats.gold_mult) as u128;
         self.level.add_xp(drops.xp);
     }
 
@@ -452,10 +460,15 @@ impl RogueGame {
     pub fn update_stats(&mut self) {
         self.attack_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
         self.attack_ticks = (self.attack_ticks as f64
-            / self.player_state.stats.game_stats.attack_speed_mult)
+            / self
+                .player_state
+                .borrow()
+                .stats
+                .game_stats
+                .attack_speed_mult)
             .ceil() as u64;
 
-        let offset = self.player_state.stats.game_stats.time_offset;
+        let offset = self.player_state.borrow().stats.game_stats.time_offset;
 
         self.timescaler.offset_start_time(offset);
     }
@@ -465,7 +478,7 @@ impl RogueGame {
         self.powerup_popup = Some(PowerupPopup::new(
             &self.character.weapons,
             &self.character.charms,
-            self.player_state.stats.weapon_stats.clone(),
+            self.player_state.borrow().stats.weapon_stats.clone(),
         ));
         self.start_popup = false;
     }
@@ -474,9 +487,9 @@ impl RogueGame {
         let init_enemy_health = 1.;
         let init_enemy_damage = 1.;
         let init_enemy_spawn_secs =
-            Self::DEFAULT_SPAWN_P_S * self.player_state.stats.game_stats.enemy_spawn_mult;
+            Self::DEFAULT_SPAWN_P_S * self.player_state.borrow().stats.game_stats.enemy_spawn_mult;
         let init_enemy_move_secs =
-            Self::DEFAULT_MOVE_P_S * self.player_state.stats.game_stats.enemy_move_mult;
+            Self::DEFAULT_MOVE_P_S * self.player_state.borrow().stats.game_stats.enemy_move_mult;
         let init_enemy_gold: u128 = 1;
         let init_enemy_xp: u128 = 1;
 
@@ -495,7 +508,7 @@ impl RogueGame {
         self.enemy_drops = EnemyDrops {
             gold: (init_enemy_gold as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil()
                 as u128,
-            xp: if self.player_state.upgrade_owned("A") {
+            xp: if self.player_state.borrow().upgrade_owned("A") {
                 (init_enemy_xp as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u128
             } else {
                 0
@@ -559,7 +572,7 @@ impl RogueGame {
 
     #[must_use]
     pub fn flatten_to_span(&self, area: Option<SquareArea>) -> Vec<Vec<Span<'static>>> {
-        fn callback_creator<F: Borrow<T>, T: Renderable>(
+        fn callback_creator<F: std::borrow::Borrow<T>, T: Renderable>(
             enum_2d: &mut Vec<(usize, Vec<(usize, Span)>)>,
             layer: &Layer,
         ) -> impl FnMut(F) {
@@ -678,14 +691,14 @@ impl RogueGame {
     }
 
     pub fn reset_stats(&mut self) {
-        self.player_state.refresh();
+        self.player_state.borrow_mut().refresh();
     }
 
     pub fn update_stats_with_charms(&mut self) {
         self.character.charms.iter().for_each(|charm_wrapper| {
             charm_wrapper
                 .get_inner()
-                .manipulate_stats(&mut self.player_state.stats);
+                .manipulate_stats(&mut self.player_state.borrow_mut().stats);
         });
     }
 
@@ -724,7 +737,7 @@ impl RogueGame {
             timer.as_secs().to_string().bold(),
             " ".into(),
             " Gold: ".dark_gray(),
-            self.player_state.inventory.gold.to_string().into(),
+            self.player_state.borrow().inventory.gold.to_string().into(),
             " ".into(),
         ]);
         let block = Block::bordered()
@@ -735,7 +748,7 @@ impl RogueGame {
         let mut game_area = block.inner(frame.area());
         frame.render_widget(&block, frame.area());
 
-        if self.player_state.upgrade_owned("A") {
+        if self.player_state.borrow().upgrade_owned("A") {
             let progress_bar_area;
 
             [progress_bar_area, game_area] =
@@ -981,6 +994,8 @@ impl EntityCharacters {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::{Ref, RefCell};
+    use std::rc::Rc;
     use std::time::Instant;
 
     use crate::common::{roguegame::RogueGame, upgrades::upgrade::PlayerState};
@@ -992,7 +1007,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = RogueGame::new(&player_state);
+        let mut rogue_game = RogueGame::new(Rc::new(RefCell::new(player_state)));
 
         rogue_game.on_tick();
         rogue_game.on_frame();
@@ -1017,7 +1032,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = RogueGame::new(&player_state);
+        let mut rogue_game = RogueGame::new(Rc::new(RefCell::new(player_state)));
 
         let start_time = Instant::now();
 

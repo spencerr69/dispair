@@ -1,6 +1,9 @@
 //! This module defines the `Character` struct and related traits for movable and damageable entities.
 //! It handles character movement, health, attacks, and other core gameplay mechanics.
+
 use ratatui::style::{Style, Stylize};
+use std::cell::{Ref, RefCell};
+use std::rc::Rc;
 
 use crate::common::{
     charms::CharmWrapper,
@@ -13,13 +16,8 @@ use crate::common::{
     weapons::{DamageArea, WeaponWrapper, flash::Flash},
 };
 
-#[cfg(not(target_family = "wasm"))]
-use std::time::{Duration, Instant};
-
-#[cfg(target_family = "wasm")]
-use web_time::{Duration, Instant};
-
 use crate::common::roguegame::EntityCharacters;
+use crate::prelude::{Duration, Instant};
 
 pub trait Renderable {
     /// Get the current `Position` of the entity
@@ -101,7 +99,7 @@ pub struct Character {
     last_moved: Instant,
     pub facing: Direction,
 
-    pub stats: PlayerStats,
+    pub stats: Rc<RefCell<PlayerState>>,
 
     health: i32,
     max_health: i32,
@@ -130,11 +128,10 @@ impl Character {
     /// A `Character` populated with position, facing, health, stats, entity character,
     /// and weapons derived from the provided `player_state`.
     #[must_use]
-    pub fn new(current_player_state: PlayerState) -> Self {
-        let stats = current_player_state.stats;
+    pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
+        let stats = &player_state.borrow().stats;
         let weapon_stats = stats.weapon_stats.clone();
         let max_health = stats.player_stats.health;
-        let player_stats = stats.player_stats;
 
         Character {
             position: Position(0, 0),
@@ -142,7 +139,7 @@ impl Character {
             last_moved: Instant::now(),
             facing: Direction::UP,
 
-            stats: player_stats,
+            stats: player_state.clone(),
 
             // player_stats: player_state.stats.clone(),
             health: max_health,
@@ -210,8 +207,11 @@ impl Movable for Character {
 
         let attempt_time = Instant::now();
         let difference = attempt_time.duration_since(self.last_moved).as_millis() as u64;
+
+        let movement_speed_multiplier = self.stats.borrow().stats.player_stats.movement_speed_mult;
+
         // this is what movement speed controls vv
-        let timeout = (100.0 / self.stats.movement_speed_mult.max(0.01)).round() as u64;
+        let timeout = (100.0 / movement_speed_multiplier.max(0.01)).round() as u64;
 
         if difference > timeout {
             self.set_pos(new_pos);

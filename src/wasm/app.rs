@@ -13,7 +13,7 @@ use ratzilla::{
 
 use web_sys::wasm_bindgen::JsValue;
 
-use crate::common::{TICK_RATE, center_horizontal, center_vertical};
+use crate::common::{Goto, TICK_RATE, Viewable, center_horizontal, center_vertical};
 
 use ratzilla::ratatui::{
     Frame, Terminal,
@@ -24,11 +24,10 @@ use ratzilla::ratatui::{
     widgets::{Block, List, ListItem, ListState},
 };
 
+use crate::common::game::Game;
 use crate::common::{
-    popups::carnagereport::CarnageReport,
-    roguegame::RogueGame,
-    upgrades::upgrade::PlayerState,
-    upgrades::upgrademenu::{Goto, UpgradesMenu},
+    popups::carnagereport::CarnageReport, roguegame::RogueGame, upgrades::upgrade::PlayerState,
+    upgrades::upgrademenu::UpgradesMenu,
 };
 
 /// Saves the player's progress to local storage.
@@ -89,8 +88,7 @@ pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
 
 /// The main application struct, which manages the game's state and views.
 pub struct App {
-    game_view: Option<RogueGame>,
-    upgrades_view: Option<UpgradesMenu>,
+    game: Option<Game>,
     player_state: Option<PlayerState>,
     current_selection: ListState,
     last_frame: Instant,
@@ -102,8 +100,7 @@ impl App {
     #[must_use]
     pub fn new() -> Self {
         let mut out = Self {
-            game_view: None,
-            upgrades_view: None,
+            game: None,
             player_state: None,
             current_selection: ListState::default(),
             last_frame: Instant::now(),
@@ -160,10 +157,8 @@ impl App {
 
     /// Handles key events.
     pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
-        if let Some(game) = &mut self.game_view {
+        if let Some(game) = &mut self.game {
             game.handle_key_event(key_event);
-        } else if let Some(upgrades_menu) = &mut self.upgrades_view {
-            upgrades_menu.handle_key_event(key_event);
         } else {
             match key_event.code {
                 KeyCode::Char('s') | KeyCode::Down => self.select_next(),
@@ -189,11 +184,11 @@ impl App {
         match self.current_selection.selected() {
             Some(0) => {
                 self.player_state = Some(load_progress().unwrap_or_default());
-                self.start_upgrades();
+                self.game = Some(Game::new(self.player_state.clone().unwrap()));
             }
             Some(1) => {
                 self.player_state = Some(PlayerState::default());
-                self.start_upgrades();
+                self.game = Some(Game::new(self.player_state.clone().unwrap()));
             }
             _ => {}
         }
@@ -201,10 +196,8 @@ impl App {
 
     /// Renders the UI for the current view.
     fn ui(&mut self, frame: &mut Frame) {
-        if let Some(ref mut game) = self.game_view {
+        if let Some(ref mut game) = self.game {
             game.render(frame);
-        } else if let Some(ref mut upgrades_menu) = self.upgrades_view {
-            upgrades_menu.render_upgrades(frame);
         } else {
             self.render_menu(frame);
         }
@@ -212,75 +205,20 @@ impl App {
 
     /// Called on each game tick.
     fn on_tick(&mut self) {
-        if let Some(game) = &mut self.game_view {
+        if let Some(game) = &mut self.game {
             game.on_tick();
-            match game.game_state {
-                GameState::GameOver => {
-                    game.carnage_report = Some(CarnageReport::new(
-                        self.player_state.clone().unwrap(),
-                        game.player_state.clone(),
-                    ));
-                }
-                GameState::Exit => {
-                    self.player_state = Some(game.player_state.clone());
-                    self.player_state.as_mut().unwrap().refresh();
-                    save_progress(&self.player_state.clone().unwrap())
-                        .map_err(|_| {
-                            web_sys::console::log_1(&JsValue::from_str("couldn't save"));
-                            JsValue::from_str("couldn't save")
-                        })
-                        .unwrap_or(());
-                    self.game_view = None;
-                    self.start_upgrades();
-                }
-                _ => {}
-            }
-        }
-
-        if let Some(upgrades_menu) = &mut self.upgrades_view
-            && let Some(close) = upgrades_menu.goto.clone()
-        {
-            self.player_state = Some(upgrades_menu.player_state.clone());
-            self.player_state.as_mut().unwrap().refresh();
-            self.upgrades_view = None;
-            save_progress(&self.player_state.clone().unwrap())
-                .map_err(|_| {
-                    web_sys::console::log_1(&JsValue::from_str("couldn't save"));
-                    JsValue::from_str("couldn't save")
-                })
-                .unwrap_or(());
-            match close {
-                Goto::Game => self.start_game(),
-                Goto::Menu => {
-                    save_progress(&self.player_state.clone().unwrap())
-                        .map_err(|_| {
-                            web_sys::console::log_1(&JsValue::from_str("couldn't save"));
-                            JsValue::from_str("couldn't save")
-                        })
-                        .unwrap_or(());
-                }
+            if game.get_goto().clone() == Goto::Menu {
+                self.player_state = Some(game.get_player_state());
+                save_progress(self.player_state.as_ref().unwrap()).unwrap();
+                self.game = None;
             }
         }
     }
 
     /// Called on each frame.
     fn on_frame(&mut self) {
-        if let Some(game) = &mut self.game_view {
+        if let Some(game) = &mut self.game {
             game.on_frame();
-        }
-    }
-
-    /// Starts the game view.
-    fn start_game(&mut self) {
-        if let Some(player_state) = &self.player_state {
-            self.game_view = Some(RogueGame::new(player_state));
-        }
-    }
-
-    /// Starts the upgrades view.
-    fn start_upgrades(&mut self) {
-        if let Some(player_state) = &self.player_state {
-            self.upgrades_view = Some(UpgradesMenu::new(player_state.clone()));
         }
     }
 

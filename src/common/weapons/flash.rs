@@ -134,7 +134,9 @@ impl Weapon for Flash {
 
         DamageArea {
             area: Rc::new(RefCell::new(new_area)),
-            damage_amount: (f64::from(self.get_damage()) * wielder.stats.damage_mult).ceil() as i32,
+            damage_amount: (f64::from(self.get_damage())
+                * wielder.stats.borrow().stats.player_stats.damage_mult)
+                .ceil() as i32,
             entity,
             duration: Duration::from_secs_f32(0.05),
             blink: false,

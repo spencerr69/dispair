@@ -2,7 +2,7 @@
 //! It handles the main loop, event handling, and switching between different views (menu, game, upgrades).
 
 use crate::common::{
-    FRAME_RATE, Goto, TICK_RATE, Viewable, center_horizontal, center_vertical, roguegame::GameState,
+    FRAME_RATE, Goto, TICK_RATE, center_horizontal, center_vertical, roguegame::GameState,
 };
 use std::fs::{File, OpenOptions};
 
@@ -20,10 +20,7 @@ use serde::de::Error as serdeError;
 use super::tui::{Event, Tui};
 
 use crate::common::game::Game;
-use crate::common::{
-    popups::carnagereport::CarnageReport, roguegame::RogueGame, upgrades::upgrade::PlayerState,
-    upgrades::upgrademenu::UpgradesMenu,
-};
+use crate::common::upgrades::upgrade::PlayerState;
 
 /// Saves the player's progress to a JSON file.
 ///
@@ -80,8 +77,6 @@ pub fn load_progress() -> Result<PlayerState, serde_json::Error> {
 
 /// The main application struct, which manages the state of the different views.
 pub struct App {
-    // game_view: Option<RogueGame>,
-    // upgrades_view: Option<UpgradesMenu>,
     game: Option<Game>,
     exit: bool,
     player_state: Option<PlayerState>,
@@ -95,8 +90,6 @@ impl App {
     #[must_use]
     pub fn new() -> Self {
         let mut out = Self {
-            // game_view: None,
-            // upgrades_view: None,
             game: None,
             exit: false,
             player_state: None,
@@ -209,34 +202,6 @@ impl App {
                 self.game = None;
             }
         }
-
-        // if let Some(game) = &mut self.game_view {
-        //     game.on_tick();
-        //     match game.game_state {
-        //         }
-        //         GameState::Exit => {
-        //             self.player_state = Some(game.player_state.clone());
-        //             self.player_state.as_mut().unwrap().refresh();
-        //             self.game_view = None;
-        //             save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
-        //             self.start_upgrades();
-        //         }
-        //         _ => {}
-        //     }
-        // }
-        //
-        // if let Some(upgrades_menu) = &mut self.upgrades_view
-        //     && let Some(close) = upgrades_menu.goto.clone()
-        // {
-        //     self.player_state = Some(upgrades_menu.player_state.clone());
-        //     self.player_state.as_mut().unwrap().refresh();
-        //     self.upgrades_view = None;
-        //     save_progress(&self.player_state.clone().unwrap()).unwrap_or(());
-        //     match close {
-        //         Goto::Game => self.start_game(),
-        //         Goto::Menu => save_progress(&self.player_state.clone().unwrap()).unwrap_or(()),
-        //     }
-        // }
     }
 
     fn on_frame(&mut self) {
@@ -244,18 +209,6 @@ impl App {
             game.on_frame();
         }
     }
-
-    // fn start_game(&mut self) {
-    //     if let Some(player_state) = &self.player_state {
-    //         self.game_view = Some(RogueGame::new(player_state));
-    //     }
-    // }
-    //
-    // fn start_upgrades(&mut self) {
-    //     if let Some(player_state) = &self.player_state {
-    //         self.upgrades_view = Some(UpgradesMenu::new(player_state.clone()));
-    //     }
-    // }
 
     /// Renders the main menu.
     pub fn render_menu(&mut self, frame: &mut Frame) {

@@ -1,6 +1,6 @@
 //! This module provides the UI and logic for the upgrade menu.
 //! It allows the player to navigate and purchase upgrades for their character.
-use crate::common::roguegame::RogueGame;
+
 use crate::common::upgrades::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
 use crate::common::{Goto, Viewable};
 use crate::prelude::{KeyCode, KeyEvent};
@@ -14,6 +14,8 @@ use ratatui::{
     text::Line,
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct MenuCrumb {
@@ -25,7 +27,7 @@ pub type MenuHistory = Vec<MenuCrumb>;
 
 /// A struct that manages the state and rendering of the upgrades menu.
 pub struct UpgradesMenu {
-    pub player_state: PlayerState,
+    pub player_state: Rc<RefCell<PlayerState>>,
     root_upgrade_tree: UpgradeTree,
     pub upgrade_selection: ListState,
     pub goto: Goto,
@@ -40,7 +42,7 @@ impl UpgradesMenu {
     ///
     /// Will panic if the upgrade tree cannot be retrieved.
     #[must_use]
-    pub fn new(player_state: PlayerState) -> Self {
+    pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
         let upgrade_tree = get_upgrade_tree().unwrap();
         let mut menu = Self {
             player_state,
@@ -93,20 +95,23 @@ impl UpgradesMenu {
     pub fn buy_upgrade(&mut self) -> Result<(), String> {
         if let Some(current_node) = self.get_selected_node() {
             if current_node.cost.is_some() {
-                let next_cost =
-                    current_node.next_cost(self.player_state.amount_owned(&current_node.id));
+                let next_cost = current_node
+                    .next_cost(self.player_state.borrow().amount_owned(&current_node.id));
 
-                if self.player_state.amount_owned(&current_node.id) >= current_node.limit {
+                if self.player_state.borrow().amount_owned(&current_node.id) >= current_node.limit {
                     return Err("Upgrade already owned".to_string());
-                } else if u128::from(next_cost) > self.player_state.inventory.gold {
+                } else if u128::from(next_cost) > self.player_state.borrow().inventory.gold {
                     return Err("Not enough money".to_string());
                 }
-                self.player_state.inventory.gold -= u128::from(next_cost);
-                let upgrade_count = self.player_state.upgrades.get_mut(&current_node.id);
+
+                let mut player_state_mut = self.player_state.borrow_mut();
+
+                player_state_mut.inventory.gold -= u128::from(next_cost);
+                let upgrade_count = player_state_mut.upgrades.get_mut(&current_node.id);
                 if let Some(count) = upgrade_count {
                     *count += 1;
                 } else {
-                    self.player_state.upgrades.insert(current_node.id, 1);
+                    player_state_mut.upgrades.insert(current_node.id, 1);
                 }
                 Ok(())
             } else {
@@ -232,10 +237,12 @@ impl UpgradesMenu {
         let mut window = Block::bordered().border_set(border::THICK);
         let inner = window.inner(frame.area());
 
-        let gold = self.player_state.inventory.gold;
+        let player_state = self.player_state.borrow();
+
+        let gold = player_state.inventory.gold;
         let current_layer = self.current_layer.clone();
 
-        let list_text: Vec<ListItem> = Self::node_to_list(&current_layer, &self.player_state);
+        let list_text: Vec<ListItem> = Self::node_to_list(&current_layer, &player_state);
 
         let horizontal = Layout::horizontal([Constraint::Percentage(70), Constraint::Fill(1)]);
         let [left, right] = horizontal.areas(inner);
@@ -269,13 +276,13 @@ impl UpgradesMenu {
         let upgrade_desc = Text::from(current_upgrade.clone().description);
         let mut upgrade_cost = Line::from("");
         if current_upgrade.limit > 0
-            && self.player_state.amount_owned(&current_upgrade.id) >= current_upgrade.limit
+            && player_state.amount_owned(&current_upgrade.id) >= current_upgrade.limit
         {
             upgrade_cost = Line::from("owned");
         } else if current_upgrade.cost.is_some() {
             upgrade_cost = Line::from(format!(
                 "${}",
-                current_upgrade.next_cost(self.player_state.amount_owned(&current_upgrade.id))
+                current_upgrade.next_cost(player_state.amount_owned(&current_upgrade.id))
             ));
         } else if current_upgrade.has_children() {
             upgrade_cost = Line::from("> enter folder");
@@ -285,7 +292,7 @@ impl UpgradesMenu {
         if current_upgrade.limit > 1 {
             upgrade_amount = Line::from(format!(
                 "You have: {}/{}",
-                self.player_state.amount_owned(&current_upgrade.id),
+                player_state.amount_owned(&current_upgrade.id),
                 current_upgrade.limit
             ));
         }

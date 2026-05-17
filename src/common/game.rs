@@ -38,14 +38,16 @@ pub struct Game {
     //TODO: make views work for any view, not each individual one
     // game_view: Option<RogueGame>,
     // upgrades_view: Option<UpgradesMenu>,
-    pub player_state: PlayerState,
+    pub player_state: Rc<RefCell<PlayerState>>,
 }
 
 impl Game {
     pub fn new(player_state: PlayerState) -> Self {
+        let player_state_rc = Rc::new(RefCell::new(player_state));
+
         Self {
-            view: View::Upgrades(UpgradesMenu::new(player_state.clone())),
-            player_state,
+            view: View::Upgrades(UpgradesMenu::new(player_state_rc.clone())),
+            player_state: player_state_rc.clone(),
         }
     }
 
@@ -54,7 +56,7 @@ impl Game {
             Goto::Upgrades => {
                 self.view = View::Upgrades(UpgradesMenu::new(self.player_state.clone()));
             }
-            Goto::Game => self.view = View::Game(RogueGame::new(&self.player_state)),
+            Goto::Game => self.view = View::Game(RogueGame::new(self.player_state.clone())),
             _ => {}
         }
     }
@@ -73,7 +75,7 @@ impl Game {
     }
 
     pub fn get_player_state(&self) -> PlayerState {
-        self.player_state.clone()
+        self.player_state.borrow().clone()
     }
 
     pub fn on_tick(&mut self) {
@@ -82,8 +84,8 @@ impl Game {
         if self.is_correct_view() {
             self.view.get_view_mut().tick();
         } else {
-            self.player_state.refresh();
-            save_progress(&self.player_state).expect("");
+            self.player_state.borrow_mut().refresh();
+            save_progress(&self.player_state.borrow()).expect("");
             self.go_to(&goto);
         }
     }
@@ -93,6 +95,7 @@ impl Game {
     }
 
     pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
+        #[cfg(not(target_family = "wasm"))]
         if !key_event.is_press() {
             return;
         }
