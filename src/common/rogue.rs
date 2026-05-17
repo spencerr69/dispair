@@ -2,7 +2,7 @@
 //! It manages game state, character movement, enemy behavior, and rendering.
 
 use crate::common::character::Renderable;
-use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
+use crate::common::enemies::enemy::{Enemy, EnemyDrops};
 use crate::common::enemies::enemywrangler::EnemyWrangler;
 use crate::common::pickups::PickupTypes;
 use crate::common::{Goto, Viewable};
@@ -11,14 +11,12 @@ use crate::{
         TICK_RATE, center,
         character::{Character, Damageable, Movable},
         coords::{Area, Direction, Position, SquareArea},
-        debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect},
         effects::DamageEffect,
         level::Level,
         pickups::{PickupEffect, Pickupable, PowerupOrb},
         popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
         timescaler::TimeScaler,
         upgrades::upgrade::PlayerState,
-        weapons::DamageArea,
     },
     prelude::{Duration, Instant, KeyCode, KeyEvent},
 };
@@ -97,7 +95,7 @@ impl Rogue {
     const DEFAULT_ATTACK_P_S: f64 = 1.5;
 
     #[must_use]
-    pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
+    pub fn new(player_state: &Rc<RefCell<PlayerState>>) -> Self {
         let init_player_state = player_state.borrow().clone();
 
         let width = init_player_state.stats.game_stats.width;
@@ -124,12 +122,12 @@ impl Rogue {
         let start_time = Instant::now();
         let timer = Duration::from_secs(init_player_state.stats.game_stats.timer);
 
-        let mut timescaler = Rc::new(RefCell::new(TimeScaler::now()));
+        let timescaler = Rc::new(RefCell::new(TimeScaler::now()));
         timescaler
             .borrow_mut()
             .offset_start_time(init_player_state.stats.game_stats.time_offset);
 
-        let mut enemies = Rc::new(RefCell::new(Vec::new()));
+        let enemies = Rc::new(RefCell::new(Vec::new()));
 
         let level = Level::new();
 
@@ -691,12 +689,12 @@ impl Viewable for Rogue {
         self.on_frame();
     }
 
-    fn render(&mut self, frame: &mut Frame) {
-        self.render_game(frame)
-    }
-
     fn get_goto(&self) -> &Goto {
         &self.goto
+    }
+
+    fn render(&mut self, frame: &mut Frame) {
+        self.render_game(frame);
     }
 
     fn handle_key_event(&mut self, key_event: &KeyEvent) {
@@ -858,7 +856,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = Rogue::new(Rc::new(RefCell::new(player_state)));
+        let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)));
 
         rogue_game.on_tick();
         rogue_game.on_frame();
@@ -883,7 +881,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = Rogue::new(Rc::new(RefCell::new(player_state)));
+        let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)));
 
         let start_time = Instant::now();
 

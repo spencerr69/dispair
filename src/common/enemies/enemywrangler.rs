@@ -77,13 +77,13 @@ impl EnemyWrangler {
         layer: &Layer,
         active_damage_effects: &mut Vec<DamageEffect>,
     ) {
-        self.enemies.borrow_mut().iter_mut().for_each(|mut enemy| {
+        self.enemies.borrow_mut().iter_mut().for_each(|enemy| {
             if let Some((desired_pos, desired_facing)) =
                 enemy.update(character, layer, active_damage_effects)
                 && can_stand(
                     self.player_state.borrow().stats.game_stats.width as i32,
                     self.player_state.borrow().stats.game_stats.height as i32,
-                    &character,
+                    character,
                     &desired_pos,
                 )
             {
@@ -102,7 +102,7 @@ impl EnemyWrangler {
                     );
                 }
 
-                enemy.move_back(character_stats.shove_amount as i32, &layer);
+                enemy.move_back(character_stats.shove_amount as i32, layer);
             }
         });
     }
@@ -132,14 +132,14 @@ impl EnemyWrangler {
             let mut debuffs = enemy.debuffs.clone();
 
             for debuff in &mut debuffs {
-                if let Some(damage_area) = debuff.on_tick(enemy, &layer, tickcount) {
+                if let Some(damage_area) = debuff.on_tick(enemy, layer, tickcount) {
                     damage_areas.push(damage_area);
                 }
-                if let Some(damage_area) = debuff.on_damage(enemy, &layer, &self.enemies.borrow()) {
+                if let Some(damage_area) = debuff.on_damage(enemy, layer, &self.enemies.borrow()) {
                     {
                         damage_areas.push(damage_area);
                     }
-                };
+                }
             }
 
             debuffs.retain(|d| !d.complete);
@@ -148,7 +148,7 @@ impl EnemyWrangler {
             if !enemy.is_alive() {
                 if !enemy.debuffs.get_on_death_effects().is_empty() {
                     for debuff in &enemy.debuffs {
-                        if let Some(damage_area) = debuff.on_death(enemy, &layer) {
+                        if let Some(damage_area) = debuff.on_death(enemy, layer) {
                             damage_areas.push(damage_area);
                         }
                     }

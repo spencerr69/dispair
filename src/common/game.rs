@@ -1,4 +1,3 @@
-use crate::common;
 use crate::common::rogue::Rogue;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::upgrades::upgrademenu::UpgradesMenu;
@@ -9,24 +8,26 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub enum View {
-    Game(Rogue),
+    Rogue(Rogue),
     Upgrades(UpgradesMenu),
 }
 
 impl View {
     pub fn get_view_mut(&mut self) -> &mut dyn Viewable {
         match self {
-            View::Game(rogue_game) => rogue_game,
+            View::Rogue(rogue_game) => rogue_game,
             View::Upgrades(upgrades_menu) => upgrades_menu,
         }
     }
+    #[must_use]
     pub fn get_view_ref(&self) -> &dyn Viewable {
         match self {
-            View::Game(rogue_game) => rogue_game,
+            View::Rogue(rogue_game) => rogue_game,
             View::Upgrades(upgrades_menu) => upgrades_menu,
         }
     }
 
+    #[must_use]
     pub fn get_goto(&self) -> &Goto {
         self.get_view_ref().get_goto()
     }
@@ -42,6 +43,7 @@ pub struct Game {
 }
 
 impl Game {
+    #[must_use]
     pub fn new(player_state: PlayerState) -> Self {
         let player_state_rc = Rc::new(RefCell::new(player_state));
 
@@ -56,28 +58,34 @@ impl Game {
             Goto::Upgrades => {
                 self.view = View::Upgrades(UpgradesMenu::new(self.player_state.clone()));
             }
-            Goto::Game => self.view = View::Game(Rogue::new(self.player_state.clone())),
-            _ => {}
+            Goto::Game => self.view = View::Rogue(Rogue::new(&self.player_state.clone())),
+            Goto::Menu => {}
         }
     }
 
+    #[must_use]
     pub fn is_correct_view(&self) -> bool {
         let goto = self.view.get_goto().clone();
 
         match self.view {
             View::Upgrades(_) => goto == Goto::Upgrades,
-            View::Game(_) => goto == Goto::Game,
+            View::Rogue(_) => goto == Goto::Game,
         }
     }
 
+    #[must_use]
     pub fn get_goto(&self) -> &Goto {
         self.view.get_goto()
     }
 
+    #[must_use]
     pub fn get_player_state(&self) -> PlayerState {
         self.player_state.borrow().clone()
     }
 
+    ///# Panics
+    ///
+    /// will panic if save fails
     pub fn on_tick(&mut self) {
         let goto = self.view.get_goto().clone();
 
@@ -85,7 +93,7 @@ impl Game {
             self.view.get_view_mut().tick();
         } else {
             self.player_state.borrow_mut().refresh();
-            save_progress(&self.player_state.borrow()).expect("");
+            save_progress(&self.player_state.borrow()).expect("Save failed");
             self.go_to(&goto);
         }
     }
