@@ -1,11 +1,13 @@
 use crate::common::character::Renderable;
 use crate::common::coords::{Position, SquareArea};
 use crate::common::effects::DamageEffect;
+use crate::common::entities::EntityCharacters;
 use crate::common::pickups::Pickupable;
 use crate::common::pickups::poweruporb::PowerupOrb;
 use crate::common::pickups::{PickupEffect, PickupTypes};
-use crate::common::rogue::{EntityCharacters, Layer, get_rand_position_on_layer};
+use crate::common::rogue::Layer;
 use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::utils::get_rand_position_on_layer;
 use crate::prelude::Duration;
 use ratatui::prelude::Style;
 use ratatui::style::Stylize;

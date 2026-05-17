@@ -1,3 +1,4 @@
+use crate::common::weapons::PlayerState;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
@@ -10,23 +11,35 @@ use crate::{
     prelude::Duration,
 };
 
-use ratatui::style::{Style, Stylize};
-
-use crate::common::character::Renderable;
+use crate::common::character::{CharacterPositionData, Renderable};
 use crate::common::enemies::enemy::Enemy;
+use crate::common::entities::EntityCharacters;
 use crate::common::{
-    character::Character,
     powerup::{DynPowerup, Poweruppable},
-    rogue::{EntityCharacters, Layer},
+    rogue::Layer,
     stats::WeaponStats,
     weapons::{DamageArea, Weapon},
 };
+use ratatui::style::{Style, Stylize};
 
-new_weapon!(Pillar, 3, 0);
+new_weapon!(Pillar, 5, 0, 6);
 
 impl Weapon for Pillar {
-    fn attack(&self, wielder: &Character, _: &[Enemy], layer: &Layer) -> DamageArea {
-        let (x, _) = wielder.get_pos().clone().get();
+    fn attack(
+        &mut self,
+        wielder: CharacterPositionData,
+        enemies: &[Enemy],
+        layer: &Layer,
+    ) -> DamageArea {
+        if self.cooldown_ticks > 0 && self.cooldown_ticks < Self::BASE_COOLDOWN {
+            self.cooldown_ticks += 1;
+            return DamageArea::new_empty();
+        } else if self.cooldown_ticks >= Self::BASE_COOLDOWN {
+            self.cooldown_ticks = 0;
+            return DamageArea::new_empty();
+        }
+
+        let (x, _) = wielder.position.get();
 
         //size should be half the size for balancing
         let size = self.stats.size / 2;
@@ -38,9 +51,11 @@ impl Weapon for Pillar {
 
         area.constrain(layer);
 
+        self.cooldown_ticks += 1;
+
         DamageArea {
             damage_amount: (f64::from(self.get_damage())
-                * wielder.stats.borrow().stats.player_stats.damage_mult)
+                * self.player_state.borrow().stats.player_stats.damage_mult)
                 .ceil() as i32,
             area: Rc::new(RefCell::new(area)),
             entity: EntityCharacters::AttackWeak(Style::new().gray()),

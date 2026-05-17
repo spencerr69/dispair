@@ -13,7 +13,7 @@ use ratzilla::{
 
 use web_sys::wasm_bindgen::JsValue;
 
-use crate::common::{Goto, TICK_RATE, center_horizontal, center_vertical};
+use crate::common::{Goto, TICK_RATE};
 
 use ratzilla::ratatui::{
     Frame, Terminal,
@@ -26,6 +26,7 @@ use ratzilla::ratatui::{
 
 use crate::common::game::Game;
 use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::utils::{center_horizontal, center_vertical};
 
 /// Saves the player's progress to local storage.
 ///

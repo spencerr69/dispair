@@ -35,10 +35,6 @@ impl View {
 
 pub struct Game {
     view: View,
-
-    //TODO: make views work for any view, not each individual one
-    // game_view: Option<RogueGame>,
-    // upgrades_view: Option<UpgradesMenu>,
     pub player_state: Rc<RefCell<PlayerState>>,
 }
 

@@ -1,10 +1,6 @@
 use crate::{
     common::{
-        TICK_RATE,
-        character::Damageable,
-        coords::ChaosArea,
-        rogue::{EntityCharacters, Layer},
-        stats::WeaponStats,
+        TICK_RATE, character::Damageable, coords::ChaosArea, rogue::Layer, stats::WeaponStats,
     },
     prelude::Duration,
 };
@@ -18,6 +14,7 @@ use ratatui::style::{Style, Stylize};
 use crate::common::character::Renderable;
 use crate::common::enemies::enemy::get_closest_enemies;
 use crate::common::enemies::enemy::{Enemy, move_to_point_granular};
+use crate::common::entities::EntityCharacters;
 use crate::common::{
     coords::{Area, SquareArea},
     stats::{DebuffStats, Proc},
@@ -136,7 +133,7 @@ impl OnTickEffect for Debuff {
                 None
             }
             DebuffTypes::FlameIgnite => {
-                if !tickcount.is_multiple_of(6) || self.complete {
+                if !tickcount.is_multiple_of(1) || self.complete {
                     return None;
                 }
 

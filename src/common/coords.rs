@@ -192,9 +192,8 @@ impl Area for ChaosArea {
 
 #[cfg(test)]
 mod tests {
-    use crate::common::rogue::EntityCharacters;
-
     use super::*;
+    use crate::common::entities::EntityCharacters;
 
     #[test]
     fn position_above_0() {

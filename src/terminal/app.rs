@@ -1,9 +1,7 @@
 //! This module defines the main application structure for the terminal UI.
 //! It handles the main loop, event handling, and switching between different views (menu, game, upgrades).
 
-use crate::common::{
-    FRAME_RATE, Goto, TICK_RATE, center_horizontal, center_vertical, rogue::GameState,
-};
+use crate::common::{FRAME_RATE, Goto, TICK_RATE};
 use std::fs::{File, OpenOptions};
 
 use crate::prelude::{KeyCode, KeyEvent};
@@ -21,6 +19,7 @@ use super::tui::{Event, Tui};
 
 use crate::common::game::Game;
 use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::utils::{center_horizontal, center_vertical};
 
 /// Saves the player's progress to a JSON file.
 ///

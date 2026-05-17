@@ -1,12 +1,16 @@
+use crate::common::TICK_RATE;
 use crate::common::character::{Character, Damageable, Movable, Renderable};
+use crate::common::coords::Position;
 use crate::common::debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect};
 use crate::common::effects::DamageEffect;
 use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
-use crate::common::rogue::{Layer, Rogue, get_rand_position_on_edge, is_next_to_character};
+use crate::common::rogue::{Layer, Rogue};
 use crate::common::timescaler::TimeScaler;
 use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::utils::{
+    can_stand, get_rand_position_on_edge, is_next_to_character, per_sec_to_tick_count,
+};
 use crate::common::weapons::DamageArea;
-use crate::common::{TICK_RATE, can_stand};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -32,8 +36,8 @@ impl EnemyWrangler {
     ) -> Self {
         let player_state_ref = player_state.borrow().clone();
 
-        let enemy_move_ticks = Rogue::per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
-        let enemy_spawn_ticks = Rogue::per_sec_to_tick_count(
+        let enemy_move_ticks = per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
+        let enemy_spawn_ticks = per_sec_to_tick_count(
             Self::DEFAULT_SPAWN_P_S * player_state_ref.stats.game_stats.enemy_spawn_mult,
         );
 
@@ -83,7 +87,7 @@ impl EnemyWrangler {
                 && can_stand(
                     self.player_state.borrow().stats.game_stats.width as i32,
                     self.player_state.borrow().stats.game_stats.height as i32,
-                    character,
+                    Some(character),
                     &desired_pos,
                 )
             {
@@ -188,10 +192,10 @@ impl EnemyWrangler {
         self.enemy_health = (init_enemy_health * (time_scaler * 5.).max(1.)).ceil() as i32;
 
         self.enemy_damage = (init_enemy_damage * (time_scaler / 5.).max(1.)).ceil() as i32;
-        self.enemy_spawn_ticks = Rogue::per_sec_to_tick_count(init_enemy_spawn_secs * time_scaler);
+        self.enemy_spawn_ticks = per_sec_to_tick_count(init_enemy_spawn_secs * time_scaler);
 
         self.enemy_move_ticks =
-            Rogue::per_sec_to_tick_count(init_enemy_move_secs * (time_scaler / 6.).max(1.));
+            per_sec_to_tick_count(init_enemy_move_secs * (time_scaler / 6.).max(1.));
 
         self.enemy_drops = EnemyDrops {
             gold: (init_enemy_gold as f64 * (time_scaler / 2.).max(1.)).ceil() as u128,
@@ -201,5 +205,14 @@ impl EnemyWrangler {
                 0
             },
         }
+    }
+
+    #[must_use]
+    pub fn get_enemy_positions(&self) -> Vec<Position> {
+        self.enemies
+            .borrow()
+            .iter()
+            .map(|enemy| enemy.get_pos().clone())
+            .collect()
     }
 }

@@ -1,13 +1,13 @@
+use crate::common::weapons::PlayerState;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     common::{
-        character::Character,
         coords::Area,
         coords::{Direction, Position, SquareArea},
         debuffs::{Debuff, DebuffTypes, Elements},
         powerup::{DynPowerup, PowerupTypes, Poweruppable},
-        rogue::{EntityCharacters, Layer},
+        rogue::Layer,
         stats::WeaponStats,
         stats::{DebuffStats, Proc},
         weapons::{DamageArea, Weapon},
@@ -16,11 +16,12 @@ use crate::{
     prelude::Duration,
 };
 
-use crate::common::character::Renderable;
+use crate::common::character::CharacterPositionData;
 use crate::common::enemies::enemy::Enemy;
+use crate::common::entities::EntityCharacters;
 use ratatui::style::{Style, Stylize};
 
-new_weapon!(Flash, 2, 1);
+new_weapon!(Flash, 2, 1, 1);
 
 impl Poweruppable for Flash {
     fn get_name(&self) -> String {
@@ -69,13 +70,13 @@ impl Poweruppable for Flash {
                     self.stats.procs.insert(
                         "burn".into(),
                         Proc {
-                            chance: 100,
+                            chance: 50,
                             debuff: Debuff {
                                 debuff_type: DebuffTypes::FlameBurn,
                                 complete: false,
                                 stats: DebuffStats {
                                     size: Some((3. * honage).ceil() as i32),
-                                    damage: Some((1. * honage).ceil() as i32),
+                                    damage: Some((0.25 * honage).ceil() as i32),
                                     misc_value: None,
                                     on_death_effect: false,
                                     on_tick_effect: true,
@@ -99,9 +100,24 @@ impl Weapon for Flash {
     /// Creates a `DamageArea` representing this weapon's attack originating from the wielder's position and facing direction.
     ///
     /// The produced `DamageArea` is positioned immediately in front of the wielder according to their facing, carries this weapon's damage scaled by `wielder.stats.damage_mult` (rounded up to an integer), and includes this weapon's `WeaponStats`.
-    fn attack(&self, wielder: &Character, _: &[Enemy], layer: &Layer) -> DamageArea {
-        let (x, y) = wielder.get_pos().clone().get();
-        let direction = wielder.facing.clone();
+    fn attack(
+        &mut self,
+        wielder: CharacterPositionData,
+        enemies: &[Enemy],
+        layer: &Layer,
+    ) -> DamageArea {
+        if self.cooldown_ticks > 0 && self.cooldown_ticks < Self::BASE_COOLDOWN {
+            self.cooldown_ticks += 1;
+            if self.cooldown_ticks == Self::BASE_COOLDOWN {
+            } else {
+                return DamageArea::new_empty();
+            }
+        } else if self.cooldown_ticks >= Self::BASE_COOLDOWN {
+            self.cooldown_ticks = 0;
+        }
+
+        let (x, y) = wielder.position.get();
+        let direction = wielder.facing;
 
         let size = self.stats.size;
 
@@ -126,6 +142,8 @@ impl Weapon for Flash {
 
         new_area.constrain(layer);
 
+        self.cooldown_ticks += 1;
+
         let mut entity = EntityCharacters::AttackBlackout(Style::new().bold().white());
 
         if let Some(style) = self.get_elemental_style() {
@@ -135,7 +153,7 @@ impl Weapon for Flash {
         DamageArea {
             area: Rc::new(RefCell::new(new_area)),
             damage_amount: (f64::from(self.get_damage())
-                * wielder.stats.borrow().stats.player_stats.damage_mult)
+                * self.player_state.borrow().stats.player_stats.damage_mult)
                 .ceil() as i32,
             entity,
             duration: Duration::from_secs_f32(0.05),

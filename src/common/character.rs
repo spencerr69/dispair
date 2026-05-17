@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::common::enemies::enemy::Enemy;
-use crate::common::rogue::EntityCharacters;
+use crate::common::entities::EntityCharacters;
 use crate::common::{
     charms::CharmWrapper,
     coords::{Direction, Position},
@@ -16,6 +16,13 @@ use crate::common::{
     weapons::{DamageArea, WeaponWrapper, flash::Flash},
 };
 use crate::prelude::{Duration, Instant};
+
+#[derive(Clone)]
+pub struct CharacterPositionData {
+    pub position: Position,
+    pub prev_position: Position,
+    pub facing: Direction,
+}
 
 pub trait Renderable {
     /// Get the current `Position` of the entity
@@ -146,8 +153,19 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![WeaponWrapper::Flash(Some(Flash::new(weapon_stats.clone())))],
+            weapons: vec![WeaponWrapper::Flash(Some(Flash::new(
+                weapon_stats.clone(),
+                player_state.clone(),
+            )))],
             charms: vec![], // weapons: vec![],
+        }
+    }
+
+    pub fn get_pos_data(&self) -> CharacterPositionData {
+        CharacterPositionData {
+            position: self.get_pos().clone(),
+            prev_position: self.get_prev_pos().clone(),
+            facing: self.get_facing(),
         }
     }
 
@@ -158,11 +176,21 @@ impl Character {
     /// # Returns
     ///
     /// A tuple where the first element is a `Vec<DamageArea>` produced by the weapons, and the second element is a `Vec<DamageEffect>` derived from those areas with staggered delays applied (`0.15` seconds multiplied by each effect's index).
-    pub fn attack(&self, layer: &Layer, enemies: &[Enemy]) -> (Vec<DamageArea>, Vec<DamageEffect>) {
+    pub fn attack(
+        &mut self,
+        layer: &Layer,
+        enemies: &[Enemy],
+    ) -> (Vec<DamageArea>, Vec<DamageEffect>) {
+        let pos_data = self.get_pos_data();
+
         let damage_areas: Vec<DamageArea> = self
             .weapons
-            .iter()
-            .map(|weapon| weapon.get_inner().attack(self, enemies, layer))
+            .iter_mut()
+            .map(|weapon| {
+                weapon
+                    .get_inner_mut()
+                    .attack(pos_data.clone(), enemies, layer)
+            })
             .inspect(|damage_area| {
                 damage_area.area.borrow_mut().constrain(layer);
             })

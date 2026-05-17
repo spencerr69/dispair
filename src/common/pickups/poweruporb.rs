@@ -4,8 +4,9 @@
 use ratatui::style::{Color, Style};
 
 use crate::common::character::Renderable;
+use crate::common::coords::Position;
+use crate::common::entities::EntityCharacters;
 use crate::common::pickups::{PickupEffect, Pickupable};
-use crate::common::{coords::Position, rogue::EntityCharacters};
 
 /// Represents a power-up orb that the player can collect.
 pub struct PowerupOrb {

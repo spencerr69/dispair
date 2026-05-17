@@ -1,7 +1,7 @@
 use crate::common::character::Renderable;
 use crate::common::coords::Position;
+use crate::common::entities::EntityCharacters;
 use crate::common::pickups::poweruporb::PowerupOrb;
-use crate::common::rogue::EntityCharacters;
 
 pub mod pickupwrangler;
 pub mod poweruporb;

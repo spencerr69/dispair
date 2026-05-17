@@ -6,7 +6,6 @@ use crate::common::character::{Character, Renderable};
 use crate::common::coords::Position;
 use crate::prelude::KeyEvent;
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Layout, Rect};
 
 pub mod character;
 pub mod charms;
@@ -14,44 +13,22 @@ pub mod coords;
 pub mod debuffs;
 pub mod effects;
 pub mod enemies;
+pub mod entities;
 pub mod game;
 pub mod level;
 pub mod pickups;
 pub mod popups;
 pub mod powerup;
+pub mod render;
 pub mod rogue;
 pub mod stats;
 pub mod timescaler;
 pub mod upgrades;
+pub(crate) mod utils;
 pub mod weapons;
 
-/// Centers a `Rect` vertically within a given area.
-#[must_use]
-pub fn center_vertical(area: Rect, height: u16) -> Rect {
-    let [centered_area] = Layout::vertical([Constraint::Length(height)])
-        .flex(ratatui::layout::Flex::Center)
-        .areas(area);
-    centered_area
-}
-
-/// Centers a `Rect` horizontally within a given area.
-#[must_use]
-pub fn center_horizontal(area: Rect, width: u16) -> Rect {
-    let [centered_area] = Layout::horizontal([Constraint::Length(width)])
-        .flex(ratatui::layout::Flex::Center)
-        .areas(area);
-    centered_area
-}
-
-/// Centers a `Rect` both vertically and horizontally within a given area.
-#[must_use]
-pub fn center(area: Rect, width: u16, height: u16) -> Rect {
-    let centered_area = center_vertical(area, height);
-    center_horizontal(centered_area, width)
-}
-
 /// The number of game ticks per second.
-pub const TICK_RATE: f64 = 90.0;
+pub const TICK_RATE: f64 = 30.0;
 /// The target number of frames per second.
 pub const FRAME_RATE: f64 = 180.0;
 
@@ -72,13 +49,4 @@ pub trait Viewable {
     fn render(&mut self, frame: &mut Frame);
 
     fn handle_key_event(&mut self, key_event: &KeyEvent);
-}
-
-pub fn can_stand(width: i32, height: i32, character: &Character, position: &Position) -> bool {
-    let (x, y) = position.get();
-
-    if x < 0 || x >= width || y < 0 || y >= height || position == character.get_pos() {
-        return false;
-    }
-    true
 }

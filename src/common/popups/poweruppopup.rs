@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::str::FromStr;
 
 use rand::seq::SliceRandom;
@@ -11,6 +13,7 @@ use ratatui::{
 };
 use strum::IntoEnumIterator;
 
+use crate::common::upgrades::upgrade::PlayerState;
 use crate::{
     common::{
         charms::CharmWrapper,
@@ -29,6 +32,7 @@ pub struct PowerupPopup {
     pub charms: Vec<CharmWrapper>,
     pub base_weapon_stats: WeaponStats,
     pub finished: bool,
+    pub player_state: Rc<RefCell<PlayerState>>,
 }
 
 impl PowerupPopup {
@@ -37,6 +41,7 @@ impl PowerupPopup {
         current_weapons: &[WeaponWrapper],
         current_charms: &[CharmWrapper],
         weapon_stats: WeaponStats,
+        player_state: Rc<RefCell<PlayerState>>,
     ) -> Self {
         let mut choices = Vec::new();
 
@@ -83,6 +88,7 @@ impl PowerupPopup {
             selection_state,
             powerup_choices: choices,
             base_weapon_stats: weapon_stats,
+            player_state,
         }
     }
 
@@ -125,7 +131,10 @@ impl PowerupPopup {
                     }) && let Ok(mut new_weapon) =
                         WeaponWrapper::from_str(selected_powerup.get_name().to_uppercase().as_str())
                     {
-                        new_weapon.populate_inner(self.base_weapon_stats.clone());
+                        new_weapon.populate_inner(
+                            self.base_weapon_stats.clone(),
+                            self.player_state.clone(),
+                        );
                         new_weapons.push(new_weapon);
                     }
 

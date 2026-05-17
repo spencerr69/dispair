@@ -1,3 +1,4 @@
+use crate::common::weapons::PlayerState;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
@@ -12,23 +13,36 @@ use crate::{
 
 use ratatui::style::{Style, Stylize};
 
-use crate::common::character::Renderable;
+use crate::common::character::{CharacterPositionData, Renderable};
 use crate::common::enemies::enemy::{Enemy, get_closest_enemies, move_to_point_granular};
+use crate::common::entities::EntityCharacters;
 use crate::common::{
-    character::Character,
     coords::ChaosArea,
     powerup::PowerupTypes,
     powerup::{DynPowerup, Poweruppable},
-    rogue::{EntityCharacters, Layer},
+    rogue::Layer,
     stats::WeaponStats,
     weapons::{DamageArea, Weapon},
 };
 
-new_weapon!(Lightning, 1, 1);
+new_weapon!(Lightning, 1, 1, 3);
 
 impl Weapon for Lightning {
-    fn attack(&self, wielder: &Character, enemies: &[Enemy], layer: &Layer) -> DamageArea {
-        let mut begin_pos = wielder.get_pos().clone();
+    fn attack(
+        &mut self,
+        wielder: CharacterPositionData,
+        enemies: &[Enemy],
+        layer: &Layer,
+    ) -> DamageArea {
+        if self.cooldown_ticks > 0 && self.cooldown_ticks < Self::BASE_COOLDOWN {
+            self.cooldown_ticks += 1;
+            return DamageArea::new_empty();
+        } else if self.cooldown_ticks >= Self::BASE_COOLDOWN {
+            self.cooldown_ticks = 0;
+            return DamageArea::new_empty();
+        }
+
+        let mut begin_pos = wielder.position;
 
         let mut positions = Vec::new();
 
@@ -68,9 +82,11 @@ impl Weapon for Lightning {
             *entity.style_mut() = style;
         }
 
+        self.cooldown_ticks += 1;
+
         DamageArea {
             damage_amount: (f64::from(self.get_damage())
-                * wielder.stats.borrow().stats.player_stats.damage_mult)
+                * self.player_state.borrow().stats.player_stats.damage_mult)
                 .ceil() as i32,
             area: Rc::new(RefCell::new(area)),
             entity,

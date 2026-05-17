@@ -5,8 +5,8 @@ use ratatui::{
     widgets::{Block, Clear},
 };
 
+use crate::common::utils::{center_horizontal, center_vertical};
 use crate::common::{
-    center_horizontal, center_vertical,
     popups::popup_area,
     upgrades::upgrade::{PlayerState, PlayerStateDiff},
 };

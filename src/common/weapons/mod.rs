@@ -9,16 +9,18 @@ use std::{cell::RefCell, rc::Rc};
 use ratatui::style::{Style, Stylize};
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
-use crate::common::character::Renderable;
+use crate::common::character::{CharacterPositionData, Renderable};
+use crate::common::coords::ChaosArea;
 use crate::common::enemies::enemy::{Debuffable, Enemy};
+use crate::common::entities::EntityCharacters;
+use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::weapons::flash::Flash;
+use crate::common::weapons::lightning::Lightning;
+use crate::common::weapons::pillar::Pillar;
 use crate::common::weapons::row::Row;
 use crate::common::{
-    character::{Character, Damageable},
-    coords::Area,
-    powerup::PoweruppableWeapon,
-    rogue::{EntityCharacters, Layer},
+    character::Damageable, coords::Area, enemies, powerup::PoweruppableWeapon, rogue::Layer,
     stats::WeaponStats,
-    weapons::{flash::Flash, lightning::Lightning, pillar::Pillar},
 };
 
 pub mod flash;
@@ -28,33 +30,41 @@ pub mod row;
 
 #[macro_export]
 macro_rules! new_weapon {
-    ($weapon_name: ident, $base_damage:expr, $base_size:expr ) => {
+    ($weapon_name: ident, $base_damage:expr, $base_size:expr, $base_cooldown:expr ) => {
         #[derive(Clone)]
         pub struct $weapon_name {
             base_damage: i32,
             damage_scalar: f64,
             stats: WeaponStats,
             element: Option<Elements>,
+            cooldown_ticks: u64,
+            player_state: Rc<RefCell<PlayerState>>,
         }
 
         impl $weapon_name {
             const BASE_DAMAGE: i32 = $base_damage;
             const BASE_SIZE: i32 = $base_size;
+            const BASE_COOLDOWN: u64 = $base_cooldown;
 
             #[doc = concat!("Creates a new `", stringify!($weapon_name), "` with stats based on \
             the \
             player's \
             current `Stats`.")]
             #[must_use]
-            pub fn new(base_weapon_stats: WeaponStats) -> Self {
+            pub fn new(
+                base_weapon_stats: WeaponStats,
+                player_state: Rc<RefCell<PlayerState>>,
+            ) -> Self {
                 Self {
                     base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
                     damage_scalar: 1.,
+                    cooldown_ticks: 0,
                     stats: WeaponStats {
                         size: Self::BASE_SIZE + base_weapon_stats.size,
                         ..base_weapon_stats
                     },
                     element: None,
+                    player_state,
                 }
             }
         }
@@ -64,16 +74,16 @@ macro_rules! new_weapon {
 #[derive(Clone, EnumIter, IntoStaticStr, EnumString)]
 pub enum WeaponWrapper {
     #[strum(serialize = "Flash", serialize = "FLASH")]
-    Flash(Option<Flash>),
+    Flash(Option<flash::Flash>),
 
     #[strum(serialize = "Pillar", serialize = "PILLAR")]
-    Pillar(Option<Pillar>),
+    Pillar(Option<pillar::Pillar>),
 
     #[strum(serialize = "Lightning", serialize = "LIGHTNING")]
-    Lightning(Option<Lightning>),
+    Lightning(Option<lightning::Lightning>),
 
     #[strum(serialize = "Row", serialize = "ROW")]
-    Row(Option<Row>),
+    Row(Option<row::Row>),
 }
 
 impl PartialEq for WeaponWrapper {
@@ -114,12 +124,20 @@ impl WeaponWrapper {
         }
     }
 
-    pub fn populate_inner(&mut self, weapon_stats: WeaponStats) {
+    pub fn populate_inner(
+        &mut self,
+        weapon_stats: WeaponStats,
+        player_state: Rc<RefCell<PlayerState>>,
+    ) {
         match self {
-            WeaponWrapper::Flash(flash) => *flash = Some(Flash::new(weapon_stats)),
-            WeaponWrapper::Pillar(pillar) => *pillar = Some(Pillar::new(weapon_stats)),
-            WeaponWrapper::Lightning(lightning) => *lightning = Some(Lightning::new(weapon_stats)),
-            WeaponWrapper::Row(row) => *row = Some(Row::new(weapon_stats)),
+            WeaponWrapper::Flash(flash) => *flash = Some(Flash::new(weapon_stats, player_state)),
+            WeaponWrapper::Pillar(pillar) => {
+                *pillar = Some(Pillar::new(weapon_stats, player_state))
+            }
+            WeaponWrapper::Lightning(lightning) => {
+                *lightning = Some(Lightning::new(weapon_stats, player_state))
+            }
+            WeaponWrapper::Row(row) => *row = Some(Row::new(weapon_stats, player_state)),
         }
     }
 }
@@ -136,6 +154,17 @@ pub struct DamageArea {
 }
 
 impl DamageArea {
+    pub fn new_empty() -> Self {
+        DamageArea {
+            damage_amount: 0,
+            area: Rc::new(RefCell::new(ChaosArea::new(vec![]))),
+            duration: Duration::from_secs_f32(0.),
+            entity: EntityCharacters::Empty,
+            blink: false,
+            weapon_stats: None,
+        }
+    }
+
     /// Applies this damage area to every enemy whose position lies inside the area.
     ///
     /// For each affected enemy, reduces its health by `damage_amount`. If `weapon_stats` is present,
@@ -163,7 +192,12 @@ impl DamageArea {
 /// A trait for any weapon that can be used to attack.
 pub trait Weapon {
     /// Creates a `DamageArea` representing the attack.
-    fn attack(&self, wielder: &Character, enemies: &[Enemy], layer: &Layer) -> DamageArea;
+    fn attack(
+        &mut self,
+        wielder: CharacterPositionData,
+        enemies: &[Enemy],
+        layer: &Layer,
+    ) -> DamageArea;
 
     /// Calculates and returns the base damage of the weapon.
     ///Damage should be rounded up to the nearest int.

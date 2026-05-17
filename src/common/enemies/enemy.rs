@@ -4,7 +4,7 @@ use crate::{
     common::{
         character::{Character, Damageable, Movable},
         debuffs::{Debuff, DebuffTypes},
-        rogue::{EntityCharacters, Layer, can_stand, is_next_to_character},
+        rogue::Layer,
     },
     prelude::Duration,
 };
@@ -13,6 +13,8 @@ use rand::Rng;
 use ratatui::style::{Style, Stylize};
 
 use crate::common::character::Renderable;
+use crate::common::entities::EntityCharacters;
+use crate::common::utils::{can_stand, is_next_to_character};
 use crate::common::{
     coords::{Direction, Position, SquareArea},
     effects::DamageEffect,
@@ -211,7 +213,12 @@ impl EnemyBehaviour for Enemy {
         let (desired_pos, desired_facing) =
             move_to_point_granular(&self.position, character.get_pos(), true);
 
-        if can_stand(layer, &desired_pos) && &desired_pos != character.get_pos() {
+        if can_stand(
+            layer[0].len() as i32,
+            layer.len() as i32,
+            Some(character),
+            &desired_pos,
+        ) {
             Some((desired_pos, desired_facing))
         } else {
             None

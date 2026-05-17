@@ -6,9 +6,9 @@ use crate::prelude::{Duration, Instant};
 use std::{cell::RefCell, rc::Rc};
 
 use crate::common::character::Renderable;
+use crate::common::entities::EntityCharacters;
 use crate::common::{
     coords::{Area, Position, SquareArea},
-    rogue::EntityCharacters,
     weapons::DamageArea,
 };
 

@@ -1,9 +1,11 @@
-use crate::common::character::{Character, Renderable};
+use crate::common::character::{Character, CharacterPositionData, Renderable};
 use crate::common::coords::{Area, Position, SquareArea};
 use crate::common::enemies::enemy::Enemy;
+use crate::common::entities::EntityCharacters;
 use crate::common::powerup::{DynPowerup, PowerupTypes, Poweruppable};
-use crate::common::rogue::{EntityCharacters, Layer};
+use crate::common::rogue::Layer;
 use crate::common::weapons::Elements;
+use crate::common::weapons::PlayerState;
 use crate::common::weapons::{DamageArea, Weapon, WeaponStats};
 use crate::new_weapon;
 use crate::prelude::Duration;
@@ -12,11 +14,24 @@ use ratatui::style::Stylize;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-new_weapon!(Row, 3, 0);
+new_weapon!(Row, 6, 0, 5);
 
 impl Weapon for Row {
-    fn attack(&self, wielder: &Character, _: &[Enemy], layer: &Layer) -> DamageArea {
-        let (_, y) = wielder.get_pos().clone().get();
+    fn attack(
+        &mut self,
+        wielder: CharacterPositionData,
+        enemies: &[Enemy],
+        layer: &Layer,
+    ) -> DamageArea {
+        if self.cooldown_ticks > 0 && self.cooldown_ticks < Self::BASE_COOLDOWN {
+            self.cooldown_ticks += 1;
+            return DamageArea::new_empty();
+        } else if self.cooldown_ticks >= Self::BASE_COOLDOWN {
+            self.cooldown_ticks = 0;
+            return DamageArea::new_empty();
+        }
+
+        let (_, y) = wielder.position.get();
 
         //size should be half the size for balancing
         let size = self.stats.size / 2;
@@ -28,9 +43,11 @@ impl Weapon for Row {
 
         area.constrain(layer);
 
+        self.cooldown_ticks += 1;
+
         DamageArea {
             damage_amount: (f64::from(self.get_damage())
-                * wielder.stats.borrow().stats.player_stats.damage_mult)
+                * self.player_state.borrow().stats.player_stats.damage_mult)
                 .ceil() as i32,
             area: Rc::new(RefCell::new(area)),
             entity: EntityCharacters::AttackWeak(Style::new().gray()),
