@@ -1,5 +1,5 @@
 use crate::common;
-use crate::common::rogue::RogueGame;
+use crate::common::rogue::Rogue;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::upgrades::upgrademenu::UpgradesMenu;
 use crate::common::{Goto, Viewable};
@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub enum View {
-    Game(RogueGame),
+    Game(Rogue),
     Upgrades(UpgradesMenu),
 }
 
@@ -56,7 +56,7 @@ impl Game {
             Goto::Upgrades => {
                 self.view = View::Upgrades(UpgradesMenu::new(self.player_state.clone()));
             }
-            Goto::Game => self.view = View::Game(RogueGame::new(self.player_state.clone())),
+            Goto::Game => self.view = View::Game(Rogue::new(self.player_state.clone())),
             _ => {}
         }
     }

@@ -44,7 +44,7 @@ pub enum GameState {
 }
 
 /// Represents the main game state and logic.
-pub struct RogueGame {
+pub struct Rogue {
     /// The player's current state, including stats and inventory.
     pub player_state: Rc<RefCell<PlayerState>>,
     init_state: PlayerState,
@@ -98,14 +98,14 @@ pub struct RogueGame {
     camera_area: SquareArea,
 }
 
-impl RogueGame {
+impl Rogue {
     const DEFAULT_ATTACK_P_S: f64 = 1.5;
     const DEFAULT_SPAWN_P_S: f64 = 0.4;
     const DEFAULT_MOVE_P_S: f64 = 2.;
 
     #[must_use]
     pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
-        let init_player_state = player_state.as_ref().borrow().clone();
+        let init_player_state = player_state.borrow().clone();
 
         let width = init_player_state.stats.game_stats.width;
         let height = init_player_state.stats.game_stats.height;
@@ -140,7 +140,7 @@ impl RogueGame {
 
         let level = Level::new();
 
-        let mut game = RogueGame {
+        let mut game = Rogue {
             goto: Goto::Game,
 
             player_state: player_state.clone(),
@@ -580,7 +580,7 @@ impl RogueGame {
                 let mut pos = entity.borrow().get_pos().clone();
                 pos.constrain(layer);
 
-                if let Some(entity_pos) = RogueGame::get_mut_item_in_2d_enum_vec(enum_2d, &pos) {
+                if let Some(entity_pos) = Rogue::get_mut_item_in_2d_enum_vec(enum_2d, &pos) {
                     *entity_pos = entity.borrow().get_entity_char().to_styled();
                 }
             }
@@ -831,7 +831,7 @@ pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer)
     }
 }
 
-impl Viewable for RogueGame {
+impl Viewable for Rogue {
     fn tick(&mut self) {
         self.on_tick();
     }
@@ -998,7 +998,7 @@ mod tests {
     use std::rc::Rc;
     use std::time::Instant;
 
-    use crate::common::{rogue::RogueGame, upgrades::upgrade::PlayerState};
+    use crate::common::{rogue::Rogue, upgrades::upgrade::PlayerState};
 
     #[test]
     fn renderspeed() {
@@ -1007,7 +1007,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = RogueGame::new(Rc::new(RefCell::new(player_state)));
+        let mut rogue_game = Rogue::new(Rc::new(RefCell::new(player_state)));
 
         rogue_game.on_tick();
         rogue_game.on_frame();
@@ -1015,7 +1015,7 @@ mod tests {
         let start_time = Instant::now();
 
         let spans = rogue_game.flatten_to_span(None);
-        let _ = RogueGame::spans_to_text(spans);
+        let _ = Rogue::spans_to_text(spans);
 
         let elapsed = start_time.elapsed().as_millis();
 
@@ -1032,7 +1032,7 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
-        let mut rogue_game = RogueGame::new(Rc::new(RefCell::new(player_state)));
+        let mut rogue_game = Rogue::new(Rc::new(RefCell::new(player_state)));
 
         let start_time = Instant::now();
 
@@ -1040,19 +1040,19 @@ mod tests {
         rogue_game.on_frame();
 
         let spans = rogue_game.flatten_to_span(None);
-        let _ = RogueGame::spans_to_text(spans);
+        let _ = Rogue::spans_to_text(spans);
 
         rogue_game.on_tick();
         rogue_game.on_frame();
 
         let spans = rogue_game.flatten_to_span(None);
-        let _ = RogueGame::spans_to_text(spans);
+        let _ = Rogue::spans_to_text(spans);
 
         rogue_game.on_tick();
         rogue_game.on_frame();
 
         let spans = rogue_game.flatten_to_span(None);
-        let _ = RogueGame::spans_to_text(spans);
+        let _ = Rogue::spans_to_text(spans);
 
         let elapsed = start_time.elapsed().as_millis();
 

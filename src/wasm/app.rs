@@ -26,7 +26,7 @@ use ratzilla::ratatui::{
 
 use crate::common::game::Game;
 use crate::common::{
-    popups::carnagereport::CarnageReport, rogue::RogueGame, upgrades::upgrade::PlayerState,
+    popups::carnagereport::CarnageReport, rogue::Rogue, upgrades::upgrade::PlayerState,
     upgrades::upgrademenu::UpgradesMenu,
 };
 
