@@ -27,6 +27,7 @@ pub mod timescaler;
 pub mod upgrades;
 pub(crate) mod utils;
 pub mod weapons;
+pub mod widgets;
 
 /// The number of game ticks per second.
 pub const TICK_RATE: f64 = 30.0;

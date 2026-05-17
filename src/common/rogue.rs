@@ -9,6 +9,7 @@ use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::render::{flatten_to_span, get_camera_area, spans_to_text};
 use crate::common::upgrades::upgrade::CurrentUpgradesTrait;
 use crate::common::utils::{center, move_entity, per_sec_to_tick_count};
+use crate::common::widgets::statswidget::StatsWidget;
 use crate::common::{Goto, PlayerStateRef, Viewable};
 use crate::{
     common::{
@@ -52,6 +53,8 @@ pub struct Rogue {
 
     /// The carnage report, which is displayed at the end of a level.
     pub carnage_report: Option<CarnageReport>,
+
+    pub stats_widget: StatsWidget,
 
     pub powerup_popup: Option<PowerupPopup>,
 
@@ -147,6 +150,8 @@ impl Rogue {
             height,
             width,
             attack_ticks,
+
+            stats_widget: StatsWidget::new(player_state.clone()),
 
             enemy_wrangler: EnemyWrangler::new(
                 player_state.clone(),
@@ -436,7 +441,10 @@ impl Rogue {
             frame.render_widget(progress_bar, progress_bar_area);
         }
 
-        self.view_area = game_area;
+        let [stats_area, view_area] =
+            Layout::horizontal([Constraint::Percentage(20), Constraint::Fill(1)]).areas(game_area);
+
+        self.view_area = view_area;
 
         let content_area = self.view_area;
 
@@ -448,6 +456,10 @@ impl Rogue {
         let content = Paragraph::new(self.map_text.clone()).centered();
 
         frame.render_widget(content, centered_area);
+
+        let stats_widget = StatsWidget::new(self.player_state.clone());
+
+        frame.render_widget(stats_widget, stats_area);
 
         if let Some(ref mut carnage) = self.carnage_report {
             carnage.render(frame);

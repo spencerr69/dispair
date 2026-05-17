@@ -382,22 +382,6 @@ pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
     Ok(upgrade_tree)
 }
 
-// /// Recursively traverses the upgrade tree and creates a map of all possible upgrades, initialized to 0.
-// #[must_use]
-// pub fn get_current_upgrades(
-//     upgrade_tree: UpgradeTree,
-//     mut acc: CurrentUpgrades,
-// ) -> CurrentUpgrades {
-//     for node in upgrade_tree {
-//         acc.set(&node.id, 0);
-//         if let Some(children) = node.children {
-//             acc = get_current_upgrades(children, acc.clone());
-//         }
-//     }
-//
-//     acc
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
