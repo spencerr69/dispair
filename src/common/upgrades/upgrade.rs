@@ -407,12 +407,4 @@ mod tests {
         let upgrade_tree = get_upgrade_tree().unwrap();
         assert!(upgrade_tree[0].title.len() > 1);
     }
-
-    #[test]
-    fn current_upgrades_check() {
-        let upgrade_tree = get_upgrade_tree().unwrap();
-        let current_upgrades: CurrentUpgrades = Vec::new();
-        println!("Current upgrades: {current_upgrades:?}");
-        assert!(!current_upgrades.is_empty());
-    }
 }
