@@ -120,10 +120,6 @@ impl Rogue {
         }
 
         let attack_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
-        // let enemy_move_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
-        // let enemy_spawn_ticks = Self::per_sec_to_tick_count(
-        //     Self::DEFAULT_SPAWN_P_S * init_player_state.stats.game_stats.enemy_spawn_mult,
-        // );
 
         let start_time = Instant::now();
         let timer = Duration::from_secs(init_player_state.stats.game_stats.timer);
@@ -241,14 +237,16 @@ impl Rogue {
 
                 self.handle_pickups();
 
-                self.process_debuffs();
-
-                self.enemy_wrangler.on_tick(
+                let drops = self.enemy_wrangler.on_tick(
                     self.tickcount,
                     &mut self.character,
                     &self.layer_base,
                     &mut self.active_damage_effects,
                 );
+
+                for drop in drops {
+                    self.consume_drops(&drop);
+                }
 
                 if self.tickcount.is_multiple_of(TICK_RATE.floor() as u64) {
                     self.scale();
@@ -268,75 +266,6 @@ impl Rogue {
                     .iter_mut()
                     .for_each(|pickup| pickup.get_inner_mut().animate(self.tickcount % 1000));
             }
-        }
-    }
-
-    fn process_debuffs(&mut self) {
-        let mut damage_areas: Vec<DamageArea> = Vec::new();
-
-        self.enemies = self
-            .enemies
-            .clone()
-            .into_iter()
-            .filter_map(|mut e| {
-                if !e.debuffs.get_on_tick_effects().is_empty() {
-                    e.debuffs = e
-                        .debuffs
-                        .clone()
-                        .into_iter()
-                        .map(|mut d| {
-                            if let Some(damage_area) =
-                                d.on_tick(&mut e, &self.layer_base, self.tickcount)
-                            {
-                                damage_areas.push(damage_area);
-                            }
-                            d
-                        })
-                        .collect();
-                }
-
-                if !e.debuffs.get_on_damage_effects().is_empty() {
-                    e.debuffs = e
-                        .debuffs
-                        .clone()
-                        .into_iter()
-                        .map(|mut d| {
-                            if let Some(damage_area) =
-                                d.on_damage(&mut e, &self.layer_base, &self.enemies)
-                            {
-                                damage_areas.push(damage_area);
-                            }
-                            d
-                        })
-                        .collect();
-                }
-
-                e.debuffs.retain(|d| !d.complete);
-
-                if e.is_alive() {
-                    Some(e)
-                } else {
-                    if !e.debuffs.get_on_death_effects().is_empty() {
-                        e.debuffs.iter().for_each(|d| {
-                            if let Some(damage_area) = d.on_death(e.clone(), &self.layer_base) {
-                                damage_areas.push(damage_area);
-                            }
-                        });
-                    }
-
-                    self.consume_drops(&e.get_drops());
-
-                    None
-                }
-            })
-            .collect();
-
-        for damage_area in damage_areas {
-            damage_area.deal_damage(&mut self.enemies);
-
-            let damage_effect = DamageEffect::from(damage_area);
-
-            self.active_damage_effects.push(damage_effect);
         }
     }
 
@@ -432,7 +361,7 @@ impl Rogue {
 
         let offset = self.player_state.borrow().stats.game_stats.time_offset;
 
-        self.timescaler.offset_start_time(offset);
+        self.timescaler.borrow_mut().offset_start_time(offset);
     }
 
     pub fn generate_popup(&mut self) {
@@ -445,50 +374,8 @@ impl Rogue {
         self.start_popup = false;
     }
 
-    fn scale_enemies(&mut self) {
-        let init_enemy_health = 1.;
-        let init_enemy_damage = 1.;
-        let init_enemy_spawn_secs =
-            Self::DEFAULT_SPAWN_P_S * self.player_state.borrow().stats.game_stats.enemy_spawn_mult;
-        let init_enemy_move_secs =
-            Self::DEFAULT_MOVE_P_S * self.player_state.borrow().stats.game_stats.enemy_move_mult;
-        let init_enemy_gold: u128 = 1;
-        let init_enemy_xp: u128 = 1;
-
-        self.enemy_health =
-            (init_enemy_health * (self.timescaler.scale_amount * 5.).max(1.)).ceil() as i32;
-
-        self.enemy_damage =
-            (init_enemy_damage * (self.timescaler.scale_amount / 5.).max(1.)).ceil() as i32;
-        self.enemy_spawn_ticks =
-            Self::per_sec_to_tick_count(init_enemy_spawn_secs * self.timescaler.scale_amount);
-
-        self.enemy_move_ticks = Self::per_sec_to_tick_count(
-            init_enemy_move_secs * (self.timescaler.scale_amount / 6.).max(1.),
-        );
-
-        self.enemy_drops = EnemyDrops {
-            gold: (init_enemy_gold as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil()
-                as u128,
-            xp: if self.player_state.borrow().upgrade_owned("A") {
-                (init_enemy_xp as f64 * (self.timescaler.scale_amount / 2.).max(1.)).ceil() as u128
-            } else {
-                0
-            },
-        }
-    }
-
-    pub fn spawn_enemy(&mut self) {
-        self.enemies.push(Enemy::new(
-            get_rand_position_on_edge(&self.layer_base),
-            self.enemy_damage,
-            self.enemy_health,
-            self.enemy_drops.clone(),
-        ));
-    }
-
     fn scale(&mut self) -> f64 {
-        self.timescaler.scale()
+        self.timescaler.borrow_mut().scale()
     }
 
     pub fn key_event(&mut self, key_event: &KeyEvent) {
@@ -593,6 +480,7 @@ impl Rogue {
             ));
 
         self.enemies
+            .borrow()
             .iter()
             .for_each(callback_creator::<_, Enemy>(&mut enum_2d, &self.layer_base));
 
@@ -635,6 +523,7 @@ impl Rogue {
     #[must_use]
     pub fn get_enemy_positions(&self) -> Vec<Position> {
         self.enemies
+            .borrow()
             .iter()
             .map(|enemy| enemy.get_pos().clone())
             .collect()

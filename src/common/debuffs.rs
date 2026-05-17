@@ -83,12 +83,12 @@ impl Debuff {}
 /// A trait for effects that trigger when an enemy dies.
 pub trait OnDeathEffect {
     /// Called when an enemy dies, potentially creating a `DamageArea`.
-    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea>;
+    fn on_death(&self, enemy: &Enemy, layer: &Layer) -> Option<DamageArea>;
 }
 
 impl OnDeathEffect for Debuff {
     /// Produces an optional area-of-effect damage specification to emit when this debuff triggers on an enemy's death.
-    fn on_death(&self, enemy: Enemy, layer: &Layer) -> Option<DamageArea> {
+    fn on_death(&self, enemy: &Enemy, layer: &Layer) -> Option<DamageArea> {
         match self.debuff_type {
             DebuffTypes::MarkedForExplosion => {
                 if let Some(size) = self.stats.size {
