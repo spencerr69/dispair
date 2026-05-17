@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{common::rogue::GameState, prelude::Instant};
+use crate::prelude::Instant;
 use serde::de::Error;
 
 use ratzilla::{
@@ -13,7 +13,7 @@ use ratzilla::{
 
 use web_sys::wasm_bindgen::JsValue;
 
-use crate::common::{Goto, TICK_RATE, Viewable, center_horizontal, center_vertical};
+use crate::common::{Goto, TICK_RATE, center_horizontal, center_vertical};
 
 use ratzilla::ratatui::{
     Frame, Terminal,
@@ -25,10 +25,7 @@ use ratzilla::ratatui::{
 };
 
 use crate::common::game::Game;
-use crate::common::{
-    popups::carnagereport::CarnageReport, rogue::Rogue, upgrades::upgrade::PlayerState,
-    upgrades::upgrademenu::UpgradesMenu,
-};
+use crate::common::upgrades::upgrade::PlayerState;
 
 /// Saves the player's progress to local storage.
 ///
