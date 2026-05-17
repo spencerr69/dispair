@@ -70,10 +70,10 @@ impl CharmWrapper {
     pub fn populate_inner(&mut self, player_state_ref: PlayerStateRef) {
         match self {
             CharmWrapper::DamageMult(damage_mult) => {
-                *damage_mult = Some(CharmDamageMult::new(player_state_ref))
+                *damage_mult = Some(CharmDamageMult::new(player_state_ref));
             }
             CharmWrapper::HypeTime(offset_add) => {
-                *offset_add = Some(CharmHypeTime::new(player_state_ref))
+                *offset_add = Some(CharmHypeTime::new(player_state_ref));
             }
             CharmWrapper::AttackSpeed(attack_speed) => {
                 *attack_speed = Some(CharmAttackSpeed::new(player_state_ref));

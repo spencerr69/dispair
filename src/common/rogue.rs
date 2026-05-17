@@ -144,7 +144,7 @@ impl Rogue {
 
             player_state: player_state.clone(),
             init_state: init_player_state,
-            character: Character::new(player_state.clone()),
+            character: Character::new(&player_state.clone()),
             layer_base: base.clone(),
             flat_layer: base,
             height,

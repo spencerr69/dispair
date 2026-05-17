@@ -11,7 +11,7 @@ use crate::{
     prelude::Duration,
 };
 
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 
 use crate::common::character::{CharacterPositionData, Renderable};
 use crate::common::enemies::enemy::{Enemy, get_closest_enemies, move_to_point_granular};

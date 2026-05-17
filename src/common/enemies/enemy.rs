@@ -10,7 +10,7 @@ use crate::{
 };
 
 use rand::Rng;
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 
 use crate::common::character::Renderable;
 use crate::common::entities::EntityCharacters;

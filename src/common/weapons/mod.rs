@@ -6,14 +6,13 @@ use crate::{common::debuffs::Elements, prelude::Duration};
 
 use std::{cell::RefCell, rc::Rc};
 
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::character::{CharacterPositionData, Renderable};
 use crate::common::coords::ChaosArea;
 use crate::common::enemies::enemy::{Debuffable, Enemy};
 use crate::common::entities::EntityCharacters;
-use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::weapons::flash::Flash;
 use crate::common::weapons::lightning::Lightning;
 use crate::common::weapons::pillar::Pillar;

@@ -1,7 +1,7 @@
 //! This module defines the `Character` struct and related traits for movable and damageable entities.
 //! It handles character movement, health, attacks, and other core gameplay mechanics.
 
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
@@ -131,7 +131,7 @@ impl Character {
     /// A `Character` populated with position, facing, health, stats, entity character,
     /// and weapons derived from the provided `player_state`.
     #[must_use]
-    pub fn new(player_state: PlayerStateRef) -> Self {
+    pub fn new(player_state: &PlayerStateRef) -> Self {
         let stats = &player_state.borrow().stats;
         let weapon_stats = stats.weapon_stats.clone();
         let max_health = stats.player_stats.health;
@@ -159,6 +159,7 @@ impl Character {
         }
     }
 
+    #[must_use]
     pub fn get_pos_data(&self) -> CharacterPositionData {
         CharacterPositionData {
             position: self.get_pos().clone(),

@@ -9,7 +9,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 
 use crate::common::character::Renderable;
 use crate::common::enemies::enemy::{Debuffable, get_closest_enemies};

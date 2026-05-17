@@ -111,7 +111,6 @@ impl DamageEffect {
     /// Value captures the positions and the active entity at the time of the call, so the
     /// iterator
     /// can be used independently of later mutations to the `DamageEffect`.
-    #[must_use]
     pub fn get_instructions(&self) -> impl Iterator<Item = RenderPosition> {
         let active_entity = self.active_entity.clone();
 

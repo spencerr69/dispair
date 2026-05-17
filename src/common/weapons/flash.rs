@@ -19,7 +19,7 @@ use crate::{
 use crate::common::character::CharacterPositionData;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
-use ratatui::style::{Style, Stylize};
+use ratatui::style::Style;
 
 new_weapon!(Flash, 2, 1, 1);
 
