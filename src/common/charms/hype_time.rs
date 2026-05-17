@@ -4,7 +4,7 @@ use crate::common::{
     stats::Stats,
 };
 
-use crate::target_types::Duration;
+use crate::prelude::Duration;
 
 #[derive(Clone)]
 pub struct CharmOffsetAdd {

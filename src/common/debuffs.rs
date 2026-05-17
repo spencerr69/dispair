@@ -7,7 +7,7 @@ use crate::{
         roguegame::{EntityCharacters, Layer},
         stats::WeaponStats,
     },
-    target_types::Duration,
+    prelude::Duration,
 };
 
 use std::{cell::RefCell, collections::HashMap, rc::Rc};

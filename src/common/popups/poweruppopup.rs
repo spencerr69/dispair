@@ -19,7 +19,7 @@ use crate::{
         stats::WeaponStats,
         weapons::WeaponWrapper,
     },
-    target_types::{KeyCode, KeyEvent},
+    prelude::{KeyCode, KeyEvent},
 };
 
 pub struct PowerupPopup {

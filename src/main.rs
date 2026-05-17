@@ -17,21 +17,25 @@ pub mod terminal;
 pub mod wasm;
 
 #[cfg(target_family = "wasm")]
-pub mod target_types {
+pub mod prelude {
     pub type KeyCode = ratzilla::event::KeyCode;
     pub type KeyEvent = ratzilla::event::KeyEvent;
     pub type Duration = web_time::Duration;
     pub type SystemTime = web_time::SystemTime;
     pub type Instant = web_time::Instant;
+
+    pub use crate::wasm::app::save_progress;
 }
 
 #[cfg(not(target_family = "wasm"))]
-pub mod target_types {
+pub mod prelude {
     pub type KeyCode = crossterm::event::KeyCode;
     pub type KeyEvent = crossterm::event::KeyEvent;
     pub type Duration = std::time::Duration;
     pub type SystemTime = std::time::SystemTime;
     pub type Instant = std::time::Instant;
+
+    pub use crate::terminal::app::save_progress;
 }
 
 /// The main entry point for the terminal application.

@@ -3,7 +3,7 @@
 
 use std::{collections::HashMap, ops::Sub};
 
-use crate::target_types::Duration;
+use crate::prelude::Duration;
 
 use serde::{Deserialize, Serialize};
 

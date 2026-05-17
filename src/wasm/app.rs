@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{common::roguegame::GameState, target_types::Instant};
+use crate::{common::roguegame::GameState, prelude::Instant};
 use serde::de::Error;
 
 use ratzilla::{
@@ -238,7 +238,7 @@ impl App {
         }
 
         if let Some(upgrades_menu) = &mut self.upgrades_view
-            && let Some(close) = upgrades_menu.close.clone()
+            && let Some(close) = upgrades_menu.goto.clone()
         {
             self.player_state = Some(upgrades_menu.player_state.clone());
             self.player_state.as_mut().unwrap().refresh();

@@ -14,7 +14,7 @@ use crate::{
         weapons::{DamageArea, Weapon},
     },
     new_weapon,
-    target_types::Duration,
+    prelude::Duration,
 };
 
 use crate::common::character::Renderable;

@@ -1,7 +1,7 @@
 //! This module provides a `TimeScaler` that dynamically adjusts a scaling factor
 //! over time. This is used to increase the game's difficulty as time progresses.
 
-use crate::target_types::{Duration, SystemTime};
+use crate::prelude::{Duration, SystemTime};
 
 /// Handles the scaling of game difficulty over time.
 pub struct TimeScaler {

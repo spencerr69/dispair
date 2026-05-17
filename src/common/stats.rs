@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ops::Sub};
 
-use crate::target_types::Duration;
+use crate::prelude::Duration;
 
 use derive_more::Sub;
 use serde::{Deserialize, Serialize};

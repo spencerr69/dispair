@@ -16,12 +16,13 @@ use crate::{
         upgrades::upgrade::PlayerState,
         weapons::DamageArea,
     },
-    target_types::{Duration, Instant, KeyCode, KeyEvent},
+    prelude::{Duration, Instant, KeyCode, KeyEvent},
 };
 use std::borrow::Borrow;
 
 use crate::common::character::Renderable;
 use crate::common::pickups::PickupTypes;
+use crate::common::{Goto, Viewable};
 use rand::Rng;
 use ratatui::{
     Frame,
@@ -45,6 +46,7 @@ pub enum GameState {
 pub struct RogueGame {
     /// The player's current state, including stats and inventory.
     pub player_state: PlayerState,
+    init_state: PlayerState,
 
     /// The carnage report, which is displayed at the end of a level.
     pub carnage_report: Option<CarnageReport>,
@@ -75,6 +77,8 @@ pub struct RogueGame {
     attack_ticks: u64,
 
     pub game_state: GameState,
+
+    pub goto: Goto,
 
     active_damage_effects: Vec<DamageEffect>,
 
@@ -134,7 +138,10 @@ impl RogueGame {
         let level = Level::new();
 
         let mut game = RogueGame {
+            goto: Goto::Game,
+
             player_state: player_state.clone(),
+            init_state: player_state.clone(),
             character: Character::new(player_state.clone()),
             layer_base: base.clone(),
             flat_layer: base,
@@ -204,7 +211,13 @@ impl RogueGame {
         self.handle_popup();
 
         match self.game_state {
-            GameState::Paused | GameState::GameOver | GameState::Exit => {}
+            GameState::Paused | GameState::Exit => {}
+            GameState::GameOver => {
+                self.carnage_report = Some(CarnageReport::new(
+                    self.init_state.clone(),
+                    self.player_state.clone(),
+                ));
+            }
             GameState::Play => {
                 self.tickcount += 1;
 
@@ -503,10 +516,11 @@ impl RogueGame {
         self.timescaler.scale()
     }
 
-    pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
+    pub fn key_event(&mut self, key_event: &KeyEvent) {
         if self.carnage_report.is_some() {
             if key_event.code == KeyCode::Esc {
                 self.game_state = GameState::Exit;
+                self.goto = Goto::Upgrades;
             }
         } else if let Some(powerup_popup) = &mut self.powerup_popup {
             powerup_popup.handle_key_event(key_event);
@@ -697,7 +711,7 @@ impl RogueGame {
         true
     }
 
-    pub fn render(&mut self, frame: &mut Frame) {
+    pub fn render_game(&mut self, frame: &mut Frame) {
         let timer = self.timer.saturating_sub(self.start_time.elapsed());
 
         let title = Line::from(" dispair.run ".bold());
@@ -801,6 +815,28 @@ pub fn get_camera_area(content_area: Rect, player_pos: &Position, layer: &Layer)
     SquareArea {
         corner1: Position(x1, y1),
         corner2: Position(x2, y2),
+    }
+}
+
+impl Viewable for RogueGame {
+    fn tick(&mut self) {
+        self.on_tick();
+    }
+
+    fn frame(&mut self) {
+        self.on_frame();
+    }
+
+    fn render(&mut self, frame: &mut Frame) {
+        self.render_game(frame)
+    }
+
+    fn get_goto(&self) -> &Goto {
+        &self.goto
+    }
+
+    fn handle_key_event(&mut self, key_event: &KeyEvent) {
+        self.key_event(key_event);
     }
 }
 

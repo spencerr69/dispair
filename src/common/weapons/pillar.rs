@@ -7,7 +7,7 @@ use crate::{
         powerup::PowerupTypes,
     },
     new_weapon,
-    target_types::Duration,
+    prelude::Duration,
 };
 
 use ratatui::style::{Style, Stylize};

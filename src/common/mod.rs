@@ -2,6 +2,8 @@
 //! between the terminal and WASM versions of the application. It includes
 //! modules for characters, coordinates, game state, and more.
 
+use crate::prelude::KeyEvent;
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
 
 pub mod character;
@@ -10,6 +12,7 @@ pub mod coords;
 pub mod debuffs;
 pub mod effects;
 pub mod enemy;
+pub mod game;
 pub mod level;
 pub mod pickups;
 pub mod popups;
@@ -49,3 +52,22 @@ pub fn center(area: Rect, width: u16, height: u16) -> Rect {
 pub const TICK_RATE: f64 = 90.0;
 /// The target number of frames per second.
 pub const FRAME_RATE: f64 = 180.0;
+
+/// An enum representing the possible destinations when closing the upgrade menu.
+#[derive(Clone, PartialEq)]
+pub enum Goto {
+    Game,
+    Menu,
+    Upgrades,
+}
+
+pub trait Viewable {
+    fn tick(&mut self);
+    fn frame(&mut self) {}
+
+    fn get_goto(&self) -> &Goto;
+
+    fn render(&mut self, frame: &mut Frame);
+
+    fn handle_key_event(&mut self, key_event: &KeyEvent);
+}

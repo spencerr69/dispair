@@ -1,7 +1,7 @@
 //! This module handles visual and gameplay effects, such as damage indicators.
 //! It defines the `DamageEffect` struct, which represents a temporary effect in a given area.
 
-use crate::target_types::{Duration, Instant};
+use crate::prelude::{Duration, Instant};
 
 use std::{cell::RefCell, rc::Rc};
 

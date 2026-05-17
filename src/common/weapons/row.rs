@@ -6,7 +6,7 @@ use crate::common::roguegame::{EntityCharacters, Layer};
 use crate::common::weapons::Elements;
 use crate::common::weapons::{DamageArea, Weapon, WeaponStats};
 use crate::new_weapon;
-use crate::target_types::Duration;
+use crate::prelude::Duration;
 use ratatui::prelude::Style;
 use ratatui::style::Stylize;
 use std::cell::RefCell;

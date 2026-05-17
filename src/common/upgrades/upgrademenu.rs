@@ -1,7 +1,9 @@
 //! This module provides the UI and logic for the upgrade menu.
 //! It allows the player to navigate and purchase upgrades for their character.
+use crate::common::roguegame::RogueGame;
 use crate::common::upgrades::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
-use crate::target_types::{KeyCode, KeyEvent};
+use crate::common::{Goto, Viewable};
+use crate::prelude::{KeyCode, KeyEvent};
 use ratatui::text::{Span, Text};
 use ratatui::widgets::BorderType;
 use ratatui::{
@@ -12,13 +14,6 @@ use ratatui::{
     text::Line,
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
-
-/// An enum representing the possible destinations when closing the upgrade menu.
-#[derive(Clone)]
-pub enum Goto {
-    Game,
-    Menu,
-}
 
 #[derive(Clone)]
 pub struct MenuCrumb {
@@ -33,7 +28,7 @@ pub struct UpgradesMenu {
     pub player_state: PlayerState,
     root_upgrade_tree: UpgradeTree,
     pub upgrade_selection: ListState,
-    pub close: Option<Goto>,
+    pub goto: Goto,
     pub current_layer: UpgradeTree,
     history: MenuHistory,
 }
@@ -52,7 +47,7 @@ impl UpgradesMenu {
             root_upgrade_tree: upgrade_tree.clone(),
             current_layer: upgrade_tree,
             upgrade_selection: ListState::default(),
-            close: None,
+            goto: Goto::Upgrades,
             history: Vec::new(),
         };
 
@@ -62,7 +57,7 @@ impl UpgradesMenu {
     }
 
     /// Handles key events for the upgrade menu.
-    pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
+    pub fn key_event(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Char('w') | KeyCode::Up => self.prev_selection(),
             KeyCode::Char('s') | KeyCode::Down => self.next_selection(),
@@ -76,14 +71,14 @@ impl UpgradesMenu {
                     }
                 }
             }
-            KeyCode::Char(' ') => self.close = Some(Goto::Game),
+            KeyCode::Char(' ') => self.goto = Goto::Game,
 
             KeyCode::Esc => {
                 if !self.history.is_empty() {
                     self.go_back();
                     self.upgrade_selection.select_first();
                 } else {
-                    self.close = Some(Goto::Menu);
+                    self.goto = Goto::Menu;
                 }
             }
             _ => {}
@@ -316,5 +311,21 @@ impl UpgradesMenu {
         frame.render_stateful_widget(list, list_rect, &mut self.upgrade_selection);
         frame.render_widget(breadcrumbs_border, breadcrumb_rect);
         frame.render_widget(breadcrumbs, breadcrumbs_inner);
+    }
+}
+
+impl Viewable for UpgradesMenu {
+    fn tick(&mut self) {}
+
+    fn get_goto(&self) -> &Goto {
+        &self.goto
+    }
+
+    fn render(&mut self, frame: &mut Frame) {
+        self.render_upgrades(frame)
+    }
+
+    fn handle_key_event(&mut self, key_event: &KeyEvent) {
+        self.key_event(key_event);
     }
 }

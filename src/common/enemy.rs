@@ -6,7 +6,7 @@ use crate::{
         debuffs::{Debuff, DebuffTypes},
         roguegame::{EntityCharacters, Layer, can_stand, is_next_to_character},
     },
-    target_types::Duration,
+    prelude::Duration,
 };
 
 use rand::Rng;
