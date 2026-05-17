@@ -15,7 +15,7 @@ impl StatsWidget {
         Self { player_state }
     }
 
-    pub fn get_stat_vecs(&self) -> (Vec<Line>, Vec<Line>) {
+    pub fn get_stat_vecs(&self) -> (Vec<Line<'_>>, Vec<Line<'_>>) {
         // Extract stats and their corresponding labels into separate vectors
         let mut stat_labels = Vec::new();
         let mut stat_values = Vec::new();
