@@ -8,7 +8,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::common::character::Renderable;
 use crate::common::{
     coords::{Area, Position, SquareArea},
-    roguegame::EntityCharacters,
+    rogue::EntityCharacters,
     weapons::DamageArea,
 };
 

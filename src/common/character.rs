@@ -10,13 +10,13 @@ use crate::common::{
     coords::{Direction, Position},
     effects::DamageEffect,
     enemy::Enemy,
-    roguegame::Layer,
+    rogue::Layer,
     stats::PlayerStats,
     upgrades::upgrade::PlayerState,
     weapons::{DamageArea, WeaponWrapper, flash::Flash},
 };
 
-use crate::common::roguegame::EntityCharacters;
+use crate::common::rogue::EntityCharacters;
 use crate::prelude::{Duration, Instant};
 
 pub trait Renderable {

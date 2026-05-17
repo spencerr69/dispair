@@ -17,7 +17,7 @@ pub mod level;
 pub mod pickups;
 pub mod popups;
 pub mod powerup;
-pub mod roguegame;
+pub mod rogue;
 pub mod stats;
 pub mod timescaler;
 pub mod upgrades;

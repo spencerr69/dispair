@@ -16,7 +16,7 @@ use crate::common::{
     coords::Area,
     enemy::{Debuffable, Enemy},
     powerup::PoweruppableWeapon,
-    roguegame::{EntityCharacters, Layer},
+    rogue::{EntityCharacters, Layer},
     stats::WeaponStats,
     weapons::{flash::Flash, lightning::Lightning, pillar::Pillar},
 };

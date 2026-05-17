@@ -998,7 +998,7 @@ mod tests {
     use std::rc::Rc;
     use std::time::Instant;
 
-    use crate::common::{roguegame::RogueGame, upgrades::upgrade::PlayerState};
+    use crate::common::{rogue::RogueGame, upgrades::upgrade::PlayerState};
 
     #[test]
     fn renderspeed() {

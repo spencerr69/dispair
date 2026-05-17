@@ -1,5 +1,5 @@
 use crate::common;
-use crate::common::roguegame::RogueGame;
+use crate::common::rogue::RogueGame;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::upgrades::upgrademenu::UpgradesMenu;
 use crate::common::{Goto, Viewable};

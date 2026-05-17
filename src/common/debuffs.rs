@@ -4,7 +4,7 @@ use crate::{
         character::Damageable,
         coords::ChaosArea,
         enemy::{Enemy, move_to_point_granular},
-        roguegame::{EntityCharacters, Layer},
+        rogue::{EntityCharacters, Layer},
         stats::WeaponStats,
     },
     prelude::Duration,

@@ -17,7 +17,7 @@ use crate::common::{
     character::Character,
     enemy::Enemy,
     powerup::{DynPowerup, Poweruppable},
-    roguegame::{EntityCharacters, Layer},
+    rogue::{EntityCharacters, Layer},
     stats::WeaponStats,
     weapons::{DamageArea, Weapon},
 };

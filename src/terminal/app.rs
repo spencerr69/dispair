@@ -2,7 +2,7 @@
 //! It handles the main loop, event handling, and switching between different views (menu, game, upgrades).
 
 use crate::common::{
-    FRAME_RATE, Goto, TICK_RATE, center_horizontal, center_vertical, roguegame::GameState,
+    FRAME_RATE, Goto, TICK_RATE, center_horizontal, center_vertical, rogue::GameState,
 };
 use std::fs::{File, OpenOptions};
 

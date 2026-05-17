@@ -8,7 +8,7 @@ use crate::{
         debuffs::{Debuff, DebuffTypes, Elements},
         enemy::Enemy,
         powerup::{DynPowerup, PowerupTypes, Poweruppable},
-        roguegame::{EntityCharacters, Layer},
+        rogue::{EntityCharacters, Layer},
         stats::WeaponStats,
         stats::{DebuffStats, Proc},
         weapons::{DamageArea, Weapon},

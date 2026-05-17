@@ -3,7 +3,7 @@
 
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{common::roguegame::GameState, prelude::Instant};
+use crate::{common::rogue::GameState, prelude::Instant};
 use serde::de::Error;
 
 use ratzilla::{
@@ -26,7 +26,7 @@ use ratzilla::ratatui::{
 
 use crate::common::game::Game;
 use crate::common::{
-    popups::carnagereport::CarnageReport, roguegame::RogueGame, upgrades::upgrade::PlayerState,
+    popups::carnagereport::CarnageReport, rogue::RogueGame, upgrades::upgrade::PlayerState,
     upgrades::upgrademenu::UpgradesMenu,
 };
 

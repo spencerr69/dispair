@@ -21,7 +21,7 @@ use crate::common::{
     enemy::move_to_point_granular,
     powerup::PowerupTypes,
     powerup::{DynPowerup, Poweruppable},
-    roguegame::{EntityCharacters, Layer},
+    rogue::{EntityCharacters, Layer},
     stats::WeaponStats,
     weapons::{DamageArea, Weapon},
 };

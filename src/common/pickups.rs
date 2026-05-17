@@ -4,7 +4,7 @@
 use ratatui::style::{Color, Style};
 
 use crate::common::character::Renderable;
-use crate::common::{coords::Position, roguegame::EntityCharacters};
+use crate::common::{coords::Position, rogue::EntityCharacters};
 
 /// A trait for entities that can be picked up by the player.
 pub trait Pickupable: Renderable {

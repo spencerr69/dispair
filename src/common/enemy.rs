@@ -4,7 +4,7 @@ use crate::{
     common::{
         character::{Character, Damageable, Movable},
         debuffs::{Debuff, DebuffTypes},
-        roguegame::{EntityCharacters, Layer, can_stand, is_next_to_character},
+        rogue::{EntityCharacters, Layer, can_stand, is_next_to_character},
     },
     prelude::Duration,
 };
