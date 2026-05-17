@@ -5,6 +5,7 @@ use crate::common::character::Renderable;
 use crate::common::enemies::enemy::{Enemy, EnemyDrops};
 use crate::common::enemies::enemywrangler::EnemyWrangler;
 use crate::common::pickups::PickupTypes;
+use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::{Goto, Viewable};
 use crate::{
     common::{
@@ -13,7 +14,6 @@ use crate::{
         coords::{Area, Direction, Position, SquareArea},
         effects::DamageEffect,
         level::Level,
-        pickups::{PickupEffect, Pickupable, PowerupOrb},
         popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
         timescaler::TimeScaler,
         upgrades::upgrade::PlayerState,
@@ -76,7 +76,7 @@ pub struct Rogue {
 
     active_damage_effects: Vec<DamageEffect>,
 
-    pickups: Vec<PickupTypes>,
+    pickup_wrangler: PickupWrangler,
 
     pub level: Level,
 
@@ -131,6 +131,8 @@ impl Rogue {
 
         let level = Level::new();
 
+        let pickup_wrangler = PickupWrangler::new(player_state.clone());
+
         let mut game = Rogue {
             goto: Goto::Game,
 
@@ -161,7 +163,7 @@ impl Rogue {
 
             tickcount: 0,
             enemies,
-            pickups: vec![],
+            pickup_wrangler,
             active_damage_effects: vec![],
             start_time,
             timer,
@@ -180,7 +182,7 @@ impl Rogue {
         game.update_stats();
 
         if game.player_state.borrow().upgrade_owned("53") {
-            game.spawn_orb();
+            game.pickup_wrangler.spawn_orb(&game.layer_base);
         }
 
         game
@@ -190,15 +192,6 @@ impl Rogue {
     pub fn per_sec_to_tick_count(per_sec: f64) -> u64 {
         let per_tick = TICK_RATE / per_sec;
         per_tick.ceil() as u64
-    }
-
-    pub fn spawn_orb(&mut self) {
-        if !self.player_state.borrow().upgrade_owned("A") {
-            let position = get_rand_position_on_layer(&self.layer_base);
-
-            self.pickups
-                .push(PickupTypes::PowerupOrb(PowerupOrb::new(position)));
-        }
     }
 
     pub fn on_tick(&mut self) {
@@ -214,6 +207,11 @@ impl Rogue {
             }
             GameState::Play => {
                 self.tickcount += 1;
+
+                if self.pickup_wrangler.start_popup {
+                    self.start_popup = true;
+                    self.pickup_wrangler.start_popup = false;
+                }
 
                 if self.start_time.elapsed() >= self.timer {
                     self.game_state = GameState::GameOver;
@@ -233,7 +231,13 @@ impl Rogue {
                     self.generate_popup();
                 }
 
-                self.handle_pickups();
+                let char_pos = self.get_character_pos().clone();
+
+                self.pickup_wrangler.on_tick(
+                    self.tickcount,
+                    &char_pos,
+                    &mut self.active_damage_effects,
+                );
 
                 let drops = self.enemy_wrangler.on_tick(
                     self.tickcount,
@@ -259,43 +263,8 @@ impl Rogue {
                     }
                     self.active_damage_effects.append(&mut damage_effects);
                 }
-
-                self.pickups
-                    .iter_mut()
-                    .for_each(|pickup| pickup.get_inner_mut().animate(self.tickcount % 1000));
             }
         }
-    }
-
-    fn handle_pickups(&mut self) {
-        let char_pos = self.get_character_pos().clone();
-
-        self.pickups.iter_mut().for_each(|pickup| {
-            if pickup.get_inner().get_pos() == &char_pos {
-                let effect = pickup.get_inner_mut().on_pickup();
-
-                match effect {
-                    PickupEffect::PowerupOrb => {
-                        let area = SquareArea::new(
-                            Position(0, 0),
-                            Position(self.width as i32, self.height as i32),
-                        );
-
-                        self.active_damage_effects.push(DamageEffect::new(
-                            area,
-                            EntityCharacters::AttackWeak(Style::new().red()),
-                            Duration::from_secs_f64(0.5),
-                            false,
-                        ));
-
-                        self.start_popup = true;
-                    }
-                }
-            }
-        });
-
-        self.pickups
-            .retain(|pickup| !pickup.get_inner().is_picked_up());
     }
 
     fn handle_popup(&mut self) {
@@ -470,7 +439,8 @@ impl Rogue {
             })
             .collect();
 
-        self.pickups
+        self.pickup_wrangler
+            .pickups
             .iter()
             .for_each(callback_creator::<_, PickupTypes>(
                 &mut enum_2d,
