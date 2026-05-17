@@ -234,24 +234,22 @@ impl PlayerState {
     /// Returns the number of times an upgrade has been purchased.
     #[must_use]
     pub fn amount_owned(&self, id: &str) -> u32 {
-        *self.upgrades.get(id).unwrap_or(&0)
+        self.upgrades.get(id)
     }
 
     /// Checks if the player owns at least one of a specific upgrade.
     #[must_use]
     pub fn upgrade_owned(&self, id: &str) -> bool {
-        *self.upgrades.get(id).unwrap_or(&0) > 0
+        self.upgrades.get(id) > 0
     }
 }
 
 impl Default for PlayerState {
     fn default() -> Self {
-        let upgrade_tree = get_upgrade_tree().unwrap();
-
         let mut out = Self {
             inventory: Inventory::default(),
             stats: Stats::default(),
-            upgrades: get_current_upgrades(upgrade_tree, HashMap::new()),
+            upgrades: Vec::new(),
         };
 
         out.refresh();
@@ -260,8 +258,38 @@ impl Default for PlayerState {
     }
 }
 
-/// A type alias for a map of upgrade IDs to the number of times they have been purchased.
-pub type CurrentUpgrades = HashMap<String, u32>;
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CurrentUpgrade {
+    pub id: String,
+    pub amount: u32,
+}
+
+pub trait CurrentUpgradesTrait {
+    /// Returns the number of times an upgrade has been purchased.
+    fn get(&self, id: &str) -> u32;
+
+    fn set(&mut self, id: &str, value: u32);
+}
+
+pub type CurrentUpgrades = Vec<CurrentUpgrade>;
+
+impl CurrentUpgradesTrait for CurrentUpgrades {
+    /// Returns the number of times an upgrade has been purchased.
+    fn get(&self, id: &str) -> u32 {
+        self.iter().find(|k| k.id == id).map_or(0u32, |v| v.amount)
+    }
+
+    fn set(&mut self, id: &str, value: u32) {
+        if let Some(upgrade) = self.iter_mut().find(|k| k.id == id) {
+            upgrade.amount = value;
+        } else {
+            self.push(CurrentUpgrade {
+                id: id.into(),
+                amount: value,
+            });
+        }
+    }
+}
 
 /// Represents a single node in the upgrade tree.
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
@@ -345,21 +373,21 @@ pub fn get_upgrade_tree() -> Result<Vec<UpgradeNode>, serde_json::Error> {
     Ok(upgrade_tree)
 }
 
-/// Recursively traverses the upgrade tree and creates a map of all possible upgrades, initialized to 0.
-#[must_use]
-pub fn get_current_upgrades(
-    upgrade_tree: UpgradeTree,
-    mut acc: CurrentUpgrades,
-) -> CurrentUpgrades {
-    for node in upgrade_tree {
-        acc.insert(node.id, 0);
-        if let Some(children) = node.children {
-            acc = get_current_upgrades(children, acc.clone());
-        }
-    }
-
-    acc
-}
+// /// Recursively traverses the upgrade tree and creates a map of all possible upgrades, initialized to 0.
+// #[must_use]
+// pub fn get_current_upgrades(
+//     upgrade_tree: UpgradeTree,
+//     mut acc: CurrentUpgrades,
+// ) -> CurrentUpgrades {
+//     for node in upgrade_tree {
+//         acc.set(&node.id, 0);
+//         if let Some(children) = node.children {
+//             acc = get_current_upgrades(children, acc.clone());
+//         }
+//     }
+//
+//     acc
+// }
 
 #[cfg(test)]
 mod tests {
@@ -374,7 +402,7 @@ mod tests {
     #[test]
     fn current_upgrades_check() {
         let upgrade_tree = get_upgrade_tree().unwrap();
-        let current_upgrades = get_current_upgrades(upgrade_tree, HashMap::new());
+        let current_upgrades: CurrentUpgrades = Vec::new();
         println!("Current upgrades: {current_upgrades:?}");
         assert!(!current_upgrades.is_empty());
     }

@@ -1,7 +1,9 @@
 //! This module provides the UI and logic for the upgrade menu.
 //! It allows the player to navigate and purchase upgrades for their character.
 
-use crate::common::upgrades::upgrade::{PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree};
+use crate::common::upgrades::upgrade::{
+    CurrentUpgradesTrait, PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree,
+};
 use crate::common::{Goto, Viewable};
 use crate::prelude::{KeyCode, KeyEvent};
 use ratatui::text::{Span, Text};
@@ -107,12 +109,11 @@ impl UpgradesMenu {
                 let mut player_state_mut = self.player_state.borrow_mut();
 
                 player_state_mut.inventory.gold -= u128::from(next_cost);
-                let upgrade_count = player_state_mut.upgrades.get_mut(&current_node.id);
-                if let Some(count) = upgrade_count {
-                    *count += 1;
-                } else {
-                    player_state_mut.upgrades.insert(current_node.id, 1);
-                }
+                let mut upgrade_count = player_state_mut.upgrades.get(&current_node.id);
+                upgrade_count += 1;
+                player_state_mut
+                    .upgrades
+                    .set(&current_node.id, upgrade_count);
                 Ok(())
             } else {
                 Err("Upgrade is not purchasable".to_string())

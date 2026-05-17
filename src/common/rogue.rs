@@ -7,6 +7,7 @@ use crate::common::enemies::enemywrangler::EnemyWrangler;
 use crate::common::entities::EntityCharacters;
 use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::render::{flatten_to_span, get_camera_area, spans_to_text};
+use crate::common::upgrades::upgrade::CurrentUpgradesTrait;
 use crate::common::utils::{center, move_entity, per_sec_to_tick_count};
 use crate::common::{Goto, Viewable};
 use crate::{
@@ -273,10 +274,7 @@ impl Rogue {
                 self.update_stats_with_charms();
                 self.update_stats();
 
-                self.player_state
-                    .borrow_mut()
-                    .upgrades
-                    .insert("A".to_string(), 1);
+                self.player_state.borrow_mut().upgrades.set("A", 1);
             } else {
                 self.powerup_popup = Some(powerup_popup);
             }
