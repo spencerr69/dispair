@@ -442,7 +442,7 @@ impl Rogue {
         }
 
         let [stats_area, view_area] =
-            Layout::horizontal([Constraint::Percentage(20), Constraint::Fill(1)]).areas(game_area);
+            Layout::horizontal([Constraint::Length(27), Constraint::Fill(1)]).areas(game_area);
 
         self.view_area = view_area;
 
