@@ -1,4 +1,4 @@
-use crate::common::weapons::PlayerState;
+use crate::common::PlayerStateRef;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
@@ -106,6 +106,10 @@ impl Weapon for Lightning {
 }
 
 impl Poweruppable for Lightning {
+    fn get_max_level(&self) -> i32 {
+        self.player_state.borrow().stats.game_stats.max_method_level
+    }
+
     fn get_name(&self) -> String {
         "LIGHTNING".into()
     }

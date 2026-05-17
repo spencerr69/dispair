@@ -2,17 +2,15 @@
 //! It handles character movement, health, attacks, and other core gameplay mechanics.
 
 use ratatui::style::{Style, Stylize};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
 use crate::common::{
+    PlayerStateRef,
     charms::CharmWrapper,
     coords::{Direction, Position},
     effects::DamageEffect,
     rogue::Layer,
-    upgrades::upgrade::PlayerState,
     weapons::{DamageArea, WeaponWrapper, flash::Flash},
 };
 use crate::prelude::{Duration, Instant};
@@ -104,7 +102,7 @@ pub struct Character {
     last_moved: Instant,
     pub facing: Direction,
 
-    pub stats: Rc<RefCell<PlayerState>>,
+    pub stats: PlayerStateRef,
 
     health: i32,
     max_health: i32,
@@ -133,7 +131,7 @@ impl Character {
     /// A `Character` populated with position, facing, health, stats, entity character,
     /// and weapons derived from the provided `player_state`.
     #[must_use]
-    pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
+    pub fn new(player_state: PlayerStateRef) -> Self {
         let stats = &player_state.borrow().stats;
         let weapon_stats = stats.weapon_stats.clone();
         let max_health = stats.player_stats.health;

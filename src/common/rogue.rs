@@ -9,7 +9,7 @@ use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::render::{flatten_to_span, get_camera_area, spans_to_text};
 use crate::common::upgrades::upgrade::CurrentUpgradesTrait;
 use crate::common::utils::{center, move_entity, per_sec_to_tick_count};
-use crate::common::{Goto, Viewable};
+use crate::common::{Goto, PlayerStateRef, Viewable};
 use crate::{
     common::{
         TICK_RATE,
@@ -47,7 +47,7 @@ pub enum GameState {
 /// Represents the main game state and logic.
 pub struct Rogue {
     /// The player's current state, including stats and inventory.
-    pub player_state: Rc<RefCell<PlayerState>>,
+    pub player_state: PlayerStateRef,
     init_state: PlayerState,
 
     /// The carnage report, which is displayed at the end of a level.
@@ -98,7 +98,7 @@ impl Rogue {
     const DEFAULT_ATTACK_P_S: f64 = 1.5;
 
     #[must_use]
-    pub fn new(player_state: &Rc<RefCell<PlayerState>>) -> Self {
+    pub fn new(player_state: &PlayerStateRef) -> Self {
         let init_player_state = player_state.borrow().clone();
 
         let width = init_player_state.stats.game_stats.width;

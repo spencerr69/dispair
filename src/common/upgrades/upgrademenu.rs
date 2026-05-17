@@ -4,7 +4,7 @@
 use crate::common::upgrades::upgrade::{
     CurrentUpgradesTrait, PlayerState, UpgradeNode, UpgradeTree, get_upgrade_tree,
 };
-use crate::common::{Goto, Viewable};
+use crate::common::{Goto, PlayerStateRef, Viewable};
 use crate::prelude::{KeyCode, KeyEvent};
 use ratatui::text::{Span, Text};
 use ratatui::widgets::BorderType;
@@ -16,8 +16,6 @@ use ratatui::{
     text::Line,
     widgets::{Block, List, ListItem, ListState, Paragraph, Wrap},
 };
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct MenuCrumb {
@@ -29,7 +27,7 @@ pub type MenuHistory = Vec<MenuCrumb>;
 
 /// A struct that manages the state and rendering of the upgrades menu.
 pub struct UpgradesMenu {
-    pub player_state: Rc<RefCell<PlayerState>>,
+    pub player_state: PlayerStateRef,
     root_upgrade_tree: UpgradeTree,
     pub upgrade_selection: ListState,
     pub goto: Goto,
@@ -44,7 +42,7 @@ impl UpgradesMenu {
     ///
     /// Will panic if the upgrade tree cannot be retrieved.
     #[must_use]
-    pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
+    pub fn new(player_state: PlayerStateRef) -> Self {
         let upgrade_tree = get_upgrade_tree().unwrap();
         let mut menu = Self {
             player_state,
@@ -183,8 +181,9 @@ impl UpgradesMenu {
                     .iter()
                     .all(|current| player_state.amount_owned(current) > 0);
 
-                if node.limit == 0 && Self::own_children(node.clone(), player_state)
-                    || (node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit)
+                if have_required
+                    && (node.limit == 0 && Self::own_children(node.clone(), player_state)
+                        || (node.limit > 0 && player_state.amount_owned(&node.id) >= node.limit))
                 {
                     Some(ListItem::from(node.get_display_title().clone().dark_gray()))
                 } else if have_required {

@@ -50,6 +50,9 @@ pub struct GameStats {
 
     pub timer: u64,
     pub time_offset: Duration,
+
+    pub max_method_level: i32,
+    pub max_charm_level: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Sub)]
@@ -109,6 +112,8 @@ impl Default for GameStats {
             width: 20,
             time_offset: Duration::from_secs(0),
             timer: 60,
+            max_charm_level: 1,
+            max_method_level: 1,
         }
     }
 }

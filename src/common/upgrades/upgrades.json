@@ -339,8 +339,148 @@
         "requires": [
           "52",
           "51"
-        ]
+        ],
+        "children": null
       }
     ]
+  },
+  {
+    "title": "METHOD",
+    "description": "methods ----- add to your arsenal\ndestroy",
+    "id": "6",
+    "cost": null,
+    "limit": 0,
+    "requires": [
+      "A",
+      "53"
+    ],
+    "children": [
+      {
+        "title": "METHOD::\\unlock",
+        "description": "unlock new METHODs\n",
+        "id": "61",
+        "cost": null,
+        "limit": 0,
+        "requires": [
+          "A"
+        ],
+        "children": [
+          {
+            "title": "METHOD::\\unlock::\\row",
+            "description": "ROW == horizontal beam",
+            "id": "611",
+            "cost": 10000,
+            "limit": 1,
+            "requires": [
+              "A"
+            ],
+            "children": null,
+            "costscale_override": null
+          },
+          {
+            "title": "METHOD::\\unlock::\\column",
+            "description": "COLUMN || vertical beam",
+            "id": "612",
+            "cost": 20000,
+            "limit": 1,
+            "requires": [
+              "A",
+              "611"
+            ],
+            "children": null,
+            "costscale_override": null
+          },
+          {
+            "title": "METHOD::\\unlock::\\lightning",
+            "description": "LIGHTNING \\\\/\\ bolt to nearest enemy",
+            "id": "613",
+            "cost": 50000,
+            "limit": 1,
+            "requires": [
+              "612"
+            ],
+            "children": null,
+            "costscale_override": null
+          }
+        ],
+        "costscale_override": null
+      },
+      {
+        "title": "METHOD::\\max_level",
+        "description": "increase max level of each METHOD.",
+        "id": "62",
+        "cost": 100000,
+        "limit": 4,
+        "requires": [
+          "613"
+        ],
+        "children": null,
+        "costscale_override": 5
+      }
+    ],
+    "costscale_override": null
+  },
+  {
+    "title": "CHARM",
+    "description": "charms ----- add to your arsenal\nenhance",
+    "id": "7",
+    "cost": null,
+    "limit": 0,
+    "requires": [
+      "A",
+      "53"
+    ],
+    "children": [
+      {
+        "title": "CHARM::\\unlock",
+        "description": "unlock new METHODs\n",
+        "id": "71",
+        "cost": null,
+        "limit": 0,
+        "requires": [
+          "A"
+        ],
+        "children": [
+          {
+            "title": "CHARM::\\unlock::\\attack_speed",
+            "description": "attack_speed // attack faster",
+            "id": "711",
+            "cost": 10000,
+            "limit": 1,
+            "requires": [
+              "A"
+            ],
+            "children": null,
+            "costscale_override": null
+          },
+          {
+            "title": "CHARM::\\unlock::\\hype_time",
+            "description": "hype_time \\\\ faster and worthier enemies",
+            "id": "712",
+            "cost": 50000,
+            "limit": 1,
+            "requires": [
+              "711"
+            ],
+            "children": null,
+            "costscale_override": null
+          }
+        ],
+        "costscale_override": null
+      },
+      {
+        "title": "CHARM::\\max_level",
+        "description": "increase max level of each CHARM.",
+        "id": "72",
+        "cost": 100000,
+        "limit": 4,
+        "requires": [
+          "712"
+        ],
+        "children": null,
+        "costscale_override": 5
+      }
+    ],
+    "costscale_override": null
   }
 ]

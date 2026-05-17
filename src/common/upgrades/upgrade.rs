@@ -1,7 +1,7 @@
 //! This module defines the data structures for player state, upgrades, and stats.
 //! It includes logic for applying upgrades and calculating player stats.
 
-use std::{collections::HashMap, ops::Sub};
+use std::ops::Sub;
 
 use crate::prelude::Duration;
 
@@ -208,6 +208,15 @@ impl PlayerState {
             game_stats.enemy_spawn_mult += 1.5 * f64::from(amount_owned);
             game_stats.gold_mult += 0.3 * f64::from(amount_owned);
             game_stats.enemy_move_mult += 0.05 * f64::from(amount_owned);
+        }
+
+        if self.upgrade_owned("62") {
+            let amount_owned = self.amount_owned("62");
+            game_stats.max_method_level += amount_owned as i32;
+        }
+        if self.upgrade_owned("72") {
+            let amount_owned = self.amount_owned("72");
+            game_stats.max_charm_level += amount_owned as i32;
         }
 
         //debug

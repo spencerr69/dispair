@@ -1,7 +1,7 @@
 use crate::common::rogue::Rogue;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::upgrades::upgrademenu::UpgradesMenu;
-use crate::common::{Goto, Viewable};
+use crate::common::{Goto, PlayerStateRef, Viewable};
 use crate::prelude::{KeyEvent, save_progress};
 use ratatui::Frame;
 use std::cell::RefCell;
@@ -35,7 +35,7 @@ impl View {
 
 pub struct Game {
     view: View,
-    pub player_state: Rc<RefCell<PlayerState>>,
+    pub player_state: PlayerStateRef,
 }
 
 impl Game {

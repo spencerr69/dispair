@@ -1,40 +1,49 @@
+use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::{
+    PlayerStateRef,
     charms::Charm,
     powerup::{DynPowerup, PowerupTypes, Poweruppable},
     stats::Stats,
 };
-
 use crate::prelude::Duration;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
-pub struct CharmOffsetAdd {
+pub struct CharmHypeTime {
     pub stat_boost: Duration,
     pub level: i32,
+    pub player_state: PlayerStateRef,
 }
 
-impl CharmOffsetAdd {
+impl CharmHypeTime {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(player_state_ref: PlayerStateRef) -> Self {
         Self {
             stat_boost: Duration::from_secs(60),
             level: 1,
+            player_state: player_state_ref,
         }
     }
 }
 
-impl Default for CharmOffsetAdd {
+impl Default for CharmHypeTime {
     fn default() -> Self {
-        Self::new()
+        Self::new(Rc::new(RefCell::new(PlayerState::default())))
     }
 }
 
-impl Charm for CharmOffsetAdd {
+impl Charm for CharmHypeTime {
     fn manipulate_stats(&self, stats: &mut Stats) {
         stats.game_stats.time_offset += self.stat_boost;
     }
 }
 
-impl Poweruppable for CharmOffsetAdd {
+impl Poweruppable for CharmHypeTime {
+    fn get_max_level(&self) -> i32 {
+        self.player_state.borrow().stats.game_stats.max_charm_level
+    }
+
     fn get_name(&self) -> String {
         "Hype Time Charm".into()
     }

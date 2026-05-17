@@ -97,7 +97,7 @@ pub fn move_entity(layer: &mut Layer, entity: &mut impl Movable, direction: Dire
 
     new_pos.constrain(layer);
 
-    if can_stand(layer.len() as i32, layer[0].len() as i32, None, &new_pos) {
+    if can_stand(layer[0].len() as i32, layer.len() as i32, None, &new_pos) {
         entity.move_to(new_pos, direction);
         // update_entity_positions(layer, entity);
     } else {

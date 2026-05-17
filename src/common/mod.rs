@@ -2,8 +2,11 @@
 //! between the terminal and WASM versions of the application. It includes
 //! modules for characters, coordinates, game state, and more.
 
+use crate::common::upgrades::upgrade::PlayerState;
 use crate::prelude::KeyEvent;
 use ratatui::Frame;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub mod character;
 pub mod charms;
@@ -29,6 +32,8 @@ pub mod weapons;
 pub const TICK_RATE: f64 = 30.0;
 /// The target number of frames per second.
 pub const FRAME_RATE: f64 = 180.0;
+
+pub type PlayerStateRef = Rc<RefCell<PlayerState>>;
 
 /// An enum representing the possible destinations when closing the upgrade menu.
 #[derive(Clone, PartialEq)]

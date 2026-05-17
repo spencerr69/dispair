@@ -1,4 +1,3 @@
-use crate::common::TICK_RATE;
 use crate::common::character::{Character, Damageable, Movable, Renderable};
 use crate::common::coords::{Area, ChaosArea, Position};
 use crate::common::debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect};
@@ -6,11 +5,11 @@ use crate::common::effects::DamageEffect;
 use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
 use crate::common::rogue::Layer;
 use crate::common::timescaler::TimeScaler;
-use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::utils::{
     can_stand, get_rand_position_on_edge, is_next_to_character, per_sec_to_tick_count,
 };
 use crate::common::weapons::DamageArea;
+use crate::common::{PlayerStateRef, TICK_RATE};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -21,7 +20,7 @@ pub struct EnemyWrangler {
     enemy_health: i32,
     enemy_damage: i32,
     enemy_drops: EnemyDrops,
-    player_state: Rc<RefCell<PlayerState>>,
+    player_state: PlayerStateRef,
     timescaler: Rc<RefCell<TimeScaler>>,
 }
 
@@ -30,7 +29,7 @@ impl EnemyWrangler {
     const DEFAULT_MOVE_P_S: f64 = 2.;
 
     pub fn new(
-        player_state: Rc<RefCell<PlayerState>>,
+        player_state: PlayerStateRef,
         timescaler: Rc<RefCell<TimeScaler>>,
         enemies: Rc<RefCell<Vec<Enemy>>>,
     ) -> Self {

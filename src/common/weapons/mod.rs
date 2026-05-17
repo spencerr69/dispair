@@ -19,7 +19,7 @@ use crate::common::weapons::lightning::Lightning;
 use crate::common::weapons::pillar::Pillar;
 use crate::common::weapons::row::Row;
 use crate::common::{
-    character::Damageable, coords::Area, powerup::PoweruppableWeapon, rogue::Layer,
+    PlayerStateRef, character::Damageable, coords::Area, powerup::PoweruppableWeapon, rogue::Layer,
     stats::WeaponStats,
 };
 
@@ -38,7 +38,7 @@ macro_rules! new_weapon {
             stats: WeaponStats,
             element: Option<Elements>,
             cooldown_ticks: u64,
-            player_state: Rc<RefCell<PlayerState>>,
+            player_state: PlayerStateRef,
         }
 
         impl $weapon_name {
@@ -51,10 +51,7 @@ macro_rules! new_weapon {
             player's \
             current `Stats`.")]
             #[must_use]
-            pub fn new(
-                base_weapon_stats: WeaponStats,
-                player_state: Rc<RefCell<PlayerState>>,
-            ) -> Self {
+            pub fn new(base_weapon_stats: WeaponStats, player_state: PlayerStateRef) -> Self {
                 Self {
                     base_damage: Self::BASE_DAMAGE + base_weapon_stats.damage_flat_boost,
                     damage_scalar: 1.,
@@ -124,11 +121,7 @@ impl WeaponWrapper {
         }
     }
 
-    pub fn populate_inner(
-        &mut self,
-        weapon_stats: WeaponStats,
-        player_state: Rc<RefCell<PlayerState>>,
-    ) {
+    pub fn populate_inner(&mut self, weapon_stats: WeaponStats, player_state: PlayerStateRef) {
         match self {
             WeaponWrapper::Flash(flash) => *flash = Some(Flash::new(weapon_stats, player_state)),
             WeaponWrapper::Pillar(pillar) => {

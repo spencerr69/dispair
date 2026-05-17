@@ -4,9 +4,7 @@ use crate::common::{
 };
 
 pub trait Poweruppable {
-    fn get_max_level(&self) -> i32 {
-        5
-    }
+    fn get_max_level(&self) -> i32;
 
     fn get_next_upgrade(&self, levels_up: i32) -> Option<DynPowerup> {
         if self.get_level() >= self.get_max_level() {

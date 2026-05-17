@@ -1,28 +1,34 @@
+use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::{
+    PlayerStateRef,
     charms::Charm,
     powerup::{DynPowerup, PowerupTypes, Poweruppable},
     stats::Stats,
 };
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct CharmDamageMult {
     pub stat_boost: f64,
     pub level: i32,
+    pub player_state: PlayerStateRef,
 }
 
 impl CharmDamageMult {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(player_state_ref: PlayerStateRef) -> Self {
         Self {
             stat_boost: 1.25,
             level: 1,
+            player_state: player_state_ref,
         }
     }
 }
 
 impl Default for CharmDamageMult {
     fn default() -> Self {
-        Self::new()
+        Self::new(Rc::new(RefCell::new(PlayerState::default())))
     }
 }
 
@@ -33,6 +39,10 @@ impl Charm for CharmDamageMult {
 }
 
 impl Poweruppable for CharmDamageMult {
+    fn get_max_level(&self) -> i32 {
+        self.player_state.borrow().stats.game_stats.max_charm_level
+    }
+
     fn get_name(&self) -> String {
         "Damage Multiplier Charm".into()
     }

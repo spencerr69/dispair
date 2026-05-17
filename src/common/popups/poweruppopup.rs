@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::str::FromStr;
 
 use rand::seq::SliceRandom;
@@ -13,7 +11,7 @@ use ratatui::{
 };
 use strum::IntoEnumIterator;
 
-use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::PlayerStateRef;
 use crate::{
     common::{
         charms::CharmWrapper,
@@ -32,7 +30,7 @@ pub struct PowerupPopup {
     pub charms: Vec<CharmWrapper>,
     pub base_weapon_stats: WeaponStats,
     pub finished: bool,
-    pub player_state: Rc<RefCell<PlayerState>>,
+    pub player_state: PlayerStateRef,
 }
 
 impl PowerupPopup {
@@ -41,11 +39,29 @@ impl PowerupPopup {
         current_weapons: &[WeaponWrapper],
         current_charms: &[CharmWrapper],
         weapon_stats: WeaponStats,
-        player_state: Rc<RefCell<PlayerState>>,
+        player_state: PlayerStateRef,
     ) -> Self {
         let mut choices = Vec::new();
 
         WeaponWrapper::iter().for_each(|weapon_wrapper| {
+            match weapon_wrapper {
+                WeaponWrapper::Flash(_) => {}
+                WeaponWrapper::Row(_) => {
+                    if !player_state.borrow().upgrade_owned("611") {
+                        return;
+                    }
+                }
+                WeaponWrapper::Pillar(_) => {
+                    if !player_state.borrow().upgrade_owned("612") {
+                        return;
+                    }
+                }
+                WeaponWrapper::Lightning(_) => {
+                    if !player_state.borrow().upgrade_owned("613") {
+                        return;
+                    }
+                }
+            }
             if let Some(weapon) = current_weapons.iter().find(|w| *w == &weapon_wrapper) {
                 let next_upgrade = weapon.get_inner().get_next_upgrade(1);
                 if let Some(next_upgrade) = next_upgrade {
@@ -59,6 +75,20 @@ impl PowerupPopup {
         });
 
         CharmWrapper::iter().for_each(|charm_wrapper| {
+            match charm_wrapper {
+                CharmWrapper::DamageMult(_) => {}
+                CharmWrapper::AttackSpeed(_) => {
+                    if !player_state.borrow().upgrade_owned("711") {
+                        return;
+                    }
+                }
+                CharmWrapper::HypeTime(_) => {
+                    if !player_state.borrow().upgrade_owned("712") {
+                        return;
+                    }
+                }
+            }
+
             if let Some(charm) = current_charms.iter().find(|c| *c == &charm_wrapper) {
                 let next_upgrade = charm.get_inner().get_next_upgrade(1);
                 if let Some(next_upgrade) = next_upgrade {
@@ -157,7 +187,7 @@ impl PowerupPopup {
                     }) && let Ok(mut new_charm) =
                         CharmWrapper::from_str(selected_powerup.get_name().to_uppercase().as_str())
                     {
-                        new_charm.populate_inner();
+                        new_charm.populate_inner(self.player_state.clone());
                         new_charms.push(new_charm);
                     }
                     self.charms = new_charms;

@@ -1,3 +1,4 @@
+use crate::common::PlayerStateRef;
 use crate::common::character::CharacterPositionData;
 use crate::common::coords::{Area, Position, SquareArea};
 use crate::common::enemies::enemy::Enemy;
@@ -5,7 +6,6 @@ use crate::common::entities::EntityCharacters;
 use crate::common::powerup::{DynPowerup, PowerupTypes, Poweruppable};
 use crate::common::rogue::Layer;
 use crate::common::weapons::Elements;
-use crate::common::weapons::PlayerState;
 use crate::common::weapons::{DamageArea, Weapon, WeaponStats};
 use crate::new_weapon;
 use crate::prelude::Duration;
@@ -67,6 +67,10 @@ impl Weapon for Row {
 }
 
 impl Poweruppable for Row {
+    fn get_max_level(&self) -> i32 {
+        self.player_state.borrow().stats.game_stats.max_method_level
+    }
+
     fn get_name(&self) -> String {
         "ROW".into()
     }

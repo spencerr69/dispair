@@ -1,8 +1,9 @@
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::{
+    PlayerStateRef,
     charms::{
-        attack_speed::CharmAttackSpeed, damage_mult::CharmDamageMult, hype_time::CharmOffsetAdd,
+        attack_speed::CharmAttackSpeed, damage_mult::CharmDamageMult, hype_time::CharmHypeTime,
     },
     powerup::Poweruppable,
     stats::Stats,
@@ -21,7 +22,7 @@ pub enum CharmWrapper {
     DamageMult(Option<CharmDamageMult>),
 
     #[strum(serialize = "Hype Time Charm", serialize = "HYPE TIME CHARM")]
-    OffsetAdd(Option<CharmOffsetAdd>),
+    HypeTime(Option<CharmHypeTime>),
 
     #[strum(serialize = "Attack Speed Charm", serialize = "ATTACK SPEED CHARM")]
     AttackSpeed(Option<CharmAttackSpeed>),
@@ -45,7 +46,7 @@ impl CharmWrapper {
     pub fn get_inner(&self) -> &dyn Charm {
         match self {
             CharmWrapper::DamageMult(damage_mult) => damage_mult.as_ref().expect("No inner charm."),
-            CharmWrapper::OffsetAdd(offset_add) => offset_add.as_ref().expect("No inner charm."),
+            CharmWrapper::HypeTime(offset_add) => offset_add.as_ref().expect("No inner charm."),
             CharmWrapper::AttackSpeed(attack_speed) => {
                 attack_speed.as_ref().expect("No inner charm.")
             }
@@ -59,19 +60,23 @@ impl CharmWrapper {
     pub fn get_inner_mut(&mut self) -> &mut dyn Charm {
         match self {
             CharmWrapper::DamageMult(damage_mult) => damage_mult.as_mut().expect("No inner charm."),
-            CharmWrapper::OffsetAdd(offset_add) => offset_add.as_mut().expect("No inner charm."),
+            CharmWrapper::HypeTime(offset_add) => offset_add.as_mut().expect("No inner charm."),
             CharmWrapper::AttackSpeed(attack_speed) => {
                 attack_speed.as_mut().expect("No inner charm.")
             }
         }
     }
 
-    pub fn populate_inner(&mut self) {
+    pub fn populate_inner(&mut self, player_state_ref: PlayerStateRef) {
         match self {
-            CharmWrapper::DamageMult(damage_mult) => *damage_mult = Some(CharmDamageMult::new()),
-            CharmWrapper::OffsetAdd(offset_add) => *offset_add = Some(CharmOffsetAdd::new()),
+            CharmWrapper::DamageMult(damage_mult) => {
+                *damage_mult = Some(CharmDamageMult::new(player_state_ref))
+            }
+            CharmWrapper::HypeTime(offset_add) => {
+                *offset_add = Some(CharmHypeTime::new(player_state_ref))
+            }
             CharmWrapper::AttackSpeed(attack_speed) => {
-                *attack_speed = Some(CharmAttackSpeed::new());
+                *attack_speed = Some(CharmAttackSpeed::new(player_state_ref));
             }
         }
     }

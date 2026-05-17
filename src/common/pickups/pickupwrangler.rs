@@ -1,3 +1,4 @@
+use crate::common::PlayerStateRef;
 use crate::common::character::Renderable;
 use crate::common::coords::{Position, SquareArea};
 use crate::common::effects::DamageEffect;
@@ -6,22 +7,19 @@ use crate::common::pickups::Pickupable;
 use crate::common::pickups::poweruporb::PowerupOrb;
 use crate::common::pickups::{PickupEffect, PickupTypes};
 use crate::common::rogue::Layer;
-use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::utils::get_rand_position_on_layer;
 use crate::prelude::Duration;
 use ratatui::prelude::Style;
 use ratatui::style::Stylize;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 pub struct PickupWrangler {
-    pub player_state: Rc<RefCell<PlayerState>>,
+    pub player_state: PlayerStateRef,
     pub pickups: Vec<PickupTypes>,
     pub start_popup: bool,
 }
 
 impl PickupWrangler {
-    pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
+    pub fn new(player_state: PlayerStateRef) -> Self {
         PickupWrangler {
             player_state,
             start_popup: false,
