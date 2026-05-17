@@ -2,8 +2,6 @@
 //! between the terminal and WASM versions of the application. It includes
 //! modules for characters, coordinates, game state, and more.
 
-use crate::common::character::{Character, Renderable};
-use crate::common::coords::Position;
 use crate::prelude::KeyEvent;
 use ratatui::Frame;
 

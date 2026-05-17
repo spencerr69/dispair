@@ -103,7 +103,7 @@ impl Weapon for Flash {
     fn attack(
         &mut self,
         wielder: CharacterPositionData,
-        enemies: &[Enemy],
+        _enemies: &[Enemy],
         layer: &Layer,
     ) -> DamageArea {
         if self.cooldown_ticks > 0 && self.cooldown_ticks < Self::BASE_COOLDOWN {

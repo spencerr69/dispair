@@ -1,7 +1,6 @@
 use crate::common::character::{Character, Renderable};
 use crate::common::coords::{Area, Position, SquareArea};
 use crate::common::enemies::enemy::Enemy;
-use crate::common::entities::EntityCharacters;
 use crate::common::pickups::PickupTypes;
 use crate::common::rogue::{Layer, Rogue};
 use crate::common::utils::get_mut_item_in_2d_enum_vec;

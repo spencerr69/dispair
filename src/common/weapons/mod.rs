@@ -19,7 +19,7 @@ use crate::common::weapons::lightning::Lightning;
 use crate::common::weapons::pillar::Pillar;
 use crate::common::weapons::row::Row;
 use crate::common::{
-    character::Damageable, coords::Area, enemies, powerup::PoweruppableWeapon, rogue::Layer,
+    character::Damageable, coords::Area, powerup::PoweruppableWeapon, rogue::Layer,
     stats::WeaponStats,
 };
 

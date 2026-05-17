@@ -1,10 +1,10 @@
 use crate::common::TICK_RATE;
 use crate::common::character::{Character, Damageable, Movable, Renderable};
-use crate::common::coords::Position;
+use crate::common::coords::{Area, ChaosArea, Position};
 use crate::common::debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect};
 use crate::common::effects::DamageEffect;
 use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
-use crate::common::rogue::{Layer, Rogue};
+use crate::common::rogue::Layer;
 use crate::common::timescaler::TimeScaler;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::utils::{
@@ -81,6 +81,9 @@ impl EnemyWrangler {
         layer: &Layer,
         active_damage_effects: &mut Vec<DamageEffect>,
     ) {
+        let enemy_area: Rc<RefCell<dyn Area>> =
+            Rc::new(RefCell::new(ChaosArea::new(self.get_enemy_positions())));
+
         self.enemies.borrow_mut().iter_mut().for_each(|enemy| {
             if let Some((desired_pos, desired_facing)) =
                 enemy.update(character, layer, active_damage_effects)
@@ -90,6 +93,7 @@ impl EnemyWrangler {
                     Some(character),
                     &desired_pos,
                 )
+                && !desired_pos.is_in_area(&enemy_area)
             {
                 enemy.move_to(desired_pos, desired_facing);
             }

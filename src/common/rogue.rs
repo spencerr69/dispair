@@ -13,7 +13,7 @@ use crate::{
     common::{
         TICK_RATE,
         character::{Character, Damageable, Movable},
-        coords::{Area, Direction, Position, SquareArea},
+        coords::{Direction, Position, SquareArea},
         effects::DamageEffect,
         level::Level,
         popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
@@ -28,7 +28,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
     symbols::border,
-    text::{Line, Span, Text},
+    text::{Line, Text},
     widgets::{Block, Gauge, Paragraph},
 };
 use std::cell::RefCell;

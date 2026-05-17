@@ -73,6 +73,8 @@ pub trait Debuffable {
     fn try_proc(&mut self, proc: &Proc);
     /// Counts the number of a specific debuff on the entity.
     fn count_debuff(&self, debuff: &Debuff) -> u32;
+
+    fn remove_debuff(&mut self, debuff: DebuffTypes);
 }
 
 impl Debuffable for Enemy {
@@ -105,6 +107,10 @@ impl Debuffable for Enemy {
                 }
             }
         }
+    }
+
+    fn remove_debuff(&mut self, debuff: DebuffTypes) {
+        self.debuffs.retain(|d| d.debuff_type != debuff);
     }
 
     /// Counts how many active debuffs share the same debuff type as the provided `debuff`.

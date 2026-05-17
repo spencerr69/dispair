@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use ratatui::style::{Style, Stylize};
 
 use crate::common::character::Renderable;
-use crate::common::enemies::enemy::get_closest_enemies;
+use crate::common::enemies::enemy::{Debuffable, get_closest_enemies};
 use crate::common::enemies::enemy::{Enemy, move_to_point_granular};
 use crate::common::entities::EntityCharacters;
 use crate::common::{
@@ -159,9 +159,7 @@ impl OnTickEffect for Debuff {
                     let mut procs = HashMap::new();
                     procs.insert("burn".into(), proc);
 
-                    enemy
-                        .debuffs
-                        .retain(|d| d.debuff_type != DebuffTypes::FlameBurn);
+                    enemy.remove_debuff(DebuffTypes::FlameBurn);
 
                     Some(DamageArea {
                         damage_amount: self.stats.damage.expect("No damage?") * 10,

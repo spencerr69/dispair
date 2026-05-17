@@ -18,7 +18,7 @@ use crate::common::{Goto, TICK_RATE};
 use ratzilla::ratatui::{
     Frame, Terminal,
     layout::{Constraint, Layout},
-    style::{Style, Stylize},
+    style::Style,
     symbols::border,
     text::Text,
     widgets::{Block, List, ListItem, ListState},

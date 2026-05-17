@@ -45,9 +45,8 @@ impl Position {
 
     /// Checks if the position is within the given area.
     pub fn is_in_area(&self, area: &Rc<RefCell<dyn Area>>) -> bool {
-        let (x, y) = self.get();
-        let (min_x, min_y, max_x, max_y) = area.borrow().get_bounds();
-        x >= min_x && x <= max_x && y >= min_y && y <= max_y
+        let area = area.borrow().get_positions();
+        area.contains(self)
     }
 }
 
