@@ -3,7 +3,6 @@ use crate::{
         TICK_RATE,
         character::Damageable,
         coords::ChaosArea,
-        enemy::{Enemy, move_to_point_granular},
         rogue::{EntityCharacters, Layer},
         stats::WeaponStats,
     },
@@ -17,7 +16,8 @@ use serde::{Deserialize, Serialize};
 use ratatui::style::{Style, Stylize};
 
 use crate::common::character::Renderable;
-use crate::common::enemy::get_closest_enemies;
+use crate::common::enemies::enemy::get_closest_enemies;
+use crate::common::enemies::enemy::{Enemy, move_to_point_granular};
 use crate::common::{
     coords::{Area, SquareArea},
     stats::{DebuffStats, Proc},

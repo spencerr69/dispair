@@ -2,17 +2,17 @@
 //! It manages game state, character movement, enemy behavior, and rendering.
 
 use crate::common::character::Renderable;
+use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
+use crate::common::enemies::enemywrangler::EnemyWrangler;
 use crate::common::pickups::PickupTypes;
 use crate::common::{Goto, Viewable};
 use crate::{
-    common,
     common::{
         TICK_RATE, center,
         character::{Character, Damageable, Movable},
         coords::{Area, Direction, Position, SquareArea},
         debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect},
         effects::DamageEffect,
-        enemy::{Enemy, EnemyBehaviour, EnemyDrops},
         level::Level,
         pickups::{PickupEffect, Pickupable, PowerupOrb},
         popups::{carnagereport::CarnageReport, poweruppopup::PowerupPopup},
@@ -66,14 +66,9 @@ pub struct Rogue {
     height: usize,
     width: usize,
 
-    enemies: Vec<Enemy>,
+    enemies: Rc<RefCell<Vec<Enemy>>>,
 
-    enemy_spawn_ticks: u64,
-    enemy_move_ticks: u64,
-
-    enemy_health: i32,
-    enemy_damage: i32,
-    enemy_drops: EnemyDrops,
+    enemy_wrangler: EnemyWrangler,
 
     attack_ticks: u64,
 
@@ -92,7 +87,7 @@ pub struct Rogue {
 
     start_popup: bool,
 
-    timescaler: TimeScaler,
+    timescaler: Rc<RefCell<TimeScaler>>,
 
     view_area: Rect,
     camera_area: SquareArea,
@@ -100,8 +95,6 @@ pub struct Rogue {
 
 impl Rogue {
     const DEFAULT_ATTACK_P_S: f64 = 1.5;
-    const DEFAULT_SPAWN_P_S: f64 = 0.4;
-    const DEFAULT_MOVE_P_S: f64 = 2.;
 
     #[must_use]
     pub fn new(player_state: Rc<RefCell<PlayerState>>) -> Self {
@@ -127,16 +120,20 @@ impl Rogue {
         }
 
         let attack_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
-        let enemy_move_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
-        let enemy_spawn_ticks = Self::per_sec_to_tick_count(
-            Self::DEFAULT_SPAWN_P_S * init_player_state.stats.game_stats.enemy_spawn_mult,
-        );
+        // let enemy_move_ticks = Self::per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
+        // let enemy_spawn_ticks = Self::per_sec_to_tick_count(
+        //     Self::DEFAULT_SPAWN_P_S * init_player_state.stats.game_stats.enemy_spawn_mult,
+        // );
 
         let start_time = Instant::now();
         let timer = Duration::from_secs(init_player_state.stats.game_stats.timer);
 
-        let mut timescaler = TimeScaler::now();
-        timescaler.offset_start_time(init_player_state.stats.game_stats.time_offset);
+        let mut timescaler = Rc::new(RefCell::new(TimeScaler::now()));
+        timescaler
+            .borrow_mut()
+            .offset_start_time(init_player_state.stats.game_stats.time_offset);
+
+        let mut enemies = Rc::new(RefCell::new(Vec::new()));
 
         let level = Level::new();
 
@@ -151,8 +148,12 @@ impl Rogue {
             height,
             width,
             attack_ticks,
-            enemy_move_ticks,
-            enemy_spawn_ticks,
+
+            enemy_wrangler: EnemyWrangler::new(
+                player_state.clone(),
+                timescaler.clone(),
+                enemies.clone(),
+            ),
 
             map_text: Text::from(""),
             start_popup: false,
@@ -164,12 +165,8 @@ impl Rogue {
 
             level,
 
-            enemy_damage: 1,
-            enemy_health: 3,
-            enemy_drops: EnemyDrops { gold: 1, xp: 0 },
-
             tickcount: 0,
-            enemies: vec![],
+            enemies,
             pickups: vec![],
             active_damage_effects: vec![],
             start_time,
@@ -246,24 +243,23 @@ impl Rogue {
 
                 self.process_debuffs();
 
-                if self.tickcount.is_multiple_of(self.enemy_spawn_ticks) {
-                    self.spawn_enemy();
-                }
-
-                if self.tickcount.is_multiple_of(self.enemy_move_ticks) {
-                    self.update_enemies();
-                }
+                self.enemy_wrangler.on_tick(
+                    self.tickcount,
+                    &mut self.character,
+                    &self.layer_base,
+                    &mut self.active_damage_effects,
+                );
 
                 if self.tickcount.is_multiple_of(TICK_RATE.floor() as u64) {
                     self.scale();
-                    self.scale_enemies();
                 }
 
                 if self.tickcount.is_multiple_of(self.attack_ticks) {
-                    let (damage_areas, mut damage_effects) =
-                        self.character.attack(&self.layer_base, &self.enemies);
+                    let (damage_areas, mut damage_effects) = self
+                        .character
+                        .attack(&self.layer_base, &self.enemies.borrow());
                     for area in damage_areas {
-                        area.deal_damage(&mut self.enemies);
+                        area.deal_damage(&mut self.enemies.borrow_mut());
                     }
                     self.active_damage_effects.append(&mut damage_effects);
                 }
@@ -273,40 +269,6 @@ impl Rogue {
                     .for_each(|pickup| pickup.get_inner_mut().animate(self.tickcount % 1000));
             }
         }
-    }
-
-    fn update_enemies(&mut self) {
-        self.enemies = self
-            .enemies
-            .clone()
-            .into_iter()
-            .map(|mut enemy| {
-                if let Some((desired_pos, desired_facing)) = enemy.update(
-                    &mut self.character,
-                    &self.layer_base,
-                    &mut self.active_damage_effects,
-                ) && self.can_stand(&desired_pos)
-                {
-                    enemy.move_to(desired_pos, desired_facing);
-                }
-
-                let character_stats = &self.player_state.borrow().stats.player_stats;
-
-                if character_stats.shove_amount > 0
-                    && is_next_to_character(self.character.get_pos(), enemy.get_prev_pos())
-                {
-                    if character_stats.shove_damage > 0 {
-                        enemy.take_damage(
-                            (f64::from(character_stats.shove_damage) * character_stats.damage_mult)
-                                .ceil() as i32,
-                        );
-                    }
-
-                    enemy.move_back(character_stats.shove_amount as i32, &self.layer_base);
-                }
-                enemy
-            })
-            .collect();
     }
 
     fn process_debuffs(&mut self) {
@@ -708,21 +670,21 @@ impl Rogue {
         self.character.get_pos()
     }
 
-    #[must_use]
-    pub fn can_stand(&self, position: &Position) -> bool {
-        let (x, y) = position.get();
-
-        if x < 0
-            || x >= self.width as i32
-            || y < 0
-            || y >= self.height as i32
-            || position == self.get_character_pos()
-        // || self.get_enemy_positions().contains(position)
-        {
-            return false;
-        }
-        true
-    }
+    // #[must_use]
+    // pub fn can_stand(&self, position: &Position) -> bool {
+    //     let (x, y) = position.get();
+    //
+    //     if x < 0
+    //         || x >= self.width as i32
+    //         || y < 0
+    //         || y >= self.height as i32
+    //         || position == self.get_character_pos()
+    //     // || self.get_enemy_positions().contains(position)
+    //     {
+    //         return false;
+    //     }
+    //     true
+    // }
 
     pub fn render_game(&mut self, frame: &mut Frame) {
         let timer = self.timer.saturating_sub(self.start_time.elapsed());
@@ -994,7 +956,7 @@ impl EntityCharacters {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::{Ref, RefCell};
+    use std::cell::RefCell;
     use std::rc::Rc;
     use std::time::Instant;
 

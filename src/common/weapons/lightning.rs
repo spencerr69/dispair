@@ -13,12 +13,10 @@ use crate::{
 use ratatui::style::{Style, Stylize};
 
 use crate::common::character::Renderable;
-use crate::common::enemy::get_closest_enemies;
+use crate::common::enemies::enemy::{Enemy, get_closest_enemies, move_to_point_granular};
 use crate::common::{
     character::Character,
     coords::ChaosArea,
-    enemy::Enemy,
-    enemy::move_to_point_granular,
     powerup::PowerupTypes,
     powerup::{DynPowerup, Poweruppable},
     rogue::{EntityCharacters, Layer},

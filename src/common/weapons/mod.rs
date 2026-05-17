@@ -10,11 +10,11 @@ use ratatui::style::{Style, Stylize};
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::character::Renderable;
+use crate::common::enemies::enemy::{Debuffable, Enemy};
 use crate::common::weapons::row::Row;
 use crate::common::{
     character::{Character, Damageable},
     coords::Area,
-    enemy::{Debuffable, Enemy},
     powerup::PoweruppableWeapon,
     rogue::{EntityCharacters, Layer},
     stats::WeaponStats,

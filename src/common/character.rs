@@ -2,21 +2,19 @@
 //! It handles character movement, health, attacks, and other core gameplay mechanics.
 
 use ratatui::style::{Style, Stylize};
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::common::enemies::enemy::Enemy;
+use crate::common::rogue::EntityCharacters;
 use crate::common::{
     charms::CharmWrapper,
     coords::{Direction, Position},
     effects::DamageEffect,
-    enemy::Enemy,
     rogue::Layer,
-    stats::PlayerStats,
     upgrades::upgrade::PlayerState,
     weapons::{DamageArea, WeaponWrapper, flash::Flash},
 };
-
-use crate::common::rogue::EntityCharacters;
 use crate::prelude::{Duration, Instant};
 
 pub trait Renderable {

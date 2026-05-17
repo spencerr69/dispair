@@ -13,9 +13,9 @@ use crate::{
 use ratatui::style::{Style, Stylize};
 
 use crate::common::character::Renderable;
+use crate::common::enemies::enemy::Enemy;
 use crate::common::{
     character::Character,
-    enemy::Enemy,
     powerup::{DynPowerup, Poweruppable},
     rogue::{EntityCharacters, Layer},
     stats::WeaponStats,

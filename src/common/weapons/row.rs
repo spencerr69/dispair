@@ -1,6 +1,6 @@
 use crate::common::character::{Character, Renderable};
 use crate::common::coords::{Area, Position, SquareArea};
-use crate::common::enemy::Enemy;
+use crate::common::enemies::enemy::Enemy;
 use crate::common::powerup::{DynPowerup, PowerupTypes, Poweruppable};
 use crate::common::rogue::{EntityCharacters, Layer};
 use crate::common::weapons::Elements;

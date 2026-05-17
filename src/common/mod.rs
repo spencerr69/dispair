@@ -2,6 +2,8 @@
 //! between the terminal and WASM versions of the application. It includes
 //! modules for characters, coordinates, game state, and more.
 
+use crate::common::character::{Character, Renderable};
+use crate::common::coords::Position;
 use crate::prelude::KeyEvent;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Rect};
@@ -11,7 +13,7 @@ pub mod charms;
 pub mod coords;
 pub mod debuffs;
 pub mod effects;
-pub mod enemy;
+pub mod enemies;
 pub mod game;
 pub mod level;
 pub mod pickups;
@@ -70,4 +72,13 @@ pub trait Viewable {
     fn render(&mut self, frame: &mut Frame);
 
     fn handle_key_event(&mut self, key_event: &KeyEvent);
+}
+
+pub fn can_stand(width: i32, height: i32, character: &Character, position: &Position) -> bool {
+    let (x, y) = position.get();
+
+    if x < 0 || x >= width || y < 0 || y >= height || position == character.get_pos() {
+        return false;
+    }
+    true
 }

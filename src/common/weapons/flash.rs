@@ -6,7 +6,6 @@ use crate::{
         coords::Area,
         coords::{Direction, Position, SquareArea},
         debuffs::{Debuff, DebuffTypes, Elements},
-        enemy::Enemy,
         powerup::{DynPowerup, PowerupTypes, Poweruppable},
         rogue::{EntityCharacters, Layer},
         stats::WeaponStats,
@@ -18,6 +17,7 @@ use crate::{
 };
 
 use crate::common::character::Renderable;
+use crate::common::enemies::enemy::Enemy;
 use ratatui::style::{Style, Stylize};
 
 new_weapon!(Flash, 2, 1);
