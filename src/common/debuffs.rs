@@ -145,21 +145,20 @@ impl OnTickEffect for Debuff {
                     self.complete = true;
 
                     let proc = Proc {
-                        chance: 50,
+                        chance: 90,
                         debuff: Debuff {
                             debuff_type: DebuffTypes::FlameBurn,
                             stats: DebuffStats {
-                                damage: Some(self.stats.damage.unwrap_or(1) * 10),
+                                damage: Some(self.stats.damage.unwrap_or(1) + 3),
                                 ..self.stats.clone()
                             },
                             complete: false,
                         },
                     };
+                    enemy.remove_debuff(DebuffTypes::FlameBurn);
 
                     let mut procs = HashMap::new();
                     procs.insert("burn".into(), proc);
-
-                    enemy.remove_debuff(DebuffTypes::FlameBurn);
 
                     Some(DamageArea {
                         damage_amount: self.stats.damage.expect("No damage?") * 10,

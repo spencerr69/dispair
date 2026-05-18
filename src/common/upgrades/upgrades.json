@@ -205,7 +205,7 @@
             "description": "+2% chance to mark enemies to explode on death",
             "id": "311",
             "cost": 20,
-            "limit": 10,
+            "limit": 5,
             "requires": [],
             "children": null
           },

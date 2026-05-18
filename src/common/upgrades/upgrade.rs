@@ -127,7 +127,7 @@ impl PlayerState {
             weapon_stats.procs.insert(
                 "mark".into(),
                 Proc {
-                    chance: 2 * self.amount_owned("311"),
+                    chance: 1 * self.amount_owned("311"),
 
                     debuff: Debuff {
                         stats: DebuffStats {
@@ -222,8 +222,8 @@ impl PlayerState {
         //debug
         #[cfg(debug_assertions)]
         if self.upgrade_owned("9999") {
-            game_stats.width = 100;
-            game_stats.height = 100;
+            game_stats.width = 50;
+            game_stats.height = 30;
             player_stats.base_health = 10000;
             game_stats.time_offset = Duration::from_secs(60);
             self.inventory.add_gold(100_000);

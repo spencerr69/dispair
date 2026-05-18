@@ -5,13 +5,13 @@ use ratatui::style::Style;
 pub type Layer = Vec<Vec<EntityCharacters>>;
 
 pub struct Map {
-    pub height: usize,
     pub width: usize,
+    pub height: usize,
     pub map: Layer,
 }
 
 impl Map {
-    pub fn new(height: usize, width: usize) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         let mut new = Self {
             height,
             width,

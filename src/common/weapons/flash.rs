@@ -22,7 +22,7 @@ use crate::common::entities::EntityCharacters;
 use crate::common::map::Layer;
 use ratatui::style::Style;
 
-new_weapon!(Flash, 2, 1, 1);
+new_weapon!(Flash, 1, 1, 1);
 
 impl Poweruppable for Flash {
     fn get_max_level(&self) -> i32 {
@@ -41,9 +41,9 @@ impl Poweruppable for Flash {
         match level {
             1 => "FLASH will create a brief damaging field directly in front of you.".into(),
             2 => "Increase size by 1, increase base damage by 1.".into(),
-            3 => "Increase base damage by 2".into(),
+            3 => "Increase base damage by 1".into(),
             4 => "Increase damage scalar by 25%".into(),
-            5 => "Increase damage scalar by 75%. Imbue FLASH with Flame element, burning enemies when hit.".into(),
+            5 => "Increase damage scalar by 25%. Imbue FLASH with Flame element, burning enemies when hit.".into(),
             _ => String::new(),
         }
     }
@@ -65,13 +65,13 @@ impl Poweruppable for Flash {
                 }
                 3 => {
                     self.stats.damage_flat_boost += 2;
-                    self.base_damage += 2;
+                    self.base_damage += 1;
                 }
                 4 => {
                     self.damage_scalar += 0.25;
                 }
                 5 => {
-                    self.damage_scalar += 0.75;
+                    self.damage_scalar += 0.25;
                     self.element = Some(Elements::Flame(self.stats.elemental_honage));
                     let honage = self.element.expect("Something crazy happened").get_honage();
                     self.stats.procs.insert(
