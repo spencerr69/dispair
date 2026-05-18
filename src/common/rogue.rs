@@ -5,6 +5,7 @@ use crate::common::character::Renderable;
 use crate::common::enemies::enemy::{Enemy, EnemyDrops};
 use crate::common::enemies::enemywrangler::EnemyWrangler;
 use crate::common::entities::EntityCharacters;
+use crate::common::map::{Layer, Map};
 use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::render::{flatten_to_span, get_camera_area, spans_to_text};
 use crate::common::upgrades::upgrade::CurrentUpgradesTrait;
@@ -24,7 +25,7 @@ use crate::{
     },
     prelude::{Duration, Instant, KeyCode, KeyEvent},
 };
-use rand::Rng;
+use rand::{Rng, rng};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -35,8 +36,6 @@ use ratatui::{
 };
 use std::cell::RefCell;
 use std::rc::Rc;
-
-pub type Layer = Vec<Vec<EntityCharacters>>;
 
 pub enum GameState {
     Paused,
@@ -58,16 +57,14 @@ pub struct Rogue {
 
     /// The rendered map text.
     pub map_text: Text<'static>,
-
     pub character: Character,
-    pub layer_base: Layer,
-    pub flat_layer: Layer,
+
+    // pub layer_base: Layer,
+    // height: usize,
+    // width: usize,
+    pub map: Map,
 
     tickcount: u64,
-
-    height: usize,
-    width: usize,
-
     pub enemies: Rc<RefCell<Vec<Enemy>>>,
 
     enemy_wrangler: EnemyWrangler,
@@ -105,21 +102,23 @@ impl Rogue {
         let width = init_player_state.stats.game_stats.width;
         let height = init_player_state.stats.game_stats.height;
 
-        let mut base: Layer = Vec::new();
+        let map = Map::new(width, height);
 
-        let mut rng = rand::rng();
+        // let mut base: Layer = Vec::new();
 
-        for _ in 0..height {
-            let mut baseline = Vec::new();
-            for _ in 0..width {
-                let choice = rng.random_range(0..=1);
-                match choice {
-                    0 => baseline.push(EntityCharacters::Background1),
-                    _ => baseline.push(EntityCharacters::Background2),
-                }
-            }
-            base.push(baseline);
-        }
+        // let mut rng = rand::rng();
+
+        // for _ in 0..height {
+        //     let mut baseline = Vec::new();
+        //     for _ in 0..width {
+        //         let choice = rng.random_range(0..=1);
+        //         match choice {
+        //             0 => baseline.push(EntityCharacters::Background1),
+        //             _ => baseline.push(EntityCharacters::Background2),
+        //         }
+        //     }
+        //     base.push(baseline);
+        // }
 
         let attack_ticks = per_sec_to_tick_count_to_u64(Self::DEFAULT_ATTACK_P_S);
 
@@ -143,10 +142,7 @@ impl Rogue {
             player_state: player_state.clone(),
             init_state: init_player_state,
             character: Character::new(&player_state.clone()),
-            layer_base: base.clone(),
-            flat_layer: base,
-            height,
-            width,
+            map,
             attack_ticks,
 
             enemy_wrangler: EnemyWrangler::new(
@@ -186,7 +182,7 @@ impl Rogue {
         game.update_stats();
 
         if game.player_state.borrow().upgrade_owned("53") {
-            game.pickup_wrangler.spawn_orb(&game.layer_base);
+            game.pickup_wrangler.spawn_orb(&game.map.map);
         }
 
         game
@@ -240,7 +236,7 @@ impl Rogue {
                 let drops = self.enemy_wrangler.on_tick(
                     self.tickcount,
                     &mut self.character,
-                    &self.layer_base,
+                    &self.map.map,
                     &mut self.active_damage_effects,
                 );
 
@@ -253,9 +249,8 @@ impl Rogue {
                 }
 
                 if self.tickcount.is_multiple_of(self.attack_ticks) {
-                    let (damage_areas, mut damage_effects) = self
-                        .character
-                        .attack(&self.layer_base, &self.enemies.borrow());
+                    let (damage_areas, mut damage_effects) =
+                        self.character.attack(&self.map.map, &self.enemies.borrow());
                     for area in damage_areas {
                         area.deal_damage(&mut self.enemies.borrow_mut());
                     }
@@ -302,7 +297,7 @@ impl Rogue {
                 .collect();
 
             self.camera_area =
-                get_camera_area(self.view_area, self.get_character_pos(), &self.layer_base);
+                get_camera_area(self.view_area, self.get_character_pos(), &self.map.map);
 
             let spans = flatten_to_span(&self, Some(self.camera_area.clone()));
 
@@ -352,16 +347,16 @@ impl Rogue {
         } else {
             match key_event.code {
                 KeyCode::Char('s') | KeyCode::Down => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::DOWN);
+                    move_entity(&mut self.map.map, &mut self.character, Direction::DOWN);
                 }
                 KeyCode::Char('w') | KeyCode::Up => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::UP);
+                    move_entity(&mut self.map.map, &mut self.character, Direction::UP);
                 }
                 KeyCode::Char('d') | KeyCode::Right => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::RIGHT);
+                    move_entity(&mut self.map.map, &mut self.character, Direction::RIGHT);
                 }
                 KeyCode::Char('a') | KeyCode::Left => {
-                    move_entity(&mut self.layer_base, &mut self.character, Direction::LEFT);
+                    move_entity(&mut self.map.map, &mut self.character, Direction::LEFT);
                 }
                 KeyCode::Char(']') => {
                     self.player_state.borrow_mut().inventory.gold += 10000;
@@ -378,8 +373,8 @@ impl Rogue {
         let mut rng = rand::rng();
 
         let (x, y) = (
-            rng.random_range(0..self.width) as i32,
-            rng.random_range(0..self.height) as i32,
+            rng.random_range(0..self.map.width) as i32,
+            rng.random_range(0..self.map.height) as i32,
         );
 
         self.character.set_pos(Position(x, y));

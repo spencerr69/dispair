@@ -17,6 +17,7 @@ pub mod enemies;
 pub mod entities;
 pub mod game;
 pub mod level;
+pub mod map;
 pub mod pickups;
 pub mod popups;
 pub mod powerup;

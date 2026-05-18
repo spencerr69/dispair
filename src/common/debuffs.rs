@@ -1,7 +1,5 @@
 use crate::{
-    common::{
-        TICK_RATE, character::Damageable, coords::ChaosArea, rogue::Layer, stats::WeaponStats,
-    },
+    common::{TICK_RATE, character::Damageable, coords::ChaosArea, stats::WeaponStats},
     prelude::Duration,
 };
 
@@ -16,6 +14,7 @@ use crate::common::coords::AreaWrapper;
 use crate::common::enemies::enemy::{Debuffable, get_closest_enemies};
 use crate::common::enemies::enemy::{Enemy, move_to_point_granular};
 use crate::common::entities::EntityCharacters;
+use crate::common::map::Layer;
 use crate::common::{
     coords::{Area, SquareArea},
     stats::{DebuffStats, Proc},

@@ -2,18 +2,16 @@
 //! It handles character movement, health, attacks, and other core gameplay mechanics.
 
 use ratatui::style::Style;
-use std::clone;
 
-use crate::common::charms::CharmWrapper::HypeTime;
 use crate::common::charms::hype_time::CharmHypeTime;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
+use crate::common::map::Layer;
 use crate::common::{
     PlayerStateRef,
     charms::CharmWrapper,
     coords::{Direction, Position},
     effects::DamageEffect,
-    rogue::Layer,
     weapons::{DamageArea, WeaponWrapper, flash::Flash},
 };
 use crate::prelude::{Duration, Instant};

@@ -1,6 +1,7 @@
 //! This module defines coordinate-related structs and enums, such as `Position`, `Area`, and `Direction`.
 //! It provides functionality for working with positions and areas within the game world.
-use crate::common::rogue::Layer;
+
+use crate::common::map::Layer;
 
 #[derive(Clone)]
 pub enum AreaWrapper {
@@ -217,6 +218,8 @@ impl Area for ChaosArea {
 mod tests {
     use super::*;
     use crate::common::entities::EntityCharacters;
+    use crate::common::map::Layer;
+    use ratatui::style::Style;
 
     #[test]
     fn position_above_0() {
@@ -240,10 +243,10 @@ mod tests {
     fn position_constrain() {
         let mut position = Position(50, 50);
         let layer: Layer = Vec::from([Vec::from([
-            EntityCharacters::Empty,
-            EntityCharacters::Empty,
-            EntityCharacters::Empty,
-            EntityCharacters::Empty,
+            EntityCharacters::Empty(Style::new()),
+            EntityCharacters::Empty(Style::new()),
+            EntityCharacters::Empty(Style::new()),
+            EntityCharacters::Empty(Style::new()),
         ])]);
         position.constrain(&layer);
         assert_eq!(position.get(), (3, 0));

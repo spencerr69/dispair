@@ -15,9 +15,9 @@ use crate::common::character::CharacterPositionData;
 use crate::common::coords::AreaWrapper::Square;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
+use crate::common::map::Layer;
 use crate::common::{
     powerup::{DynPowerup, Poweruppable},
-    rogue::Layer,
     stats::WeaponStats,
     weapons::{DamageArea, Weapon},
 };

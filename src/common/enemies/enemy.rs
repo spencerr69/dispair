@@ -5,7 +5,6 @@ use crate::{
     common::{
         character::{Character, Damageable, Movable},
         debuffs::{Debuff, DebuffTypes},
-        rogue::Layer,
     },
     prelude::Duration,
 };
@@ -16,6 +15,7 @@ use ratatui::style::Style;
 use crate::common::character::Renderable;
 use crate::common::coords::AreaWrapper::Square;
 use crate::common::entities::EntityCharacters;
+use crate::common::map::Layer;
 use crate::common::utils::{can_stand, is_next_to_character};
 use crate::common::{
     coords::{Direction, Position, SquareArea},

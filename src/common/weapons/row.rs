@@ -4,16 +4,13 @@ use crate::common::coords::AreaWrapper::Square;
 use crate::common::coords::{Area, Position, SquareArea};
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
+use crate::common::map::Layer;
 use crate::common::powerup::{DynPowerup, PowerupTypes, Poweruppable};
-use crate::common::rogue::Layer;
 use crate::common::weapons::Elements;
 use crate::common::weapons::{DamageArea, Weapon, WeaponStats};
 use crate::new_weapon;
 use crate::prelude::Duration;
 use ratatui::prelude::Style;
-use ratatui::style::Stylize;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 new_weapon!(Row, 6, 0, 5);
 

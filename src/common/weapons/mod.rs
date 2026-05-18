@@ -6,20 +6,19 @@ use crate::{common::debuffs::Elements, prelude::Duration};
 
 use ratatui::style::Style;
 use std::cmp::Ordering;
-use std::{cell::RefCell, rc::Rc};
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::character::{CharacterPositionData, Renderable};
 use crate::common::coords::{AreaWrapper, ChaosArea};
 use crate::common::enemies::enemy::{Debuffable, Enemy};
 use crate::common::entities::EntityCharacters;
+use crate::common::map::Layer;
 use crate::common::weapons::flash::Flash;
 use crate::common::weapons::lightning::Lightning;
 use crate::common::weapons::pillar::Pillar;
 use crate::common::weapons::row::Row;
 use crate::common::{
-    PlayerStateRef, character::Damageable, coords::Area, powerup::PoweruppableWeapon, rogue::Layer,
-    stats::WeaponStats,
+    PlayerStateRef, character::Damageable, powerup::PoweruppableWeapon, stats::WeaponStats,
 };
 
 pub mod flash;
@@ -156,7 +155,7 @@ impl DamageArea {
             damage_amount: 0,
             area: AreaWrapper::Chaos(ChaosArea::new(vec![])),
             duration: Duration::from_secs_f32(0.),
-            entity: EntityCharacters::Empty,
+            entity: EntityCharacters::Empty(Style::new()),
             blink: false,
             weapon_stats: None,
         }

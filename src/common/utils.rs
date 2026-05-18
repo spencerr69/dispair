@@ -1,7 +1,7 @@
 use crate::common::TICK_RATE;
 use crate::common::character::{Character, Movable, Renderable};
 use crate::common::coords::{Direction, Position};
-use crate::common::rogue::Layer;
+use crate::common::map::Layer;
 use rand::Rng;
 use ratatui::layout::{Constraint, Layout, Rect};
 use std::fmt::format;

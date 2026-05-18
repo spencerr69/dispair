@@ -1,8 +1,9 @@
 use crate::common::character::{Character, Renderable};
 use crate::common::coords::{Area, Position, SquareArea};
 use crate::common::enemies::enemy::Enemy;
+use crate::common::map::Layer;
 use crate::common::pickups::PickupTypes;
-use crate::common::rogue::{Layer, Rogue};
+use crate::common::rogue::Rogue;
 use crate::common::utils::get_mut_item_in_2d_enum_vec;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Line, Span, Text};
@@ -88,13 +89,14 @@ pub fn flatten_to_span(rogue: &Rogue, area: Option<SquareArea>) -> Vec<Vec<Span<
         (x1, y1, x2, y2) = (
             0,
             0,
-            rogue.layer_base[0].len() as i32 - 1,
-            rogue.layer_base.len() as i32 - 1,
+            rogue.map.map[0].len() as i32 - 1,
+            rogue.map.map.len() as i32 - 1,
         );
     }
 
     let mut enum_2d: Vec<(usize, Vec<(usize, Span<'static>)>)> = rogue
-        .layer_base
+        .map
+        .map
         .iter()
         .enumerate()
         .filter_map(|(i, line)| {
@@ -124,27 +126,23 @@ pub fn flatten_to_span(rogue: &Rogue, area: Option<SquareArea>) -> Vec<Vec<Span<
         .iter()
         .for_each(callback_creator::<_, PickupTypes>(
             &mut enum_2d,
-            &rogue.layer_base,
+            &rogue.map.map,
         ));
 
     rogue
         .enemies
         .borrow()
         .iter()
-        .for_each(callback_creator::<_, Enemy>(
-            &mut enum_2d,
-            &rogue.layer_base,
-        ));
+        .for_each(callback_creator::<_, Enemy>(&mut enum_2d, &rogue.map.map));
 
     rogue.active_damage_effects.iter().for_each(|effect| {
         effect
             .get_instructions()
-            .for_each(callback_creator(&mut enum_2d, &rogue.layer_base));
+            .for_each(callback_creator(&mut enum_2d, &rogue.map.map));
     });
 
     {
-        let mut character_callback =
-            callback_creator::<_, Character>(&mut enum_2d, &rogue.layer_base);
+        let mut character_callback = callback_creator::<_, Character>(&mut enum_2d, &rogue.map.map);
         character_callback(&rogue.character);
     }
 

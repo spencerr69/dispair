@@ -17,11 +17,11 @@ use crate::common::character::{CharacterPositionData, Renderable};
 use crate::common::coords::AreaWrapper::Chaos;
 use crate::common::enemies::enemy::{Enemy, get_closest_enemies, move_to_point_granular};
 use crate::common::entities::EntityCharacters;
+use crate::common::map::Layer;
 use crate::common::{
     coords::ChaosArea,
     powerup::PowerupTypes,
     powerup::{DynPowerup, Poweruppable},
-    rogue::Layer,
     stats::WeaponStats,
     weapons::{DamageArea, Weapon},
 };

@@ -3,7 +3,7 @@ use crate::common::coords::{Area, ChaosArea, Position};
 use crate::common::debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect};
 use crate::common::effects::DamageEffect;
 use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
-use crate::common::rogue::Layer;
+use crate::common::map::Layer;
 use crate::common::timescaler::TimeScaler;
 use crate::common::utils::{
     can_stand, convert_range, get_rand_position_on_edge, is_next_to_character,

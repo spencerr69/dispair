@@ -3,8 +3,6 @@
 
 use crate::prelude::{Duration, Instant};
 
-use std::{cell::RefCell, rc::Rc};
-
 use crate::common::character::Renderable;
 use crate::common::coords::AreaWrapper::Chaos;
 use crate::common::coords::{AreaWrapper, ChaosArea};
@@ -13,6 +11,8 @@ use crate::common::{
     coords::{Area, Position, SquareArea},
     weapons::DamageArea,
 };
+use ratatui::prelude::Style;
+use std::{cell::RefCell, rc::Rc};
 
 /// Represents a visual effect that occurs over a specified area for a certain duration.
 #[derive(Clone)]
@@ -88,7 +88,7 @@ impl DamageEffect {
         if now < self.start_time {
             //hasn't started yet
             self.active_area = Chaos(ChaosArea::empty());
-            self.active_entity = EntityCharacters::Empty;
+            self.active_entity = EntityCharacters::Empty(Style::new());
         } else {
             self.active_area = self.damage_area.area.clone();
             self.active_entity = self.damage_area.entity.clone();
@@ -98,7 +98,7 @@ impl DamageEffect {
             self.complete = true;
         } else if self.damage_area.blink {
             if self.active_entity == self.damage_area.entity {
-                self.active_entity = EntityCharacters::Empty;
+                self.active_entity = EntityCharacters::Empty(Style::new());
             } else {
                 self.active_entity = self.damage_area.entity.clone();
             }
