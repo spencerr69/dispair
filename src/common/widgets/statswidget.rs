@@ -1,10 +1,16 @@
-use crate::common::PlayerStateRef;
+use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::weapons::WeaponWrapper::Flash;
+use crate::common::weapons::{WeaponWrapper, flash};
+use crate::common::widgets::inviconwidget::InvIconWidget;
+use crate::common::{PlayerStateRef, charms};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::prelude::Widget;
 use ratatui::style::{Style, Stylize};
 use ratatui::text::{Line, Text};
 use ratatui::widgets::{Block, BorderType};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct StatsWidget {
     pub player_state: PlayerStateRef,
@@ -62,13 +68,52 @@ impl Widget for StatsWidget {
             .title_top("Stats");
         let inner_area = block.inner(area);
 
+        let [top, bottom] =
+            Layout::vertical([Constraint::Fill(1), Constraint::Length(6)]).areas(inner_area);
+
         let [left, right] =
-            Layout::horizontal([Constraint::Fill(1), Constraint::Length(5)]).areas(inner_area);
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(5)]).areas(top);
 
         let (stat_labels, stat_values) = self.get_stat_vecs();
 
+        let [icons_top, icons_bottom] =
+            Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).areas(bottom);
+
+        let icons_top: [Rect; 5] = Layout::horizontal([
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(5),
+        ])
+        .areas(icons_top);
+        let icons_bottom: [Rect; 5] = Layout::horizontal([
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(5),
+        ])
+        .areas(icons_bottom);
+
         let left_text = Text::from(stat_labels);
         let right_text = Text::from(stat_values);
+
+        let test_powerup = charms::attack_speed::CharmAttackSpeed {
+            stat_boost: 1.0,
+            level: 1,
+            player_state: Rc::new(RefCell::new(PlayerState::default())),
+        };
+
+        let test_icon = InvIconWidget::new(&test_powerup);
+
+        for a in icons_top {
+            test_icon.clone().render(a, buf);
+        }
+
+        for a in icons_bottom {
+            test_icon.clone().render(a, buf);
+        }
 
         left_text.render(left, buf);
         right_text.render(right, buf);
