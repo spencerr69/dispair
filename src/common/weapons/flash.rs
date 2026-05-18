@@ -17,6 +17,7 @@ use crate::{
 };
 
 use crate::common::character::CharacterPositionData;
+use crate::common::coords::AreaWrapper::Square;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
 use ratatui::style::Style;
@@ -60,9 +61,11 @@ impl Poweruppable for Flash {
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
+                    self.base_damage += 1;
                 }
                 3 => {
                     self.stats.damage_flat_boost += 2;
+                    self.base_damage += 2;
                 }
                 4 => {
                     self.damage_scalar += 0.25;
@@ -74,12 +77,12 @@ impl Poweruppable for Flash {
                     self.stats.procs.insert(
                         "burn".into(),
                         Proc {
-                            chance: 50,
+                            chance: 80,
                             debuff: Debuff {
                                 debuff_type: DebuffTypes::FlameBurn,
                                 complete: false,
                                 stats: DebuffStats {
-                                    size: Some((3. * honage).ceil() as i32),
+                                    size: Some((1. * (honage * 0.5 + 0.5)).ceil() as i32),
                                     damage: Some((0.25 * honage).ceil() as i32),
                                     misc_value: None,
                                     on_death_effect: false,
@@ -155,7 +158,7 @@ impl Weapon for Flash {
         }
 
         DamageArea {
-            area: Rc::new(RefCell::new(new_area)),
+            area: Square(new_area),
             damage_amount: (f64::from(self.get_damage())
                 * self.player_state.borrow().stats.player_stats.damage_mult)
                 .ceil() as i32,

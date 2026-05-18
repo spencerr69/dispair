@@ -3,6 +3,8 @@
 
 use ratatui::style::Style;
 
+use crate::common::charms::CharmWrapper::HypeTime;
+use crate::common::charms::hype_time::CharmHypeTime;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
 use crate::common::{
@@ -136,6 +138,17 @@ impl Character {
         let weapon_stats = stats.weapon_stats.clone();
         let max_health = stats.player_stats.health;
 
+        let mut weapon =
+            WeaponWrapper::Flash(Some(Flash::new(weapon_stats.clone(), player_state.clone())));
+
+        #[cfg(debug_assertions)]
+        {
+            let powerup = weapon.get_inner().get_next_upgrade(4).expect("girl");
+            weapon.get_inner_mut().upgrade_self(&powerup);
+        }
+
+        let mut charm = CharmWrapper::HypeTime(Some(CharmHypeTime::new(player_state.clone())));
+
         Character {
             position: Position(0, 0),
             prev_position: Position(0, 0),
@@ -151,11 +164,8 @@ impl Character {
 
             entitychar: EntityCharacters::Character(Style::default()),
 
-            weapons: vec![WeaponWrapper::Flash(Some(Flash::new(
-                weapon_stats.clone(),
-                player_state.clone(),
-            )))],
-            charms: vec![], // weapons: vec![],
+            weapons: vec![weapon],
+            charms: vec![charm], // weapons: vec![],
         }
     }
 
@@ -190,8 +200,9 @@ impl Character {
                     .get_inner_mut()
                     .attack(pos_data.clone(), enemies, layer)
             })
-            .inspect(|damage_area| {
-                damage_area.area.borrow_mut().constrain(layer);
+            .map(|mut damage_area| {
+                damage_area.area.get_inner_mut().constrain(layer);
+                damage_area
             })
             .collect();
         let mut damage_effects: Vec<DamageEffect> = damage_areas
@@ -203,7 +214,7 @@ impl Character {
             .iter_mut()
             .enumerate()
             .for_each(|(i, effect)| {
-                effect.delay(Duration::from_secs_f64(0.05 * i as f64));
+                effect.delay(Duration::from_secs_f64(0.01 * i as f64));
                 effect.update();
             });
         (damage_areas, damage_effects)

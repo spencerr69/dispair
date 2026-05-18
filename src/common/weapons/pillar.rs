@@ -12,6 +12,7 @@ use crate::{
 };
 
 use crate::common::character::CharacterPositionData;
+use crate::common::coords::AreaWrapper::Square;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
 use crate::common::{
@@ -57,7 +58,7 @@ impl Weapon for Pillar {
             damage_amount: (f64::from(self.get_damage())
                 * self.player_state.borrow().stats.player_stats.damage_mult)
                 .ceil() as i32,
-            area: Rc::new(RefCell::new(area)),
+            area: Square(area),
             entity: EntityCharacters::AttackWeak(Style::new().gray()),
             duration: Duration::from_secs_f64(0.05),
             blink: false,
@@ -113,9 +114,11 @@ impl Poweruppable for Pillar {
                 2 => {
                     self.stats.size += 1;
                     self.stats.damage_flat_boost += 1;
+                    self.base_damage += 1;
                 }
                 3 => {
                     self.stats.damage_flat_boost += 2;
+                    self.base_damage += 2;
                 }
                 4 => {
                     self.damage_scalar += 0.25;

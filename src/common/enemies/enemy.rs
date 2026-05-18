@@ -1,5 +1,6 @@
 //! This module defines the `Enemy` struct and its related traits and behaviors.
 //! It includes logic for enemy movement, health, attacks, and debuffs.
+
 use crate::{
     common::{
         character::{Character, Damageable, Movable},
@@ -13,6 +14,7 @@ use rand::Rng;
 use ratatui::style::Style;
 
 use crate::common::character::Renderable;
+use crate::common::coords::AreaWrapper::Square;
 use crate::common::entities::EntityCharacters;
 use crate::common::utils::{can_stand, is_next_to_character};
 use crate::common::{
@@ -87,7 +89,7 @@ impl Debuffable for Enemy {
         if roll <= proc.chance {
             match proc.debuff.debuff_type {
                 DebuffTypes::FlameBurn => {
-                    if self.count_debuff(&proc.debuff) < 2 {
+                    if self.count_debuff(&proc.debuff) < 3 {
                         self.debuffs.push(proc.debuff.clone());
                     } else {
                         self.try_proc(&Proc {
@@ -98,6 +100,7 @@ impl Debuffable for Enemy {
                                 complete: false,
                             },
                         });
+                        self.remove_debuff(DebuffTypes::FlameBurn);
                     }
                 }
                 _ => {
@@ -136,7 +139,7 @@ impl Debuffable for Enemy {
 impl Enemy {
     /// Update the enemy's visual style to reflect any active debuffs.
     fn change_style_with_debuff(&mut self) {
-        let mut style = Style::new();
+        let mut style = self.entitychar.style_mut().clone();
 
         self.debuffs
             .iter()
@@ -201,7 +204,7 @@ impl EnemyBehaviour for Enemy {
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);
             damage_effects.push(DamageEffect::new(
-                SquareArea::from(character.get_pos().clone()),
+                Square(SquareArea::from(character.get_pos().clone())),
                 EntityCharacters::AttackBlackout(Style::new().bold().dark_gray()),
                 Duration::from_secs_f64(0.2),
                 true,

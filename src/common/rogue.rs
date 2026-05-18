@@ -8,7 +8,7 @@ use crate::common::entities::EntityCharacters;
 use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::render::{flatten_to_span, get_camera_area, spans_to_text};
 use crate::common::upgrades::upgrade::CurrentUpgradesTrait;
-use crate::common::utils::{center, move_entity, per_sec_to_tick_count};
+use crate::common::utils::{center, move_entity, per_sec_to_tick_count_to_u64};
 use crate::common::widgets::statswidget::StatsWidget;
 use crate::common::{Goto, PlayerStateRef, Viewable};
 use crate::{
@@ -53,8 +53,6 @@ pub struct Rogue {
 
     /// The carnage report, which is displayed at the end of a level.
     pub carnage_report: Option<CarnageReport>,
-
-    pub stats_widget: StatsWidget,
 
     pub powerup_popup: Option<PowerupPopup>,
 
@@ -123,7 +121,7 @@ impl Rogue {
             base.push(baseline);
         }
 
-        let attack_ticks = per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
+        let attack_ticks = per_sec_to_tick_count_to_u64(Self::DEFAULT_ATTACK_P_S);
 
         let start_time = Instant::now();
         let timer = Duration::from_secs(init_player_state.stats.game_stats.timer);
@@ -150,8 +148,6 @@ impl Rogue {
             height,
             width,
             attack_ticks,
-
-            stats_widget: StatsWidget::new(player_state.clone()),
 
             enemy_wrangler: EnemyWrangler::new(
                 player_state.clone(),
@@ -315,7 +311,7 @@ impl Rogue {
     }
 
     pub fn update_stats(&mut self) {
-        self.attack_ticks = per_sec_to_tick_count(Self::DEFAULT_ATTACK_P_S);
+        self.attack_ticks = per_sec_to_tick_count_to_u64(Self::DEFAULT_ATTACK_P_S);
         self.attack_ticks = (self.attack_ticks as f64
             / self
                 .player_state
@@ -457,7 +453,12 @@ impl Rogue {
 
         frame.render_widget(content, centered_area);
 
-        let stats_widget = StatsWidget::new(self.player_state.clone());
+        let stats_widget = StatsWidget::new(
+            self.player_state.clone(),
+            &self.enemy_wrangler,
+            &self.character.weapons,
+            &self.character.charms,
+        );
 
         frame.render_widget(stats_widget, stats_area);
 

@@ -4,13 +4,13 @@
 
 use crate::{common::debuffs::Elements, prelude::Duration};
 
-use std::{cell::RefCell, rc::Rc};
-
 use ratatui::style::Style;
+use std::cmp::Ordering;
+use std::{cell::RefCell, rc::Rc};
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::character::{CharacterPositionData, Renderable};
-use crate::common::coords::ChaosArea;
+use crate::common::coords::{AreaWrapper, ChaosArea};
 use crate::common::enemies::enemy::{Debuffable, Enemy};
 use crate::common::entities::EntityCharacters;
 use crate::common::weapons::flash::Flash;
@@ -124,13 +124,18 @@ impl WeaponWrapper {
         match self {
             WeaponWrapper::Flash(flash) => *flash = Some(Flash::new(weapon_stats, player_state)),
             WeaponWrapper::Pillar(pillar) => {
-                *pillar = Some(Pillar::new(weapon_stats, player_state))
+                *pillar = Some(Pillar::new(weapon_stats, player_state));
             }
             WeaponWrapper::Lightning(lightning) => {
-                *lightning = Some(Lightning::new(weapon_stats, player_state))
+                *lightning = Some(Lightning::new(weapon_stats, player_state));
             }
             WeaponWrapper::Row(row) => *row = Some(Row::new(weapon_stats, player_state)),
         }
+    }
+
+    #[must_use]
+    pub fn get_damage(&self) -> i32 {
+        self.get_inner().get_damage()
     }
 }
 
@@ -138,7 +143,7 @@ impl WeaponWrapper {
 #[derive(Clone)]
 pub struct DamageArea {
     pub damage_amount: i32,
-    pub area: Rc<RefCell<dyn Area>>,
+    pub area: AreaWrapper,
     pub entity: EntityCharacters,
     pub duration: Duration,
     pub blink: bool,
@@ -149,7 +154,7 @@ impl DamageArea {
     pub fn new_empty() -> Self {
         DamageArea {
             damage_amount: 0,
-            area: Rc::new(RefCell::new(ChaosArea::new(vec![]))),
+            area: AreaWrapper::Chaos(ChaosArea::new(vec![])),
             duration: Duration::from_secs_f32(0.),
             entity: EntityCharacters::Empty,
             blink: false,
@@ -163,7 +168,7 @@ impl DamageArea {
     /// iterates its `procs` and invokes each proc with `chance > 0` on the enemy.
     pub fn deal_damage(&self, enemies: &mut [Enemy]) {
         for enemy in enemies.iter_mut() {
-            if enemy.get_pos().is_in_area(&self.area) {
+            if enemy.get_pos().is_in_area(self.area.get_inner()) {
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon, do the following
@@ -179,6 +184,17 @@ impl DamageArea {
             }
         }
     }
+}
+
+#[must_use]
+pub fn get_strongest_weapon(weapons: &[WeaponWrapper]) -> Option<&WeaponWrapper> {
+    weapons.iter().max_by(|a, b| {
+        if a.get_damage() > b.get_damage() {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        }
+    })
 }
 
 /// A trait for any weapon that can be used to attack.

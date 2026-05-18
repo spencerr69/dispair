@@ -6,7 +6,8 @@ use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
 use crate::common::rogue::Layer;
 use crate::common::timescaler::TimeScaler;
 use crate::common::utils::{
-    can_stand, get_rand_position_on_edge, is_next_to_character, per_sec_to_tick_count,
+    can_stand, convert_range, get_rand_position_on_edge, is_next_to_character,
+    per_sec_to_tick_count, per_sec_to_tick_count_to_u64,
 };
 use crate::common::weapons::DamageArea;
 use crate::common::{PlayerStateRef, TICK_RATE};
@@ -14,17 +15,19 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct EnemyWrangler {
-    enemies: Rc<RefCell<Vec<Enemy>>>,
-    enemy_spawn_ticks: u64,
-    enemy_move_ticks: u64,
-    enemy_health: i32,
-    enemy_damage: i32,
-    enemy_drops: EnemyDrops,
-    player_state: PlayerStateRef,
-    timescaler: Rc<RefCell<TimeScaler>>,
+    pub enemies: Rc<RefCell<Vec<Enemy>>>,
+    pub enemy_spawn_ticks: u64,
+    pub enemy_spawn_mult: f64,
+    pub enemy_move_ticks: u64,
+    pub enemy_health: i32,
+    pub enemy_damage: i32,
+    pub enemy_drops: EnemyDrops,
+    pub player_state: PlayerStateRef,
+    pub timescaler: Rc<RefCell<TimeScaler>>,
 }
 
 impl EnemyWrangler {
+    const ENEMY_CAP: u64 = 1000;
     const DEFAULT_SPAWN_P_S: f64 = 0.4;
     const DEFAULT_MOVE_P_S: f64 = 2.;
 
@@ -35,14 +38,15 @@ impl EnemyWrangler {
     ) -> Self {
         let player_state_ref = player_state.borrow().clone();
 
-        let enemy_move_ticks = per_sec_to_tick_count(Self::DEFAULT_MOVE_P_S);
-        let enemy_spawn_ticks = per_sec_to_tick_count(
+        let enemy_move_ticks = per_sec_to_tick_count_to_u64(Self::DEFAULT_MOVE_P_S);
+        let enemy_spawn_ticks = per_sec_to_tick_count_to_u64(
             Self::DEFAULT_SPAWN_P_S * player_state_ref.stats.game_stats.enemy_spawn_mult,
         );
 
         Self {
             enemy_move_ticks,
             enemy_spawn_ticks,
+            enemy_spawn_mult: 1.0,
             enemy_damage: 1,
             enemy_health: 3,
             enemy_drops: EnemyDrops { gold: 1, xp: 0 },
@@ -60,7 +64,9 @@ impl EnemyWrangler {
         active_damage_effects: &mut Vec<DamageEffect>,
     ) -> Vec<EnemyDrops> {
         if tickcount.is_multiple_of(self.enemy_spawn_ticks) {
-            self.spawn_enemy(layer);
+            for i in 0..self.enemy_spawn_mult.ceil() as i32 {
+                self.spawn_enemy(layer);
+            }
         }
 
         if tickcount.is_multiple_of(self.enemy_move_ticks) {
@@ -74,14 +80,22 @@ impl EnemyWrangler {
         self.process_enemy_effects(layer, active_damage_effects, tickcount)
     }
 
+    #[must_use]
+    pub fn get_spawn_multiplier(&self) -> f64 {
+        if self.enemy_spawn_ticks > 1 {
+            convert_range(self.enemy_spawn_ticks as f64, 100., 1., 1., 10.)
+        } else {
+            convert_range(self.enemy_spawn_mult, 1., 10., 10., 100.)
+        }
+    }
+
     fn update_enemies(
         &mut self,
         character: &mut Character,
         layer: &Layer,
         active_damage_effects: &mut Vec<DamageEffect>,
     ) {
-        let enemy_area: Rc<RefCell<dyn Area>> =
-            Rc::new(RefCell::new(ChaosArea::new(self.get_enemy_positions())));
+        let enemy_area = ChaosArea::new(self.get_enemy_positions());
 
         self.enemies.borrow_mut().iter_mut().for_each(|enemy| {
             if let Some((desired_pos, desired_facing)) =
@@ -115,6 +129,18 @@ impl EnemyWrangler {
     }
 
     pub fn spawn_enemy(&mut self, layer: &Layer) {
+        if self.enemies.borrow().len() as u64 > Self::ENEMY_CAP {
+            return;
+        }
+
+        let position = get_rand_position_on_edge(layer);
+
+        let enemy_area = ChaosArea::new(self.get_enemy_positions());
+
+        if position.is_in_area(&enemy_area) {
+            return;
+        }
+
         self.enemies.borrow_mut().push(Enemy::new(
             get_rand_position_on_edge(layer),
             self.enemy_damage,
@@ -195,10 +221,16 @@ impl EnemyWrangler {
         self.enemy_health = (init_enemy_health * (time_scaler * 5.).max(1.)).ceil() as i32;
 
         self.enemy_damage = (init_enemy_damage * (time_scaler / 5.).max(1.)).ceil() as i32;
-        self.enemy_spawn_ticks = per_sec_to_tick_count(init_enemy_spawn_secs * time_scaler);
+        let enemy_spawn_calc = per_sec_to_tick_count(init_enemy_spawn_secs * time_scaler);
+        if enemy_spawn_calc > 1.0 {
+            self.enemy_spawn_ticks = enemy_spawn_calc.ceil() as u64;
+        } else {
+            self.enemy_spawn_ticks = 1;
+            self.enemy_spawn_mult = convert_range(enemy_spawn_calc, 1.0, 0.0, 1.0, 10.0);
+        }
 
         self.enemy_move_ticks =
-            per_sec_to_tick_count(init_enemy_move_secs * (time_scaler / 6.).max(1.));
+            per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 6.).max(1.));
 
         self.enemy_drops = EnemyDrops {
             gold: (init_enemy_gold as f64 * (time_scaler / 2.).max(1.)).ceil() as u128,

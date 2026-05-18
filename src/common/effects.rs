@@ -6,6 +6,8 @@ use crate::prelude::{Duration, Instant};
 use std::{cell::RefCell, rc::Rc};
 
 use crate::common::character::Renderable;
+use crate::common::coords::AreaWrapper::Chaos;
+use crate::common::coords::{AreaWrapper, ChaosArea};
 use crate::common::entities::EntityCharacters;
 use crate::common::{
     coords::{Area, Position, SquareArea},
@@ -20,7 +22,7 @@ pub struct DamageEffect {
     start_time: Instant,
     pub complete: bool,
 
-    pub active_area: Rc<RefCell<dyn Area>>,
+    pub active_area: AreaWrapper,
     pub active_entity: EntityCharacters,
 }
 
@@ -39,16 +41,14 @@ impl From<DamageArea> for DamageEffect {
 
 impl DamageEffect {
     pub fn new(
-        area: impl Area + 'static,
+        area: AreaWrapper,
         entity: EntityCharacters,
         duration: Duration,
         blink: bool,
     ) -> Self {
-        let area_rc = Rc::new(RefCell::new(area));
-
         let damage_area = DamageArea {
             damage_amount: 0,
-            area: area_rc.clone(),
+            area: area.clone(),
             entity: entity.clone(),
             duration,
             blink,
@@ -60,7 +60,7 @@ impl DamageEffect {
             complete: false,
             start_time: Instant::now(),
 
-            active_area: area_rc.clone(),
+            active_area: area,
             active_entity: entity,
         }
     }
@@ -87,7 +87,7 @@ impl DamageEffect {
 
         if now < self.start_time {
             //hasn't started yet
-            self.active_area = Rc::new(RefCell::new(SquareArea::origin()));
+            self.active_area = Chaos(ChaosArea::empty());
             self.active_entity = EntityCharacters::Empty;
         } else {
             self.active_area = self.damage_area.area.clone();
@@ -115,8 +115,7 @@ impl DamageEffect {
         let active_entity = self.active_entity.clone();
 
         self.active_area
-            .clone()
-            .borrow()
+            .get_inner()
             .pos_iter()
             .map(move |pos| RenderPosition(pos, active_entity.clone()))
     }

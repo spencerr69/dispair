@@ -1,7 +1,27 @@
 //! This module defines coordinate-related structs and enums, such as `Position`, `Area`, and `Direction`.
 //! It provides functionality for working with positions and areas within the game world.
 use crate::common::rogue::Layer;
-use std::{cell::RefCell, rc::Rc};
+
+#[derive(Clone)]
+pub enum AreaWrapper {
+    Square(SquareArea),
+    Chaos(ChaosArea),
+}
+
+impl AreaWrapper {
+    pub fn get_inner(&self) -> &dyn Area {
+        match self {
+            AreaWrapper::Square(square) => square,
+            AreaWrapper::Chaos(chaos) => chaos,
+        }
+    }
+    pub fn get_inner_mut(&mut self) -> &mut dyn Area {
+        match self {
+            AreaWrapper::Square(square) => square,
+            AreaWrapper::Chaos(chaos) => chaos,
+        }
+    }
+}
 
 /// Represents a 2D position with x and y coordinates.
 #[derive(Clone, Default, Debug, PartialEq, Eq, Ord, PartialOrd)]
@@ -44,9 +64,9 @@ impl Position {
     }
 
     /// Checks if the position is within the given area.
-    pub fn is_in_area(&self, area: &Rc<RefCell<dyn Area>>) -> bool {
-        let area = area.borrow().get_positions();
-        area.contains(self)
+    pub fn is_in_area(&self, area: &dyn Area) -> bool {
+        let area_positions = area.get_positions();
+        area_positions.contains(self)
     }
 }
 
@@ -162,6 +182,10 @@ impl ChaosArea {
     #[must_use]
     pub fn new(position_list: Vec<Position>) -> Self {
         ChaosArea { position_list }
+    }
+
+    pub fn empty() -> Self {
+        Self::new(Vec::new())
     }
 }
 

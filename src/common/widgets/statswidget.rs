@@ -1,6 +1,9 @@
+use crate::common::charms::CharmWrapper;
+use crate::common::enemies::enemywrangler::EnemyWrangler;
 use crate::common::upgrades::upgrade::PlayerState;
+use crate::common::utils::trim_string;
 use crate::common::weapons::WeaponWrapper::Flash;
-use crate::common::weapons::{WeaponWrapper, flash};
+use crate::common::weapons::{Weapon, WeaponWrapper, flash, get_strongest_weapon};
 use crate::common::widgets::inviconwidget::InvIconWidget;
 use crate::common::{PlayerStateRef, charms};
 use ratatui::buffer::Buffer;
@@ -12,15 +15,29 @@ use ratatui::widgets::{Block, BorderType};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub struct StatsWidget {
+pub struct StatsWidget<'a> {
     pub player_state: PlayerStateRef,
+    pub enemy_wrangler: &'a EnemyWrangler,
+    pub weapons: &'a Vec<WeaponWrapper>,
+    pub charms: &'a Vec<CharmWrapper>,
 }
 
-impl StatsWidget {
-    pub fn new(player_state: PlayerStateRef) -> Self {
-        Self { player_state }
+impl<'a> StatsWidget<'a> {
+    pub fn new(
+        player_state: PlayerStateRef,
+        enemy_wrangler: &'a EnemyWrangler,
+        weapons: &'a Vec<WeaponWrapper>,
+        charms: &'a Vec<CharmWrapper>,
+    ) -> Self {
+        Self {
+            player_state,
+            enemy_wrangler,
+            weapons,
+            charms,
+        }
     }
 
+    #[must_use]
     pub fn get_stat_vecs(&self) -> (Vec<Line<'_>>, Vec<Line<'_>>) {
         // Extract stats and their corresponding labels into separate vectors
         let mut stat_labels = Vec::new();
@@ -30,35 +47,111 @@ impl StatsWidget {
         let game_stats = &self.player_state.borrow().stats.game_stats;
         let weapon_stats = &self.player_state.borrow().stats.weapon_stats;
 
-        stat_labels.push(Line::raw("damage_raw").left_aligned());
-        stat_values.push(Line::raw(format!("+{}", weapon_stats.damage_flat_boost)).right_aligned());
+        let best_weapon = get_strongest_weapon(self.weapons)
+            .map(|w| w.get_damage())
+            .unwrap_or_default();
+
+        stat_labels.push(Line::raw("damage_boost").left_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!("+{}", weapon_stats.damage_flat_boost),
+                5,
+            ))
+            .right_aligned(),
+        );
 
         stat_labels.push(Line::raw("damage_mult").left_aligned());
-        stat_values.push(Line::raw(format!("x{}", player_stats.damage_mult)).right_aligned());
+        stat_values.push(
+            Line::raw(trim_string(format!("x{}", player_stats.damage_mult), 5)).right_aligned(),
+        );
+        stat_labels.push(Line::raw("max_damage").left_aligned());
+        stat_values.push(Line::raw(trim_string(format!("{best_weapon}"), 5)).right_aligned());
 
         stat_labels.push(Line::from(""));
         stat_values.push(Line::from(""));
 
         stat_labels.push(Line::raw("base_health").left_aligned());
-        stat_values.push(Line::raw(format!("{}", player_stats.base_health)).right_aligned());
+        stat_values.push(
+            Line::raw(trim_string(format!("{}", player_stats.base_health), 5)).right_aligned(),
+        );
 
         stat_labels.push(Line::raw("health_mult").left_aligned());
-        stat_values.push(Line::raw(format!("x{}", player_stats.health_mult)).right_aligned());
+        stat_values.push(
+            Line::raw(trim_string(format!("x{}", player_stats.health_mult), 5)).right_aligned(),
+        );
 
         stat_labels.push(Line::from(""));
         stat_values.push(Line::from(""));
 
         stat_labels.push(Line::raw("attack_speed_mult").left_aligned());
-        stat_values.push(Line::raw(format!("x{}", game_stats.attack_speed_mult)).right_aligned());
+        stat_values.push(
+            Line::raw(trim_string(format!("x{}", game_stats.attack_speed_mult), 5)).right_aligned(),
+        );
         stat_labels.push(Line::raw("movement_speed_mult").left_aligned());
-        stat_values
-            .push(Line::raw(format!("x{}", player_stats.movement_speed_mult)).right_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!("x{}", player_stats.movement_speed_mult),
+                5,
+            ))
+            .right_aligned(),
+        );
+
+        stat_labels.push(Line::from(""));
+        stat_values.push(Line::from(""));
+
+        stat_labels.push(Line::from("enemy_health").left_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!("{}", self.enemy_wrangler.enemy_health),
+                5,
+            ))
+            .right_aligned(),
+        );
+        stat_labels.push(Line::from("enemy_damage").left_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!("{}", self.enemy_wrangler.enemy_damage),
+                5,
+            ))
+            .right_aligned(),
+        );
+        stat_labels.push(Line::from("enemy_spawn_speed").left_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!("x{}", self.enemy_wrangler.get_spawn_multiplier()),
+                5,
+            ))
+            .right_aligned(),
+        );
+        stat_labels.push(Line::from("enemy_move_speed").left_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!(
+                    "{}%",
+                    (self.enemy_wrangler.enemy_move_ticks as i32 - 100).abs()
+                ),
+                5,
+            ))
+            .right_aligned(),
+        );
+
+        stat_labels.push(Line::from(""));
+        stat_values.push(Line::from(""));
+
+        stat_labels.push(Line::from("enemy_count").left_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!("{}", self.enemy_wrangler.enemies.borrow().len()),
+                5,
+            ))
+            .right_aligned(),
+        );
 
         (stat_labels, stat_values)
     }
 }
 
-impl Widget for StatsWidget {
+impl Widget for StatsWidget<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         // Logic to render the stats widget
 

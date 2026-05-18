@@ -4,6 +4,7 @@ use crate::common::coords::{Direction, Position};
 use crate::common::rogue::Layer;
 use rand::Rng;
 use ratatui::layout::{Constraint, Layout, Rect};
+use std::fmt::format;
 
 /// Centers a `Rect` vertically within a given area.
 #[must_use]
@@ -124,7 +125,25 @@ pub fn get_mut_item_in_2d_enum_vec<'a, T>(
 }
 
 #[must_use]
-pub fn per_sec_to_tick_count(per_sec: f64) -> u64 {
+pub fn per_sec_to_tick_count_to_u64(per_sec: f64) -> u64 {
     let per_tick = TICK_RATE / per_sec;
     per_tick.ceil() as u64
+}
+#[must_use]
+pub fn per_sec_to_tick_count(per_sec: f64) -> f64 {
+    TICK_RATE / per_sec
+}
+
+pub fn trim_string(s: String, max_len: usize) -> String {
+    if s.len() > max_len {
+        s[0..max_len].to_string()
+    } else {
+        s
+    }
+}
+
+pub fn convert_range(value: f64, old_min: f64, old_max: f64, new_min: f64, new_max: f64) -> f64 {
+    let old_range = old_max - old_min;
+    let new_range = new_max - new_min;
+    (((value - old_min) * new_range) / old_range) + new_min
 }

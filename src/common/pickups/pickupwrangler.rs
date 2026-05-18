@@ -1,5 +1,6 @@
 use crate::common::PlayerStateRef;
 use crate::common::character::Renderable;
+use crate::common::coords::AreaWrapper::Square;
 use crate::common::coords::{Position, SquareArea};
 use crate::common::effects::DamageEffect;
 use crate::common::entities::EntityCharacters;
@@ -56,7 +57,7 @@ impl PickupWrangler {
                         );
 
                         active_damage_effects.push(DamageEffect::new(
-                            area,
+                            Square(area),
                             EntityCharacters::AttackWeak(Style::new().red()),
                             Duration::from_secs_f64(0.5),
                             false,

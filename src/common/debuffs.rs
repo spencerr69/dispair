@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use ratatui::style::Style;
 
 use crate::common::character::Renderable;
+use crate::common::coords::AreaWrapper;
 use crate::common::enemies::enemy::{Debuffable, get_closest_enemies};
 use crate::common::enemies::enemy::{Enemy, move_to_point_granular};
 use crate::common::entities::EntityCharacters;
@@ -95,7 +96,7 @@ impl OnDeathEffect for Debuff {
 
                     Some(DamageArea {
                         damage_amount: self.stats.damage.unwrap_or(0),
-                        area: Rc::new(RefCell::new(area)),
+                        area: AreaWrapper::Square(area),
                         entity: EntityCharacters::AttackMist(Style::new().dark_gray()),
                         duration: Duration::from_secs_f64(0.05),
                         blink: false,
@@ -133,7 +134,7 @@ impl OnTickEffect for Debuff {
                 None
             }
             DebuffTypes::FlameIgnite => {
-                if !tickcount.is_multiple_of(1) || self.complete {
+                if self.complete {
                     return None;
                 }
 
@@ -145,11 +146,11 @@ impl OnTickEffect for Debuff {
                     self.complete = true;
 
                     let proc = Proc {
-                        chance: 80,
+                        chance: 50,
                         debuff: Debuff {
                             debuff_type: DebuffTypes::FlameBurn,
                             stats: DebuffStats {
-                                damage: Some(self.stats.damage.unwrap_or(1) * 3),
+                                damage: Some(self.stats.damage.unwrap_or(1) * 10),
                                 ..self.stats.clone()
                             },
                             complete: false,
@@ -163,7 +164,7 @@ impl OnTickEffect for Debuff {
 
                     Some(DamageArea {
                         damage_amount: self.stats.damage.expect("No damage?") * 10,
-                        area: Rc::new(RefCell::new(area)),
+                        area: AreaWrapper::Square(area),
                         entity: EntityCharacters::AttackMist(Style::new().red()),
                         duration: Duration::from_secs_f64(0.05),
                         blink: false,
@@ -273,7 +274,7 @@ impl OnDamageEffect for Debuff {
 
                 let out = Some(DamageArea {
                     damage_amount: enemy.got_hit.1,
-                    area: Rc::new(RefCell::new(area)),
+                    area: AreaWrapper::Chaos(area),
                     entity: EntityCharacters::AttackMist(Style::new().light_yellow()),
                     duration: Duration::from_secs_f64(0.01),
                     blink: false,
