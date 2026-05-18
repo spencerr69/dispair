@@ -2,6 +2,7 @@
 //! It handles character movement, health, attacks, and other core gameplay mechanics.
 
 use ratatui::style::Style;
+use std::clone;
 
 use crate::common::charms::CharmWrapper::HypeTime;
 use crate::common::charms::hype_time::CharmHypeTime;
@@ -147,7 +148,12 @@ impl Character {
             weapon.get_inner_mut().upgrade_self(&powerup);
         }
 
-        let mut charm = CharmWrapper::HypeTime(Some(CharmHypeTime::new(player_state.clone())));
+        let mut charms = vec![];
+
+        #[cfg(debug_assertions)]
+        charms.push(CharmWrapper::HypeTime(Some(CharmHypeTime::new(
+            player_state.clone(),
+        ))));
 
         Character {
             position: Position(0, 0),
@@ -165,7 +171,7 @@ impl Character {
             entitychar: EntityCharacters::Character(Style::default()),
 
             weapons: vec![weapon],
-            charms: vec![charm], // weapons: vec![],
+            charms: charms, // weapons: vec![],
         }
     }
 
