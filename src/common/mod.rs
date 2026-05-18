@@ -30,7 +30,7 @@ pub mod weapons;
 pub mod widgets;
 
 /// The number of game ticks per second.
-pub const TICK_RATE: f64 = 30.0;
+pub const TICK_RATE: f64 = 20.0;
 /// The target number of frames per second.
 pub const FRAME_RATE: f64 = 180.0;
 

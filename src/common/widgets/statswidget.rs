@@ -168,9 +168,26 @@ impl Widget for StatsWidget<'_> {
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(5)]).areas(top);
 
         let (stat_labels, stat_values) = self.get_stat_vecs();
+        let left_text = Text::from(stat_labels);
+        let right_text = Text::from(stat_values);
 
+        Self::create_icons(buf, bottom, self.weapons, self.charms);
+
+        left_text.render(left, buf);
+        right_text.render(right, buf);
+        block.render(area, buf);
+    }
+}
+
+impl StatsWidget<'_> {
+    fn create_icons(
+        buf: &mut Buffer,
+        area: Rect,
+        weapons: &Vec<WeaponWrapper>,
+        charms: &Vec<CharmWrapper>,
+    ) {
         let [icons_top, icons_bottom] =
-            Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).areas(bottom);
+            Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).areas(area);
 
         let icons_top: [Rect; 5] = Layout::horizontal([
             Constraint::Length(5),
@@ -189,27 +206,13 @@ impl Widget for StatsWidget<'_> {
         ])
         .areas(icons_bottom);
 
-        let left_text = Text::from(stat_labels);
-        let right_text = Text::from(stat_values);
-
-        let test_powerup = charms::attack_speed::CharmAttackSpeed {
-            stat_boost: 1.0,
-            level: 1,
-            player_state: Rc::new(RefCell::new(PlayerState::default())),
-        };
-
-        let test_icon = InvIconWidget::new(&test_powerup);
-
-        for a in icons_top {
-            test_icon.clone().render(a, buf);
+        for (i, charm) in charms.iter().enumerate() {
+            let icon = InvIconWidget::new(charm.get_inner());
+            icon.render(icons_top[i], buf)
         }
-
-        for a in icons_bottom {
-            test_icon.clone().render(a, buf);
+        for (i, weapon) in weapons.iter().enumerate() {
+            let icon = InvIconWidget::new(weapon.get_inner());
+            icon.render(icons_bottom[i], buf)
         }
-
-        left_text.render(left, buf);
-        right_text.render(right, buf);
-        block.render(area, buf);
     }
 }

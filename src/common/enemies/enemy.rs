@@ -315,7 +315,7 @@ impl Damageable for Enemy {
         let normal_style = current_style;
         let hurt_style = current_style.italic();
 
-        self.health -= damage;
+        self.health = self.health.saturating_sub(damage);
         self.got_hit = (true, damage);
 
         if self.health >= self.max_health / 2 {

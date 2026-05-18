@@ -27,7 +27,7 @@ pub struct EnemyWrangler {
 }
 
 impl EnemyWrangler {
-    const ENEMY_CAP: u64 = 1000;
+    const ENEMY_CAP: u64 = 2000;
     const DEFAULT_SPAWN_P_S: f64 = 0.4;
     const DEFAULT_MOVE_P_S: f64 = 2.;
 
@@ -129,7 +129,7 @@ impl EnemyWrangler {
     }
 
     pub fn spawn_enemy(&mut self, layer: &Layer) {
-        if self.enemies.borrow().len() as u64 > Self::ENEMY_CAP {
+        if self.enemies.borrow().len() as u64 >= Self::ENEMY_CAP {
             return;
         }
 
@@ -220,7 +220,7 @@ impl EnemyWrangler {
 
         self.enemy_health = (init_enemy_health * (time_scaler * 5.).max(1.)).ceil() as i32;
 
-        self.enemy_damage = (init_enemy_damage * (time_scaler / 5.).max(1.)).ceil() as i32;
+        self.enemy_damage = (init_enemy_damage * (time_scaler / 50.).max(1.)).ceil() as i32;
         let enemy_spawn_calc = per_sec_to_tick_count(init_enemy_spawn_secs * time_scaler);
         if enemy_spawn_calc > 1.0 {
             self.enemy_spawn_ticks = enemy_spawn_calc.ceil() as u64;

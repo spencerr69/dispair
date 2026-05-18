@@ -11,7 +11,6 @@ use crate::common::rogue::Layer;
 use crate::common::utils::get_rand_position_on_layer;
 use crate::prelude::Duration;
 use ratatui::prelude::Style;
-use ratatui::style::Stylize;
 
 pub struct PickupWrangler {
     pub player_state: PlayerStateRef,
