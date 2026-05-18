@@ -8,11 +8,10 @@ use crate::common::coords::AreaWrapper::Chaos;
 use crate::common::coords::{AreaWrapper, ChaosArea};
 use crate::common::entities::EntityCharacters;
 use crate::common::{
-    coords::{Area, Position, SquareArea},
+    coords::{Area, Position},
     weapons::DamageArea,
 };
 use ratatui::prelude::Style;
-use std::{cell::RefCell, rc::Rc};
 
 /// Represents a visual effect that occurs over a specified area for a certain duration.
 #[derive(Clone)]

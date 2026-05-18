@@ -1,5 +1,4 @@
 use ratatui::prelude::{Span, Style};
-use ratatui::style::Stylize;
 
 #[derive(PartialEq, Eq, Clone)]
 pub enum EntityCharacters {

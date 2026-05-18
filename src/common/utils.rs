@@ -4,7 +4,6 @@ use crate::common::coords::{Direction, Position};
 use crate::common::map::Layer;
 use rand::Rng;
 use ratatui::layout::{Constraint, Layout, Rect};
-use std::fmt::format;
 
 /// Centers a `Rect` vertically within a given area.
 #[must_use]

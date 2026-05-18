@@ -13,10 +13,7 @@ use crate::common::coords::{AreaWrapper, ChaosArea};
 use crate::common::enemies::enemy::{Debuffable, Enemy};
 use crate::common::entities::EntityCharacters;
 use crate::common::map::Layer;
-use crate::common::weapons::flash::Flash;
-use crate::common::weapons::lightning::Lightning;
-use crate::common::weapons::pillar::Pillar;
-use crate::common::weapons::row::Row;
+
 use crate::common::{
     PlayerStateRef, character::Damageable, powerup::PoweruppableWeapon, stats::WeaponStats,
 };
@@ -121,14 +118,16 @@ impl WeaponWrapper {
 
     pub fn populate_inner(&mut self, weapon_stats: WeaponStats, player_state: PlayerStateRef) {
         match self {
-            WeaponWrapper::Flash(flash) => *flash = Some(Flash::new(weapon_stats, player_state)),
+            WeaponWrapper::Flash(flash) => {
+                *flash = Some(flash::Flash::new(weapon_stats, player_state))
+            }
             WeaponWrapper::Pillar(pillar) => {
-                *pillar = Some(Pillar::new(weapon_stats, player_state));
+                *pillar = Some(pillar::Pillar::new(weapon_stats, player_state));
             }
             WeaponWrapper::Lightning(lightning) => {
-                *lightning = Some(Lightning::new(weapon_stats, player_state));
+                *lightning = Some(lightning::Lightning::new(weapon_stats, player_state));
             }
-            WeaponWrapper::Row(row) => *row = Some(Row::new(weapon_stats, player_state)),
+            WeaponWrapper::Row(row) => *row = Some(row::Row::new(weapon_stats, player_state)),
         }
     }
 

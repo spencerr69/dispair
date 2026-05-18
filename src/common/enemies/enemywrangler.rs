@@ -1,5 +1,5 @@
 use crate::common::character::{Character, Damageable, Movable, Renderable};
-use crate::common::coords::{Area, ChaosArea, Position};
+use crate::common::coords::{ChaosArea, Position};
 use crate::common::debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTickEffect};
 use crate::common::effects::DamageEffect;
 use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
@@ -64,7 +64,7 @@ impl EnemyWrangler {
         active_damage_effects: &mut Vec<DamageEffect>,
     ) -> Vec<EnemyDrops> {
         if tickcount.is_multiple_of(self.enemy_spawn_ticks) {
-            for i in 0..self.enemy_spawn_mult.ceil() as i32 {
+            for _ in 0..self.enemy_spawn_mult.ceil() as i32 {
                 self.spawn_enemy(layer);
             }
         }

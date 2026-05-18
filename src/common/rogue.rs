@@ -4,8 +4,7 @@
 use crate::common::character::Renderable;
 use crate::common::enemies::enemy::{Enemy, EnemyDrops};
 use crate::common::enemies::enemywrangler::EnemyWrangler;
-use crate::common::entities::EntityCharacters;
-use crate::common::map::{Layer, Map};
+use crate::common::map::Map;
 use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::render::{flatten_to_span, get_camera_area, spans_to_text};
 use crate::common::upgrades::upgrade::CurrentUpgradesTrait;
@@ -25,7 +24,7 @@ use crate::{
     },
     prelude::{Duration, Instant, KeyCode, KeyEvent},
 };
-use rand::{Rng, rng};
+use rand::Rng;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},

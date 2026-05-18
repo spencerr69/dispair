@@ -1,19 +1,15 @@
+use crate::common::PlayerStateRef;
 use crate::common::charms::CharmWrapper;
 use crate::common::enemies::enemywrangler::EnemyWrangler;
-use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::utils::trim_string;
-use crate::common::weapons::WeaponWrapper::Flash;
-use crate::common::weapons::{Weapon, WeaponWrapper, flash, get_strongest_weapon};
+use crate::common::weapons::{Weapon, WeaponWrapper, get_strongest_weapon};
 use crate::common::widgets::inviconwidget::InvIconWidget;
-use crate::common::{PlayerStateRef, charms};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::prelude::Widget;
 use ratatui::style::{Style, Stylize};
 use ratatui::text::{Line, Text};
 use ratatui::widgets::{Block, BorderType};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 pub struct StatsWidget<'a> {
     pub player_state: PlayerStateRef,

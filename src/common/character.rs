@@ -169,7 +169,7 @@ impl Character {
             entitychar: EntityCharacters::Character(Style::default()),
 
             weapons: vec![weapon],
-            charms: charms, // weapons: vec![],
+            charms,
         }
     }
 

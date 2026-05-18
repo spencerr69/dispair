@@ -5,8 +5,6 @@ use ratatui::layout::{Alignment, Rect};
 use ratatui::style::Stylize;
 use ratatui::text::Text;
 use ratatui::widgets::{Block, BorderType, Widget};
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct InvIconWidget<'a> {
