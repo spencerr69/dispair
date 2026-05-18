@@ -363,6 +363,9 @@ impl Rogue {
                 KeyCode::Char('a') | KeyCode::Left => {
                     move_entity(&mut self.layer_base, &mut self.character, Direction::LEFT);
                 }
+                KeyCode::Char(']') => {
+                    self.player_state.borrow_mut().inventory.gold += 10000;
+                }
                 KeyCode::Esc => self.game_state = GameState::GameOver,
                 #[cfg(debug_assertions)]
                 KeyCode::Char('u') => self.generate_popup(),
