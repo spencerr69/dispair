@@ -29,7 +29,7 @@ pub struct EnemyWrangler {
 impl EnemyWrangler {
     const ENEMY_CAP: u64 = 2000;
     const DEFAULT_SPAWN_P_S: f64 = 0.4;
-    const DEFAULT_MOVE_P_S: f64 = 2.;
+    const DEFAULT_MOVE_P_S: f64 = 1.3;
 
     pub fn new(
         player_state: PlayerStateRef,
@@ -216,21 +216,28 @@ impl EnemyWrangler {
         let init_enemy_gold: u128 = 1;
         let init_enemy_xp: u128 = 1;
 
-        let time_scaler = self.timescaler.borrow().scale_amount;
+        let time_scaler = self.timescaler.borrow().doom;
 
         self.enemy_health = (init_enemy_health * (time_scaler * 5.).max(1.)).ceil() as i32;
 
         self.enemy_damage = (init_enemy_damage * (time_scaler / 50.).max(1.)).ceil() as i32;
-        let enemy_spawn_calc = per_sec_to_tick_count(init_enemy_spawn_secs * time_scaler);
+        let enemy_spawn_calc =
+            per_sec_to_tick_count(init_enemy_spawn_secs * (0.3 * time_scaler).max(1.));
         if enemy_spawn_calc > 1.0 {
             self.enemy_spawn_ticks = enemy_spawn_calc.ceil() as u64;
         } else {
             self.enemy_spawn_ticks = 1;
-            self.enemy_spawn_mult = convert_range(enemy_spawn_calc, 1.0, 0.0, 1.0, 10.0);
+            self.enemy_spawn_mult = convert_range(enemy_spawn_calc, 1.0, 0.0, 1.0, 5.0);
         }
 
         self.enemy_move_ticks =
-            per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 6.).max(1.));
+            per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 12.).max(1.));
+
+        if self.enemy_spawn_ticks < 5 {
+            self.enemy_spawn_ticks =
+                per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 24.).max(1.))
+                    .min(5);
+        }
 
         self.enemy_drops = EnemyDrops {
             gold: (init_enemy_gold as f64 * (time_scaler / 2.).max(1.)).ceil() as u128,

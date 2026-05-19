@@ -141,8 +141,16 @@ pub fn trim_string(s: String, max_len: usize) -> String {
     }
 }
 
-pub fn convert_range(value: f64, old_min: f64, old_max: f64, new_min: f64, new_max: f64) -> f64 {
+pub fn convert_range<T>(value: T, old_min: T, old_max: T, new_min: T, new_max: T) -> T
+where
+    T: Copy
+        + std::ops::Sub<Output = T>
+        + std::ops::Add<Output = T>
+        + std::ops::Mul<Output = T>
+        + std::ops::Div<Output = T>,
+{
     let old_range = old_max - old_min;
     let new_range = new_max - new_min;
-    (((value - old_min) * new_range) / old_range) + new_min
+    let fin: T = (((value - old_min) * new_range) / old_range) + new_min;
+    fin
 }

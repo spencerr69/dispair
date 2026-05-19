@@ -1,7 +1,7 @@
 use crate::common::PlayerStateRef;
 use crate::common::charms::CharmWrapper;
 use crate::common::enemies::enemywrangler::EnemyWrangler;
-use crate::common::utils::trim_string;
+use crate::common::utils::{convert_range, trim_string};
 use crate::common::weapons::{Weapon, WeaponWrapper, get_strongest_weapon};
 use crate::common::widgets::inviconwidget::InvIconWidget;
 use ratatui::buffer::Buffer;
@@ -124,7 +124,7 @@ impl<'a> StatsWidget<'a> {
             Line::raw(trim_string(
                 format!(
                     "{}%",
-                    (self.enemy_wrangler.enemy_move_ticks as i32 - 100).abs()
+                    convert_range(self.enemy_wrangler.enemy_move_ticks as i32, 20, 1, 0, 100)
                 ),
                 5,
             ))
@@ -138,6 +138,17 @@ impl<'a> StatsWidget<'a> {
         stat_values.push(
             Line::raw(trim_string(
                 format!("{}", self.enemy_wrangler.enemies.borrow().len()),
+                5,
+            ))
+            .right_aligned(),
+        );
+        stat_labels.push(Line::from(""));
+        stat_values.push(Line::from(""));
+
+        stat_labels.push(Line::from("doom").left_aligned());
+        stat_values.push(
+            Line::raw(trim_string(
+                format!("{}", self.enemy_wrangler.timescaler.borrow().doom),
                 5,
             ))
             .right_aligned(),
