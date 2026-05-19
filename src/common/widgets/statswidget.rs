@@ -178,7 +178,7 @@ impl Widget for StatsWidget<'_> {
         let left_text = Text::from(stat_labels);
         let right_text = Text::from(stat_values);
 
-        Self::create_icons(buf, bottom, self.weapons, self.charms);
+        Self::create_icons(buf, bottom, self.weapons, self.charms, &self.player_state);
 
         left_text.render(left, buf);
         right_text.render(right, buf);
@@ -190,9 +190,14 @@ impl StatsWidget<'_> {
     fn create_icons(
         buf: &mut Buffer,
         area: Rect,
-        weapons: &Vec<WeaponWrapper>,
-        charms: &Vec<CharmWrapper>,
+        weapons: &[WeaponWrapper],
+        charms: &[CharmWrapper],
+        player_state_ref: &PlayerStateRef,
     ) {
+        if !player_state_ref.borrow().upgrade_owned("A") {
+            return;
+        }
+
         let [icons_top, icons_bottom] =
             Layout::vertical([Constraint::Length(3), Constraint::Fill(1)]).areas(area);
 
