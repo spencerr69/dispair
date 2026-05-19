@@ -515,6 +515,9 @@ mod tests {
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
+        player_state.stats.game_stats.max_method_level = 5;
+        player_state.stats.game_stats.max_charm_level = 5;
+
         let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)));
 
         rogue_game.on_tick();
@@ -539,6 +542,9 @@ mod tests {
 
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
+
+        player_state.stats.game_stats.max_method_level = 5;
+        player_state.stats.game_stats.max_charm_level = 5;
 
         let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)));
 
