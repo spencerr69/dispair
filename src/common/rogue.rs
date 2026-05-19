@@ -295,6 +295,8 @@ impl Rogue {
                 .filter(|effect| !effect.complete)
                 .collect();
 
+            self.enemy_wrangler.on_frame();
+
             self.camera_area =
                 get_camera_area(self.view_area, self.get_character_pos(), &self.map.map);
 

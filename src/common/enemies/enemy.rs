@@ -138,7 +138,7 @@ impl Debuffable for Enemy {
 
 impl Enemy {
     /// Update the enemy's visual style to reflect any active debuffs.
-    fn change_style_with_debuff(&mut self) {
+    pub(crate) fn change_style_with_debuff(&mut self) {
         let mut style = self.entitychar.style_mut().clone();
 
         self.debuffs
@@ -198,8 +198,6 @@ impl EnemyBehaviour for Enemy {
             .collect();
 
         self.prev_position = self.position.clone();
-
-        self.change_style_with_debuff();
 
         if is_next_to_character(character.get_pos(), &self.position) {
             character.take_damage(self.damage);

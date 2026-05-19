@@ -206,6 +206,12 @@ impl EnemyWrangler {
         drops
     }
 
+    pub fn on_frame(&mut self) {
+        self.enemies.borrow_mut().iter_mut().for_each(|e| {
+            e.change_style_with_debuff();
+        });
+    }
+
     fn scale_enemies(&mut self) {
         let init_enemy_health = 1.;
         let init_enemy_damage = 1.;
@@ -231,11 +237,11 @@ impl EnemyWrangler {
         }
 
         self.enemy_move_ticks =
-            per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 12.).max(1.));
+            per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 9.).max(1.));
 
         if self.enemy_spawn_ticks < 5 {
             self.enemy_spawn_ticks =
-                per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 24.).max(1.))
+                per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 18.).max(1.))
                     .min(5);
         }
 
