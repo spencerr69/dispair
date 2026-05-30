@@ -177,9 +177,10 @@
         "cost": 3000,
         "limit": 4,
         "requires": [
-          "A"
+          "B"
         ],
-        "children": null
+        "children": null,
+        "costscale_override": null
       }
     ]
   },
@@ -408,15 +409,15 @@
       },
       {
         "title": "METHOD::\\max_level",
-        "description": "increase max level of each METHOD.",
+        "description": "increase max level of each METHOD.\nthe level 5 upgrade of each METHOD may add an ELEMENT",
         "id": "62",
-        "cost": 100000,
+        "cost": 10000,
         "limit": 4,
         "requires": [
           "613"
         ],
         "children": null,
-        "costscale_override": 5
+        "costscale_override": 2
       }
     ],
     "costscale_override": null
@@ -473,13 +474,13 @@
         "title": "CHARM::\\max_level",
         "description": "increase max level of each CHARM.",
         "id": "72",
-        "cost": 100000,
+        "cost": 10000,
         "limit": 4,
         "requires": [
           "712"
         ],
         "children": null,
-        "costscale_override": 5
+        "costscale_override": 2
       }
     ],
     "costscale_override": null

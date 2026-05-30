@@ -213,6 +213,9 @@ impl PlayerState {
         if self.upgrade_owned("62") {
             let amount_owned = self.amount_owned("62");
             game_stats.max_method_level += amount_owned as i32;
+            if amount_owned >= 4 {
+                self.upgrades.set("B", 1);
+            }
         }
         if self.upgrade_owned("72") {
             let amount_owned = self.amount_owned("72");

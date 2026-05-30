@@ -111,8 +111,10 @@ impl PowerupPopup {
             selection_state.select_first();
         }
 
+        let finished = choices.is_empty();
+
         Self {
-            finished: false,
+            finished,
             weapons: Vec::from(current_weapons),
             charms: Vec::from(current_charms),
             selection_state,
