@@ -79,12 +79,13 @@
           },
           {
             "title": "STATS::\\damage::\\mult_up",
-            "description": "increase all damage by +10%",
+            "description": "increase all damage by +20%",
             "id": "212",
             "cost": 20,
             "limit": 3,
             "requires": [],
-            "children": null
+            "children": null,
+            "costscale_override": null
           }
         ]
       },
@@ -268,7 +269,7 @@
         "title": "GREED::\\hype",
         "description": "your arrival is being awaited. +30s to timescale $$how do i explain this lol",
         "id": "41",
-        "cost": 80,
+        "cost": 40,
         "limit": 3,
         "requires": [],
         "children": null,

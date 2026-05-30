@@ -78,7 +78,7 @@ impl PlayerState {
 
         //upgrade 212 damage/mult_up
         if self.upgrade_owned("212") {
-            player_stats.damage_mult += 0.1 * f64::from(self.amount_owned("212"));
+            player_stats.damage_mult += 0.2 * f64::from(self.amount_owned("212"));
         }
 
         //upgrade 221 health/flat_up
@@ -170,7 +170,7 @@ impl PlayerState {
         // upgrade 4 GREED
         // upgrade 41 hype
         if self.upgrade_owned("41") {
-            game_stats.time_offset += Duration::from_secs((30 * self.amount_owned("41")).into());
+            game_stats.doom_offset += 1. * f64::from(self.amount_owned("41"));
         }
 
         // upgrade 42 growth
@@ -225,7 +225,7 @@ impl PlayerState {
             game_stats.width = 50;
             game_stats.height = 30;
             player_stats.base_health = 10000;
-            game_stats.time_offset = Duration::from_secs(60);
+            game_stats.doom_offset += 1.;
             self.inventory.add_gold(100_000);
         }
 

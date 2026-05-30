@@ -10,36 +10,36 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Clone)]
-pub struct CharmHypeTime {
-    pub stat_boost: Duration,
+pub struct CharmDoomOffset {
+    pub stat_boost: f64,
     pub level: i32,
     pub player_state: PlayerStateRef,
 }
 
-impl CharmHypeTime {
+impl CharmDoomOffset {
     #[must_use]
     pub fn new(player_state_ref: PlayerStateRef) -> Self {
         Self {
-            stat_boost: Duration::from_secs(60),
+            stat_boost: 1.,
             level: 1,
             player_state: player_state_ref,
         }
     }
 }
 
-impl Default for CharmHypeTime {
+impl Default for CharmDoomOffset {
     fn default() -> Self {
         Self::new(Rc::new(RefCell::new(PlayerState::default())))
     }
 }
 
-impl Charm for CharmHypeTime {
+impl Charm for CharmDoomOffset {
     fn manipulate_stats(&self, stats: &mut Stats) {
-        stats.game_stats.time_offset += self.stat_boost;
+        stats.game_stats.doom_offset += self.stat_boost;
     }
 }
 
-impl Poweruppable for CharmHypeTime {
+impl Poweruppable for CharmDoomOffset {
     fn get_max_level(&self) -> i32 {
         self.player_state.borrow().stats.game_stats.max_charm_level
     }
@@ -54,11 +54,11 @@ impl Poweruppable for CharmHypeTime {
 
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
-            1 => "Set your Hype Time to 1 minutes.".into(),
-            2 => "Set your Hype Time to 1.5 minutes.".into(),
-            3 => "Set your Hype Time to 2.5 minutes.".into(),
-            4 => "Set your Hype Time to 3.5 minutes.".into(),
-            5 => "Set your Hype Time to 5 minutes. Be prepared.".into(),
+            1 => "Offset Doom by 1 (increase difficulty).".into(),
+            2 => "Offset Doom by 2.".into(),
+            3 => "Offset Doom by 4.".into(),
+            4 => "Offset Doom by 6.".into(),
+            5 => "Offset Doom by 10. Be prepared.".into(),
             _ => String::new(),
         }
     }
@@ -73,11 +73,11 @@ impl Poweruppable for CharmHypeTime {
 
         for i in (from + 1)..=to {
             match i {
-                1 => self.stat_boost = Duration::from_secs(60),
-                2 => self.stat_boost = Duration::from_secs((1.5 * 60.) as u64),
-                3 => self.stat_boost = Duration::from_secs((2.5 * 60.) as u64),
-                4 => self.stat_boost = Duration::from_secs((3.5 * 60.) as u64),
-                5 => self.stat_boost = Duration::from_secs(5 * 60),
+                1 => self.stat_boost = 1.,
+                2 => self.stat_boost = 2.,
+                3 => self.stat_boost = 4.,
+                4 => self.stat_boost = 6.,
+                5 => self.stat_boost = 10.,
                 _ => {}
             }
         }

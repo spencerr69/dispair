@@ -3,7 +3,7 @@ use strum::{EnumIter, EnumString, IntoStaticStr};
 use crate::common::{
     PlayerStateRef,
     charms::{
-        attack_speed::CharmAttackSpeed, damage_mult::CharmDamageMult, hype_time::CharmHypeTime,
+        attack_speed::CharmAttackSpeed, damage_mult::CharmDamageMult, doom_offset::CharmDoomOffset,
     },
     powerup::Poweruppable,
     stats::Stats,
@@ -11,7 +11,7 @@ use crate::common::{
 
 pub mod attack_speed;
 pub mod damage_mult;
-pub mod hype_time;
+pub mod doom_offset;
 
 #[derive(Clone, IntoStaticStr, EnumIter, EnumString)]
 pub enum CharmWrapper {
@@ -22,7 +22,7 @@ pub enum CharmWrapper {
     DamageMult(Option<CharmDamageMult>),
 
     #[strum(serialize = "Hype Time Charm", serialize = "HYPE TIME CHARM")]
-    HypeTime(Option<CharmHypeTime>),
+    HypeTime(Option<CharmDoomOffset>),
 
     #[strum(serialize = "Attack Speed Charm", serialize = "ATTACK SPEED CHARM")]
     AttackSpeed(Option<CharmAttackSpeed>),
@@ -73,7 +73,7 @@ impl CharmWrapper {
                 *damage_mult = Some(CharmDamageMult::new(player_state_ref));
             }
             CharmWrapper::HypeTime(offset_add) => {
-                *offset_add = Some(CharmHypeTime::new(player_state_ref));
+                *offset_add = Some(CharmDoomOffset::new(player_state_ref));
             }
             CharmWrapper::AttackSpeed(attack_speed) => {
                 *attack_speed = Some(CharmAttackSpeed::new(player_state_ref));

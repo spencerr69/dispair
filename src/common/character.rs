@@ -3,7 +3,7 @@
 
 use ratatui::style::Style;
 
-use crate::common::charms::hype_time::CharmHypeTime;
+use crate::common::charms::doom_offset::CharmDoomOffset;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
 use crate::common::map::Layer;
@@ -137,21 +137,10 @@ impl Character {
         let weapon_stats = stats.weapon_stats.clone();
         let max_health = stats.player_stats.health;
 
-        let mut weapon =
+        let weapon =
             WeaponWrapper::Flash(Some(Flash::new(weapon_stats.clone(), player_state.clone())));
 
-        #[cfg(debug_assertions)]
-        {
-            let powerup = weapon.get_inner().get_next_upgrade(4).expect("girl");
-            weapon.get_inner_mut().upgrade_self(&powerup);
-        }
-
-        let mut charms = vec![];
-
-        #[cfg(debug_assertions)]
-        charms.push(CharmWrapper::HypeTime(Some(CharmHypeTime::new(
-            player_state.clone(),
-        ))));
+        let charms = vec![];
 
         Character {
             position: Position(0, 0),

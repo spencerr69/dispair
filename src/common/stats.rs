@@ -49,7 +49,7 @@ pub struct GameStats {
     pub height: usize,
 
     pub timer: u64,
-    pub time_offset: Duration,
+    pub doom_offset: f64,
 
     pub max_method_level: i32,
     pub max_charm_level: i32,
@@ -110,7 +110,7 @@ impl Default for GameStats {
             gold_mult: 1.,
             height: 6,
             width: 20,
-            time_offset: Duration::from_secs(0),
+            doom_offset: 0.,
             timer: 60,
             max_charm_level: 1,
             max_method_level: 1,

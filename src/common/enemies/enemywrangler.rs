@@ -30,6 +30,7 @@ impl EnemyWrangler {
     const ENEMY_CAP: u64 = 2000;
     const DEFAULT_SPAWN_P_S: f64 = 0.4;
     const DEFAULT_MOVE_P_S: f64 = 1.3;
+    const DEFAULT_HEALTH: i32 = 2;
 
     pub fn new(
         player_state: PlayerStateRef,
@@ -48,7 +49,7 @@ impl EnemyWrangler {
             enemy_spawn_ticks,
             enemy_spawn_mult: 1.0,
             enemy_damage: 1,
-            enemy_health: 3,
+            enemy_health: Self::DEFAULT_HEALTH,
             enemy_drops: EnemyDrops { gold: 1, xp: 0 },
             enemies,
             player_state,
@@ -83,9 +84,9 @@ impl EnemyWrangler {
     #[must_use]
     pub fn get_spawn_multiplier(&self) -> f64 {
         if self.enemy_spawn_ticks > 1 {
-            convert_range(self.enemy_spawn_ticks as f64, 100., 1., 1., 10.)
+            convert_range(self.enemy_spawn_ticks as f64, 50., 1., 0., 1.)
         } else {
-            convert_range(self.enemy_spawn_mult, 1., 10., 10., 100.)
+            convert_range(self.enemy_spawn_mult, 1., 10., 1., 100.)
         }
     }
 
@@ -213,7 +214,7 @@ impl EnemyWrangler {
     }
 
     fn scale_enemies(&mut self) {
-        let init_enemy_health = 1.;
+        let init_enemy_health = Self::DEFAULT_HEALTH;
         let init_enemy_damage = 1.;
         let init_enemy_spawn_secs =
             Self::DEFAULT_SPAWN_P_S * self.player_state.borrow().stats.game_stats.enemy_spawn_mult;
@@ -224,7 +225,8 @@ impl EnemyWrangler {
 
         let time_scaler = self.timescaler.borrow().doom;
 
-        self.enemy_health = (init_enemy_health * (time_scaler * 5.).max(1.)).ceil() as i32;
+        self.enemy_health =
+            (f64::from(init_enemy_health) * (time_scaler * 0.5).max(1.)).ceil() as i32;
 
         self.enemy_damage = (init_enemy_damage * (time_scaler / 50.).max(1.)).ceil() as i32;
         let enemy_spawn_calc =

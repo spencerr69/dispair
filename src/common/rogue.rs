@@ -103,22 +103,6 @@ impl Rogue {
 
         let map = Map::new(width, height);
 
-        // let mut base: Layer = Vec::new();
-
-        // let mut rng = rand::rng();
-
-        // for _ in 0..height {
-        //     let mut baseline = Vec::new();
-        //     for _ in 0..width {
-        //         let choice = rng.random_range(0..=1);
-        //         match choice {
-        //             0 => baseline.push(EntityCharacters::Background1),
-        //             _ => baseline.push(EntityCharacters::Background2),
-        //         }
-        //     }
-        //     base.push(baseline);
-        // }
-
         let attack_ticks = per_sec_to_tick_count_to_u64(Self::DEFAULT_ATTACK_P_S);
 
         let start_time = Instant::now();
@@ -127,7 +111,7 @@ impl Rogue {
         let timescaler = Rc::new(RefCell::new(TimeScaler::now()));
         timescaler
             .borrow_mut()
-            .offset_start_time(init_player_state.stats.game_stats.time_offset);
+            .offset_doom(init_player_state.stats.game_stats.doom_offset);
 
         let enemies = Rc::new(RefCell::new(Vec::new()));
 
@@ -317,9 +301,9 @@ impl Rogue {
                 .attack_speed_mult)
             .ceil() as u64;
 
-        let offset = self.player_state.borrow().stats.game_stats.time_offset;
+        let offset = self.player_state.borrow().stats.game_stats.doom_offset;
 
-        self.timescaler.borrow_mut().offset_start_time(offset);
+        self.timescaler.borrow_mut().offset_doom(offset);
     }
 
     pub fn generate_popup(&mut self) {

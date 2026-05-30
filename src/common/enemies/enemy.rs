@@ -112,10 +112,6 @@ impl Debuffable for Enemy {
         }
     }
 
-    fn remove_debuff(&mut self, debuff: DebuffTypes) {
-        self.debuffs.retain(|d| d.debuff_type != debuff);
-    }
-
     /// Counts how many active debuffs share the same debuff type as the provided `debuff`.
     ///
     /// # Parameters
@@ -133,6 +129,10 @@ impl Debuffable for Enemy {
                 acc
             }
         })
+    }
+
+    fn remove_debuff(&mut self, debuff: DebuffTypes) {
+        self.debuffs.retain(|d| d.debuff_type != debuff);
     }
 }
 
