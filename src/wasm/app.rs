@@ -91,6 +91,7 @@ pub struct App {
     current_selection: ListState,
     last_frame: Instant,
     pub tick_rate: f64,
+    save_exists: bool,
 }
 
 impl App {
@@ -103,6 +104,7 @@ impl App {
             current_selection: ListState::default(),
             last_frame: Instant::now(),
             tick_rate: TICK_RATE,
+            save_exists: load_progress().is_ok(),
         };
 
         out.current_selection.select_first();
@@ -170,6 +172,9 @@ impl App {
     /// Selects the next item in the menu.
     fn select_next(&mut self) {
         self.current_selection.select_next();
+        if !self.save_exists && self.current_selection.selected().unwrap_or(0) == 1 {
+            self.select_prev();
+        }
     }
 
     /// Selects the previous item in the menu.
@@ -181,11 +186,11 @@ impl App {
     fn confirm_curr(&mut self) {
         match self.current_selection.selected() {
             Some(0) => {
-                self.player_state = Some(load_progress().unwrap_or_default());
+                self.player_state = Some(PlayerState::default());
                 self.game = Some(Game::new(self.player_state.clone().unwrap()));
             }
             Some(1) => {
-                self.player_state = Some(PlayerState::default());
+                self.player_state = Some(load_progress().unwrap_or_default());
                 self.game = Some(Game::new(self.player_state.clone().unwrap()));
             }
             _ => {}
@@ -208,6 +213,7 @@ impl App {
             if game.get_goto().clone() == Goto::Menu {
                 self.player_state = Some(game.get_player_state());
                 save_progress(self.player_state.as_ref().unwrap()).unwrap();
+                self.save_exists = load_progress().is_ok();
                 self.game = None;
             }
         }
@@ -233,9 +239,16 @@ impl App {
 
         let options_area = center_vertical(center_horizontal(bottom, 12), 3);
 
-        let options = List::new(vec![ListItem::from("Continue"), ListItem::from("New Game")])
-            .highlight_symbol("> ")
-            .highlight_style(Style::new().bold());
+        let options = List::new(vec![
+            ListItem::from("New Game"),
+            ListItem::from("Continue").style(if !self.save_exists {
+                Style::default().dark_gray()
+            } else {
+                Style::default()
+            }),
+        ])
+        .highlight_symbol("> ")
+        .highlight_style(Style::new().bold());
 
         frame.render_widget(block, frame.area());
 

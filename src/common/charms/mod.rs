@@ -21,8 +21,8 @@ pub enum CharmWrapper {
     )]
     DamageMult(Option<CharmDamageMult>),
 
-    #[strum(serialize = "Hype Time Charm", serialize = "HYPE TIME CHARM")]
-    HypeTime(Option<CharmDoomOffset>),
+    #[strum(serialize = "Doom Offset Charm", serialize = "DOOM OFFSET CHARM")]
+    DoomOffset(Option<CharmDoomOffset>),
 
     #[strum(serialize = "Attack Speed Charm", serialize = "ATTACK SPEED CHARM")]
     AttackSpeed(Option<CharmAttackSpeed>),
@@ -46,7 +46,7 @@ impl CharmWrapper {
     pub fn get_inner(&self) -> &dyn Charm {
         match self {
             CharmWrapper::DamageMult(damage_mult) => damage_mult.as_ref().expect("No inner charm."),
-            CharmWrapper::HypeTime(offset_add) => offset_add.as_ref().expect("No inner charm."),
+            CharmWrapper::DoomOffset(offset_add) => offset_add.as_ref().expect("No inner charm."),
             CharmWrapper::AttackSpeed(attack_speed) => {
                 attack_speed.as_ref().expect("No inner charm.")
             }
@@ -60,7 +60,7 @@ impl CharmWrapper {
     pub fn get_inner_mut(&mut self) -> &mut dyn Charm {
         match self {
             CharmWrapper::DamageMult(damage_mult) => damage_mult.as_mut().expect("No inner charm."),
-            CharmWrapper::HypeTime(offset_add) => offset_add.as_mut().expect("No inner charm."),
+            CharmWrapper::DoomOffset(offset_add) => offset_add.as_mut().expect("No inner charm."),
             CharmWrapper::AttackSpeed(attack_speed) => {
                 attack_speed.as_mut().expect("No inner charm.")
             }
@@ -72,7 +72,7 @@ impl CharmWrapper {
             CharmWrapper::DamageMult(damage_mult) => {
                 *damage_mult = Some(CharmDamageMult::new(player_state_ref));
             }
-            CharmWrapper::HypeTime(offset_add) => {
+            CharmWrapper::DoomOffset(offset_add) => {
                 *offset_add = Some(CharmDoomOffset::new(player_state_ref));
             }
             CharmWrapper::AttackSpeed(attack_speed) => {

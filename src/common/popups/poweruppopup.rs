@@ -82,7 +82,7 @@ impl PowerupPopup {
                         return;
                     }
                 }
-                CharmWrapper::HypeTime(_) => {
+                CharmWrapper::DoomOffset(_) => {
                     if !player_state.borrow().upgrade_owned("712") {
                         return;
                     }

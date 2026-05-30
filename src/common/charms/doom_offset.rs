@@ -5,7 +5,6 @@ use crate::common::{
     powerup::{DynPowerup, PowerupTypes, Poweruppable},
     stats::Stats,
 };
-use crate::prelude::Duration;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -45,7 +44,7 @@ impl Poweruppable for CharmDoomOffset {
     }
 
     fn get_name(&self) -> String {
-        "Hype Time Charm".into()
+        "Doom Offset Charm".into()
     }
 
     fn get_powerup_type(&self) -> PowerupTypes {
@@ -54,11 +53,11 @@ impl Poweruppable for CharmDoomOffset {
 
     fn upgrade_desc(&self, level: i32) -> String {
         match level {
-            1 => "Offset Doom by 1 (increase difficulty).".into(),
-            2 => "Offset Doom by 2.".into(),
-            3 => "Offset Doom by 4.".into(),
-            4 => "Offset Doom by 6.".into(),
-            5 => "Offset Doom by 10. Be prepared.".into(),
+            1 => "Offset Doom by 2 (increase difficulty).".into(),
+            2 => "Offset Doom by 4.".into(),
+            3 => "Offset Doom by 8.".into(),
+            4 => "Offset Doom by 16.".into(),
+            5 => "Offset Doom by 32. Be prepared.".into(),
             _ => String::new(),
         }
     }
@@ -73,11 +72,11 @@ impl Poweruppable for CharmDoomOffset {
 
         for i in (from + 1)..=to {
             match i {
-                1 => self.stat_boost = 1.,
-                2 => self.stat_boost = 2.,
-                3 => self.stat_boost = 4.,
-                4 => self.stat_boost = 6.,
-                5 => self.stat_boost = 10.,
+                1 => self.stat_boost = 2.,
+                2 => self.stat_boost = 4.,
+                3 => self.stat_boost = 8.,
+                4 => self.stat_boost = 16.,
+                5 => self.stat_boost = 32.,
                 _ => {}
             }
         }

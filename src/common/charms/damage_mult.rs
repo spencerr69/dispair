@@ -55,9 +55,9 @@ impl Poweruppable for CharmDamageMult {
         match level {
             1 => "Multiply your Damage Multiplier by 1.25".into(),
             2 => "Increase Damage Mult Mult by 0.25".into(),
-            3 => "Increase Damage Mult Mult by 0.5".into(),
-            4 => "Increase Damage Mult Mult by 0.75".into(),
-            5 => "Increase Damage Mult Mult by 2.0".into(),
+            3 => "Increase Damage Mult Mult by 0.25".into(),
+            4 => "Increase Damage Mult Mult by 0.50".into(),
+            5 => "Increase Damage Mult Mult by 1.0".into(),
             _ => String::new(),
         }
     }
@@ -72,11 +72,11 @@ impl Poweruppable for CharmDamageMult {
 
         for i in (from + 1)..=to {
             match i {
-                1 => self.stat_boost = 1.25,
+                1 => self.stat_boost = 1.,
                 2 => self.stat_boost += 0.25,
-                3 => self.stat_boost += 0.5,
-                4 => self.stat_boost += 0.75,
-                5 => self.stat_boost += 2.,
+                3 => self.stat_boost += 0.25,
+                4 => self.stat_boost += 0.50,
+                5 => self.stat_boost += 1.0,
                 _ => {}
             }
         }

@@ -168,8 +168,7 @@ impl Weapon for Flash {
 
     /// Returns the damage of the sword, calculated from its base damage and scalar.
     fn get_damage(&self) -> i32 {
-        (f64::from(self.base_damage)
-            * self.damage_scalar
+        ((f64::from(self.base_damage) * self.damage_scalar)
             * self.player_state.borrow().stats.player_stats.damage_mult)
             .ceil() as i32
     }

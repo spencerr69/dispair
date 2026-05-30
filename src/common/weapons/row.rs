@@ -44,9 +44,7 @@ impl Weapon for Row {
         self.cooldown_ticks += 1;
 
         DamageArea {
-            damage_amount: (f64::from(self.get_damage())
-                * self.player_state.borrow().stats.player_stats.damage_mult)
-                .ceil() as i32,
+            damage_amount: self.get_damage(),
             area: Square(area),
             entity: EntityCharacters::AttackWeak(Style::new().gray()),
             duration: Duration::from_secs_f64(0.05),
@@ -56,7 +54,9 @@ impl Weapon for Row {
     }
 
     fn get_damage(&self) -> i32 {
-        (f64::from(self.base_damage) * self.damage_scalar).ceil() as i32
+        ((f64::from(self.base_damage) * self.damage_scalar)
+            * self.player_state.borrow().stats.player_stats.damage_mult)
+            .ceil() as i32
     }
 
     fn get_element(&self) -> Option<Elements> {

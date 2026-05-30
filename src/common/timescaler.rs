@@ -28,7 +28,7 @@ impl TimeScaler {
     }
 
     pub fn offset_doom(&mut self, offset: f64) {
-        self.doom_offset += offset;
+        self.doom_offset = offset;
     }
 
     /// Returns the elapsed time in seconds since the `start_time`.

@@ -226,7 +226,7 @@ impl EnemyWrangler {
         let time_scaler = self.timescaler.borrow().doom;
 
         self.enemy_health =
-            (f64::from(init_enemy_health) * (time_scaler * 0.5).max(1.)).ceil() as i32;
+            (f64::from(init_enemy_health) * (time_scaler * 0.75).max(1.)).ceil() as i32;
 
         self.enemy_damage = (init_enemy_damage * (time_scaler / 50.).max(1.)).ceil() as i32;
         let enemy_spawn_calc =
