@@ -90,7 +90,7 @@ pub struct App {
     game: Option<Game>,
     player_state: Option<PlayerState>,
     current_selection: ListState,
-    sound_wrangler: Rc<RefCell<SoundWrangler>>,
+    sound_wrangler: Option<Rc<RefCell<SoundWrangler>>>,
     last_frame: Instant,
     pub tick_rate: f64,
     save_exists: bool,
@@ -104,7 +104,7 @@ impl App {
             game: None,
             player_state: None,
             current_selection: ListState::default(),
-            sound_wrangler: Rc::new(RefCell::new(SoundWrangler::new())),
+            sound_wrangler: None,
             last_frame: Instant::now(),
             tick_rate: TICK_RATE,
             save_exists: load_progress().is_ok(),
@@ -161,6 +161,9 @@ impl App {
 
     /// Handles key events.
     pub fn handle_key_event(&mut self, key_event: &KeyEvent) {
+        if self.sound_wrangler.is_none() {
+            self.sound_wrangler = Some(Rc::new(RefCell::new(SoundWrangler::default())));
+        }
         if let Some(game) = &mut self.game {
             game.handle_key_event(key_event);
         } else {
@@ -193,14 +196,14 @@ impl App {
                 self.player_state = Some(PlayerState::default());
                 self.game = Some(Game::new(
                     self.player_state.clone().unwrap(),
-                    self.sound_wrangler.clone(),
+                    self.sound_wrangler.clone().unwrap_or_default(),
                 ));
             }
             Some(1) => {
                 self.player_state = Some(load_progress().unwrap_or_default());
                 self.game = Some(Game::new(
                     self.player_state.clone().unwrap(),
-                    self.sound_wrangler.clone(),
+                    self.sound_wrangler.clone().unwrap_or_default(),
                 ));
             }
             _ => {}
