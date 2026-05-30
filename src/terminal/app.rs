@@ -82,6 +82,7 @@ pub struct App {
     pub frame_rate: f64,
     pub tick_rate: f64,
     current_selection: ListState,
+    save_exists: bool,
 }
 
 impl App {
@@ -95,6 +96,7 @@ impl App {
             frame_rate: FRAME_RATE,
             tick_rate: TICK_RATE,
             current_selection: ListState::default(),
+            save_exists: load_progress().is_ok(),
         };
 
         out.current_selection.select_first();
@@ -163,20 +165,26 @@ impl App {
 
     fn select_next(&mut self) {
         self.current_selection.select_next();
+        if !self.save_exists && self.current_selection.selected().unwrap_or(0) == 1 {
+            self.select_next();
+        }
     }
 
     fn select_prev(&mut self) {
         self.current_selection.select_previous();
+        if !self.save_exists && self.current_selection.selected().unwrap_or(0) == 1 {
+            self.select_prev();
+        }
     }
 
     fn confirm_curr(&mut self) {
         match self.current_selection.selected() {
             Some(0) => {
-                self.player_state = Some(load_progress().unwrap_or_default());
+                self.player_state = Some(PlayerState::default());
                 self.game = Some(Game::new(self.player_state.clone().unwrap()));
             }
             Some(1) => {
-                self.player_state = Some(PlayerState::default());
+                self.player_state = Some(load_progress().unwrap_or_default());
                 self.game = Some(Game::new(self.player_state.clone().unwrap()));
             }
             Some(2) => self.exit = true,
@@ -198,6 +206,7 @@ impl App {
             if game.get_goto().clone() == Goto::Menu {
                 self.player_state = Some(game.get_player_state());
                 save_progress(self.player_state.as_ref().expect("it's here")).unwrap_or(());
+                self.save_exists = load_progress().is_ok();
                 self.game = None;
             }
         }
@@ -222,13 +231,19 @@ impl App {
 
         let options_area = center_vertical(center_horizontal(bottom, 12), 3);
 
-        let options = List::new(vec![
-            ListItem::from("Continue"),
+        let options_items = vec![
             ListItem::from("New Game"),
+            ListItem::from("Continue").style(if !self.save_exists {
+                Style::new().dark_gray()
+            } else {
+                Style::new()
+            }),
             ListItem::from("Quit"),
-        ])
-        .highlight_symbol("> ")
-        .highlight_style(Style::new().bold());
+        ];
+
+        let options = List::new(options_items)
+            .highlight_symbol("> ")
+            .highlight_style(Style::new().bold());
 
         frame.render_widget(block, frame.area());
 
