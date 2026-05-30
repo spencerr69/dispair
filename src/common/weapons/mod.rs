@@ -3,9 +3,11 @@
 //! for handling attacks and their effects on enemies.
 
 use crate::{common::debuffs::Elements, prelude::Duration};
+use std::cell::RefCell;
 
 use ratatui::style::Style;
 use std::cmp::Ordering;
+use std::rc::Rc;
 use strum::{EnumIter, EnumString, IntoStaticStr};
 
 use crate::common::character::{CharacterPositionData, Renderable};
@@ -14,6 +16,7 @@ use crate::common::enemies::enemy::{Debuffable, Enemy};
 use crate::common::entities::EntityCharacters;
 use crate::common::map::Layer;
 
+use crate::common::sound::{SoundEffect, SoundWrangler};
 use crate::common::{
     PlayerStateRef, character::Damageable, powerup::PoweruppableWeapon, stats::WeaponStats,
 };
@@ -102,6 +105,13 @@ impl WeaponWrapper {
         }
     }
 
+    pub fn get_sound(&self) -> SoundEffect {
+        match self {
+            WeaponWrapper::Flash(_) => SoundEffect::Flash,
+            _ => SoundEffect::Hit,
+        }
+    }
+
     /// Get a mutable reference to the inner weapon.
     ///
     /// # Panics
@@ -164,9 +174,11 @@ impl DamageArea {
     ///
     /// For each affected enemy, reduces its health by `damage_amount`. If `weapon_stats` is present,
     /// iterates its `procs` and invokes each proc with `chance > 0` on the enemy.
-    pub fn deal_damage(&self, enemies: &mut [Enemy]) {
+    pub fn deal_damage(&self, enemies: &mut [Enemy], sound_wrangler: Rc<RefCell<SoundWrangler>>) {
+        let mut any_hit = false;
         for enemy in enemies.iter_mut() {
             if enemy.get_pos().is_in_area(self.area.get_inner()) {
+                any_hit = true;
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon, do the following
@@ -180,6 +192,9 @@ impl DamageArea {
                     });
                 }
             }
+        }
+        if any_hit {
+            sound_wrangler.borrow_mut().play(SoundEffect::Hit);
         }
     }
 }

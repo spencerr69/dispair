@@ -7,6 +7,7 @@ use crate::common::enemies::enemywrangler::EnemyWrangler;
 use crate::common::map::Map;
 use crate::common::pickups::pickupwrangler::PickupWrangler;
 use crate::common::render::{flatten_to_span, get_camera_area, spans_to_text};
+use crate::common::sound::{SoundEffect, SoundWrangler};
 use crate::common::upgrades::upgrade::CurrentUpgradesTrait;
 use crate::common::utils::{center, move_entity, per_sec_to_tick_count_to_u64};
 use crate::common::widgets::statswidget::StatsWidget;
@@ -54,6 +55,8 @@ pub struct Rogue {
 
     pub powerup_popup: Option<PowerupPopup>,
 
+    pub sound_wrangler: Rc<RefCell<SoundWrangler>>,
+
     /// The rendered map text.
     pub map_text: Text<'static>,
     pub character: Character,
@@ -95,7 +98,7 @@ impl Rogue {
     const DEFAULT_ATTACK_P_S: f64 = 1.5;
 
     #[must_use]
-    pub fn new(player_state: &PlayerStateRef) -> Self {
+    pub fn new(player_state: &PlayerStateRef, sound_wrangler: Rc<RefCell<SoundWrangler>>) -> Self {
         let init_player_state = player_state.borrow().clone();
 
         let width = init_player_state.stats.game_stats.width;
@@ -124,7 +127,8 @@ impl Rogue {
 
             player_state: player_state.clone(),
             init_state: init_player_state,
-            character: Character::new(&player_state.clone()),
+            character: Character::new(&player_state.clone(), sound_wrangler.clone()),
+
             map,
             attack_ticks,
 
@@ -132,7 +136,9 @@ impl Rogue {
                 player_state.clone(),
                 timescaler.clone(),
                 enemies.clone(),
+                sound_wrangler.clone(),
             ),
+            sound_wrangler,
 
             map_text: Text::from(""),
             start_popup: false,
@@ -163,6 +169,8 @@ impl Rogue {
 
         game.update_stats_with_charms();
         game.update_stats();
+
+        game.sound_wrangler.borrow().play(SoundEffect::RoundStart);
 
         if game.player_state.borrow().upgrade_owned("53") {
             game.pickup_wrangler.spawn_orb(&game.map.map);
@@ -235,7 +243,10 @@ impl Rogue {
                     let (damage_areas, mut damage_effects) =
                         self.character.attack(&self.map.map, &self.enemies.borrow());
                     for area in damage_areas {
-                        area.deal_damage(&mut self.enemies.borrow_mut());
+                        area.deal_damage(
+                            &mut self.enemies.borrow_mut(),
+                            self.sound_wrangler.clone(),
+                        );
                     }
                     self.active_damage_effects.append(&mut damage_effects);
                 }
@@ -492,19 +503,21 @@ mod tests {
     use std::time::Instant;
 
     use crate::common::render::{flatten_to_span, spans_to_text};
+    use crate::common::sound::SoundWrangler;
     use crate::common::{rogue::Rogue, upgrades::upgrade::PlayerState};
 
     #[test]
     fn renderspeed() {
         let mut player_state = PlayerState::default();
 
+        let wrangler = Rc::new(RefCell::new(SoundWrangler::default()));
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
         player_state.stats.game_stats.max_method_level = 5;
         player_state.stats.game_stats.max_charm_level = 5;
 
-        let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)));
+        let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)), wrangler);
 
         rogue_game.on_tick();
         rogue_game.on_frame();
@@ -526,13 +539,15 @@ mod tests {
     fn updated_renderspeed() {
         let mut player_state = PlayerState::default();
 
+        let wrangler = Rc::new(RefCell::new(SoundWrangler::default()));
+
         player_state.stats.game_stats.width = 1000;
         player_state.stats.game_stats.height = 1000;
 
         player_state.stats.game_stats.max_method_level = 5;
         player_state.stats.game_stats.max_charm_level = 5;
 
-        let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)));
+        let mut rogue_game = Rogue::new(&Rc::new(RefCell::new(player_state)), wrangler);
 
         let start_time = Instant::now();
 

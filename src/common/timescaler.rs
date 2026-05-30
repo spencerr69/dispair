@@ -1,7 +1,6 @@
 //! This module provides a `TimeScaler` that dynamically adjusts a scaling factor
 //! over time. This is used to increase the game's difficulty as time progresses.
 
-use crate::common::utils::convert_range;
 use crate::prelude::SystemTime;
 
 /// Handles the scaling of game difficulty over time.
@@ -44,9 +43,9 @@ impl TimeScaler {
     /// Calculates the new scaling factor based on the elapsed time.
     pub fn scale(&mut self) -> f64 {
         let mut doom = Self::SCALE_BASE.powf(self.time_in_secs() as f64) * (self.doom_offset + 1.);
-        if self.doom > 50. {
-            doom = convert_range(doom, 50., 150., 50., 100.);
-        }
+        // if self.doom > 50. {
+        //     doom = convert_range(doom, 50., 150., 50., 100.);
+        // }
         self.doom = doom;
         self.doom
     }

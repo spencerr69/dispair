@@ -23,6 +23,7 @@ pub mod popups;
 pub mod powerup;
 pub mod render;
 pub mod rogue;
+pub mod sound;
 pub mod stats;
 pub mod timescaler;
 pub mod upgrades;

@@ -1,4 +1,5 @@
 use crate::common::rogue::Rogue;
+use crate::common::sound::SoundWrangler;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::upgrades::upgrademenu::UpgradesMenu;
 use crate::common::{Goto, PlayerStateRef, Viewable};
@@ -36,16 +37,18 @@ impl View {
 pub struct Game {
     view: View,
     pub player_state: PlayerStateRef,
+    pub sound_wrangler: Rc<RefCell<SoundWrangler>>,
 }
 
 impl Game {
     #[must_use]
-    pub fn new(player_state: PlayerState) -> Self {
+    pub fn new(player_state: PlayerState, sound_wrangler: Rc<RefCell<SoundWrangler>>) -> Self {
         let player_state_rc = Rc::new(RefCell::new(player_state));
 
         Self {
             view: View::Upgrades(UpgradesMenu::new(player_state_rc.clone())),
             player_state: player_state_rc.clone(),
+            sound_wrangler,
         }
     }
 
@@ -54,7 +57,12 @@ impl Game {
             Goto::Upgrades => {
                 self.view = View::Upgrades(UpgradesMenu::new(self.player_state.clone()));
             }
-            Goto::Game => self.view = View::Rogue(Rogue::new(&self.player_state.clone())),
+            Goto::Game => {
+                self.view = View::Rogue(Rogue::new(
+                    &self.player_state.clone(),
+                    self.sound_wrangler.clone(),
+                ));
+            }
             Goto::Menu => {}
         }
     }

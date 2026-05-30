@@ -2,11 +2,13 @@
 //! It handles character movement, health, attacks, and other core gameplay mechanics.
 
 use ratatui::style::Style;
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::common::charms::doom_offset::CharmDoomOffset;
 use crate::common::enemies::enemy::Enemy;
 use crate::common::entities::EntityCharacters;
 use crate::common::map::Layer;
+use crate::common::sound::SoundWrangler;
 use crate::common::{
     PlayerStateRef,
     charms::CharmWrapper,
@@ -105,6 +107,8 @@ pub struct Character {
 
     pub stats: PlayerStateRef,
 
+    sound_wrangler: Rc<RefCell<SoundWrangler>>,
+
     health: i32,
     max_health: i32,
     is_alive: bool,
@@ -132,7 +136,7 @@ impl Character {
     /// A `Character` populated with position, facing, health, stats, entity character,
     /// and weapons derived from the provided `player_state`.
     #[must_use]
-    pub fn new(player_state: &PlayerStateRef) -> Self {
+    pub fn new(player_state: &PlayerStateRef, sound_wrangler: Rc<RefCell<SoundWrangler>>) -> Self {
         let stats = &player_state.borrow().stats;
         let weapon_stats = stats.weapon_stats.clone();
         let max_health = stats.player_stats.health;
@@ -147,6 +151,8 @@ impl Character {
             prev_position: Position(0, 0),
             last_moved: Instant::now(),
             facing: Direction::UP,
+
+            sound_wrangler,
 
             stats: player_state.clone(),
 
@@ -189,6 +195,8 @@ impl Character {
             .weapons
             .iter_mut()
             .map(|weapon| {
+                self.sound_wrangler.borrow().play(weapon.get_sound());
+
                 weapon
                     .get_inner_mut()
                     .attack(pos_data.clone(), enemies, layer)

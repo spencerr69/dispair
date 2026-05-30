@@ -2,8 +2,6 @@
 //! It handles the main loop, event handling, and switching between different views (menu, game, upgrades).
 
 use crate::common::{FRAME_RATE, Goto, TICK_RATE};
-use std::fs::{File, OpenOptions};
-
 use crate::prelude::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
@@ -14,10 +12,14 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState},
 };
 use serde::de::Error as serdeError;
+use std::cell::RefCell;
+use std::fs::{File, OpenOptions};
+use std::rc::Rc;
 
 use super::tui::{Event, Tui};
 
 use crate::common::game::Game;
+use crate::common::sound::SoundWrangler;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::utils::{center_horizontal, center_vertical};
 
@@ -79,6 +81,7 @@ pub struct App {
     game: Option<Game>,
     exit: bool,
     player_state: Option<PlayerState>,
+    sound_wrangler: Rc<RefCell<SoundWrangler>>,
     pub frame_rate: f64,
     pub tick_rate: f64,
     current_selection: ListState,
@@ -93,6 +96,7 @@ impl App {
             game: None,
             exit: false,
             player_state: None,
+            sound_wrangler: Rc::new(RefCell::new(SoundWrangler::new())),
             frame_rate: FRAME_RATE,
             tick_rate: TICK_RATE,
             current_selection: ListState::default(),
@@ -181,11 +185,17 @@ impl App {
         match self.current_selection.selected() {
             Some(0) => {
                 self.player_state = Some(PlayerState::default());
-                self.game = Some(Game::new(self.player_state.clone().unwrap()));
+                self.game = Some(Game::new(
+                    self.player_state.clone().unwrap(),
+                    self.sound_wrangler.clone(),
+                ));
             }
             Some(1) => {
                 self.player_state = Some(load_progress().unwrap_or_default());
-                self.game = Some(Game::new(self.player_state.clone().unwrap()));
+                self.game = Some(Game::new(
+                    self.player_state.clone().unwrap(),
+                    self.sound_wrangler.clone(),
+                ));
             }
             Some(2) => self.exit = true,
             _ => {}

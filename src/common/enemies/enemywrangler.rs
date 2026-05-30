@@ -4,6 +4,7 @@ use crate::common::debuffs::{GetDebuffTypes, OnDamageEffect, OnDeathEffect, OnTi
 use crate::common::effects::DamageEffect;
 use crate::common::enemies::enemy::{Enemy, EnemyBehaviour, EnemyDrops};
 use crate::common::map::Layer;
+use crate::common::sound::{SoundEffect, SoundWrangler};
 use crate::common::timescaler::TimeScaler;
 use crate::common::utils::{
     can_stand, convert_range, get_rand_position_on_edge, is_next_to_character,
@@ -24,6 +25,8 @@ pub struct EnemyWrangler {
     pub enemy_drops: EnemyDrops,
     pub player_state: PlayerStateRef,
     pub timescaler: Rc<RefCell<TimeScaler>>,
+
+    pub sound_wrangler: Rc<RefCell<SoundWrangler>>,
 }
 
 impl EnemyWrangler {
@@ -36,6 +39,7 @@ impl EnemyWrangler {
         player_state: PlayerStateRef,
         timescaler: Rc<RefCell<TimeScaler>>,
         enemies: Rc<RefCell<Vec<Enemy>>>,
+        sound_wrangler: Rc<RefCell<SoundWrangler>>,
     ) -> Self {
         let player_state_ref = player_state.borrow().clone();
 
@@ -54,6 +58,7 @@ impl EnemyWrangler {
             enemies,
             player_state,
             timescaler,
+            sound_wrangler,
         }
     }
 
@@ -162,11 +167,15 @@ impl EnemyWrangler {
 
         let mut enemies = self.enemies.borrow_mut().clone();
 
+        let init_size = enemies.len();
+
         for enemy in &mut enemies {
             let mut debuffs = enemy.debuffs.clone();
 
             for debuff in &mut debuffs {
-                if let Some(damage_area) = debuff.on_tick(enemy, layer, tickcount) {
+                if let Some(damage_area) =
+                    debuff.on_tick(enemy, layer, tickcount, self.sound_wrangler.clone())
+                {
                     damage_areas.push(damage_area);
                 }
                 if let Some(damage_area) = debuff.on_damage(enemy, layer, &self.enemies.borrow()) {
@@ -196,8 +205,12 @@ impl EnemyWrangler {
 
         self.enemies.borrow_mut().retain(Damageable::is_alive);
 
+        if self.enemies.borrow().len() < init_size {
+            self.sound_wrangler.borrow().play(SoundEffect::EnemyKill);
+        }
+
         for damage_area in damage_areas {
-            damage_area.deal_damage(&mut self.enemies.borrow_mut());
+            damage_area.deal_damage(&mut self.enemies.borrow_mut(), self.sound_wrangler.clone());
 
             let damage_effect = DamageEffect::from(damage_area);
 
@@ -230,8 +243,8 @@ impl EnemyWrangler {
 
         self.enemy_damage = (init_enemy_damage * (time_scaler / 50.).max(1.)).ceil() as i32;
         let enemy_spawn_calc =
-            per_sec_to_tick_count(init_enemy_spawn_secs * (0.3 * time_scaler).max(1.));
-        if enemy_spawn_calc > 1.0 {
+            per_sec_to_tick_count(init_enemy_spawn_secs * (0.8 * time_scaler).max(1.));
+        if enemy_spawn_calc > 1.5 {
             self.enemy_spawn_ticks = enemy_spawn_calc.ceil() as u64;
         } else {
             self.enemy_spawn_ticks = 1;
@@ -239,7 +252,7 @@ impl EnemyWrangler {
         }
 
         self.enemy_move_ticks =
-            per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 9.).max(1.));
+            per_sec_to_tick_count_to_u64(init_enemy_move_secs * (time_scaler / 7.).max(1.));
 
         if self.enemy_spawn_ticks < 5 {
             self.enemy_spawn_ticks =

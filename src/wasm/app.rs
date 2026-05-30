@@ -25,6 +25,7 @@ use ratzilla::ratatui::{
 };
 
 use crate::common::game::Game;
+use crate::common::sound::SoundWrangler;
 use crate::common::upgrades::upgrade::PlayerState;
 use crate::common::utils::{center_horizontal, center_vertical};
 
@@ -89,6 +90,7 @@ pub struct App {
     game: Option<Game>,
     player_state: Option<PlayerState>,
     current_selection: ListState,
+    sound_wrangler: Rc<RefCell<SoundWrangler>>,
     last_frame: Instant,
     pub tick_rate: f64,
     save_exists: bool,
@@ -102,10 +104,12 @@ impl App {
             game: None,
             player_state: None,
             current_selection: ListState::default(),
+            sound_wrangler: Rc::new(RefCell::new(SoundWrangler::new())),
             last_frame: Instant::now(),
             tick_rate: TICK_RATE,
             save_exists: load_progress().is_ok(),
         };
+        web_sys::console::log_1(&"Hello WASM!".into());
 
         out.current_selection.select_first();
 
@@ -187,11 +191,17 @@ impl App {
         match self.current_selection.selected() {
             Some(0) => {
                 self.player_state = Some(PlayerState::default());
-                self.game = Some(Game::new(self.player_state.clone().unwrap()));
+                self.game = Some(Game::new(
+                    self.player_state.clone().unwrap(),
+                    self.sound_wrangler.clone(),
+                ));
             }
             Some(1) => {
                 self.player_state = Some(load_progress().unwrap_or_default());
-                self.game = Some(Game::new(self.player_state.clone().unwrap()));
+                self.game = Some(Game::new(
+                    self.player_state.clone().unwrap(),
+                    self.sound_wrangler.clone(),
+                ));
             }
             _ => {}
         }

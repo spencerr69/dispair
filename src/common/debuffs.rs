@@ -2,10 +2,11 @@ use crate::{
     common::{TICK_RATE, character::Damageable, coords::ChaosArea, stats::WeaponStats},
     prelude::Duration,
 };
-
-use std::collections::HashMap;
+use std::cell::RefCell;
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::rc::Rc;
 
 use ratatui::style::Style;
 
@@ -15,6 +16,7 @@ use crate::common::enemies::enemy::{Debuffable, get_closest_enemies};
 use crate::common::enemies::enemy::{Enemy, move_to_point_granular};
 use crate::common::entities::EntityCharacters;
 use crate::common::map::Layer;
+use crate::common::sound::{SoundEffect, SoundWrangler};
 use crate::common::{
     coords::{Area, SquareArea},
     stats::{DebuffStats, Proc},
@@ -111,11 +113,23 @@ impl OnDeathEffect for Debuff {
 }
 
 pub trait OnTickEffect {
-    fn on_tick(&mut self, enemy: &mut Enemy, layer: &Layer, tickcount: u64) -> Option<DamageArea>;
+    fn on_tick(
+        &mut self,
+        enemy: &mut Enemy,
+        layer: &Layer,
+        tickcount: u64,
+        sound_wrangler: Rc<RefCell<SoundWrangler>>,
+    ) -> Option<DamageArea>;
 }
 
 impl OnTickEffect for Debuff {
-    fn on_tick(&mut self, enemy: &mut Enemy, layer: &Layer, tickcount: u64) -> Option<DamageArea> {
+    fn on_tick(
+        &mut self,
+        enemy: &mut Enemy,
+        layer: &Layer,
+        tickcount: u64,
+        sound_wrangler: Rc<RefCell<SoundWrangler>>,
+    ) -> Option<DamageArea> {
         if self.complete {
             return None;
         }
@@ -159,6 +173,8 @@ impl OnTickEffect for Debuff {
 
                     let mut procs = HashMap::new();
                     procs.insert("burn".into(), proc);
+
+                    sound_wrangler.borrow().play(SoundEffect::Ignite);
 
                     Some(DamageArea {
                         damage_amount: self.stats.damage.expect("No damage?") * 10,

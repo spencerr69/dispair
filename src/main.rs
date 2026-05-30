@@ -7,6 +7,7 @@
     clippy::cast_precision_loss,
     clippy::if_not_else
 )]
+extern crate core;
 
 pub mod common;
 
