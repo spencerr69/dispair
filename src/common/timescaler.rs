@@ -42,7 +42,7 @@ impl TimeScaler {
 
     /// Calculates the new scaling factor based on the elapsed time.
     pub fn scale(&mut self) -> f64 {
-        let mut doom = Self::SCALE_BASE.powf(self.time_in_secs() as f64) * (self.doom_offset + 1.);
+        let doom = Self::SCALE_BASE.powf(self.time_in_secs() as f64) * (self.doom_offset + 1.);
         // if self.doom > 50. {
         //     doom = convert_range(doom, 50., 150., 50., 100.);
         // }

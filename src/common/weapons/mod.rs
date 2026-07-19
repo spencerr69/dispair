@@ -179,6 +179,7 @@ impl DamageArea {
         for enemy in enemies.iter_mut() {
             if enemy.get_pos().is_in_area(self.area.get_inner()) {
                 any_hit = true;
+                // sound_wrangler.borrow_mut().play(SoundEffect::Hit);
                 enemy.take_damage(self.damage_amount);
 
                 // if was hit by a weapon, do the following

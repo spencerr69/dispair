@@ -1,4 +1,5 @@
 use include_dir::{Dir, include_dir};
+use rand::Rng;
 use rodio::source::Amplify;
 use rodio::{Decoder, MixerDeviceSink, Source};
 use std::io::Cursor;
@@ -34,8 +35,37 @@ impl SoundEffect {
                 Cursor::new(file.contents())
             }
             SoundEffect::EnemyKill => {
-                let file = SOUNDS_DIR.get_file("005_ENEMY_KILL.wav").unwrap();
-                Cursor::new(file.contents())
+                // let file = SOUNDS_DIR.get_file("005_ENEMY_KILL.wav").unwrap();
+                // Cursor::new(file.contents())
+
+                let mut rng = rand::rng();
+                let choice = rng.random_range(0..10);
+                match choice {
+                    0..3 => {
+                        let file = SOUNDS_DIR.get_file("010_KILL_1.wav").unwrap();
+                        Cursor::new(file.contents())
+                    }
+                    3..4 => {
+                        let file = SOUNDS_DIR.get_file("011_KILL_2.wav").unwrap();
+                        Cursor::new(file.contents())
+                    }
+                    4..6 => {
+                        let file = SOUNDS_DIR.get_file("012_KILL_3.wav").unwrap();
+                        Cursor::new(file.contents())
+                    }
+                    6..9 => {
+                        let file = SOUNDS_DIR.get_file("013_KILL_5.wav").unwrap();
+                        Cursor::new(file.contents())
+                    }
+                    9..10 => {
+                        let file = SOUNDS_DIR.get_file("014_KILL_7.wav").unwrap();
+                        Cursor::new(file.contents())
+                    }
+                    _ => {
+                        let file = SOUNDS_DIR.get_file("005_ENEMY_KILL.wav").unwrap();
+                        Cursor::new(file.contents())
+                    }
+                }
             }
         }
     }
